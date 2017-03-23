@@ -36,6 +36,7 @@ function ConnectionIndicator(videoContainer, videoId) {
     this.resolution = null;
     this.isResolutionHD = null;
     this.transport = [];
+    this.framerate = null;
     this.popover = null;
     this.id = videoId;
     this.create();
@@ -88,11 +89,16 @@ ConnectionIndicator.prototype.generateText = function () {
     }
 
     // GENERATE RESOLUTIONS STRING
-    let resolutions = this.resolution || {};
-    let resolutionStr = Object.keys(resolutions).map(function (ssrc) {
+    const resolutions = this.resolution || {};
+    const resolutionStr = Object.keys(resolutions).map(ssrc => {
         let {width, height} = resolutions[ssrc];
         return `${width}x${height}`;
     }).join(', ') || 'N/A';
+
+    const framerates = this.framerate || {};
+    const frameRateStr = Object.keys(framerates).map(ssrc =>
+        framerates[ssrc]
+    ).join(', ') || 'N/A';
 
     let result = (
         `<table class="connection-info__container" style='width:100%'>
@@ -117,6 +123,14 @@ ConnectionIndicator.prototype.generateText = function () {
                 </td>
                 <td>
                     ${resolutionStr}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span data-i18n='connectionindicator.framerate'></span>
+                </td>
+                <td>
+                    ${frameRateStr}
                 </td>
             </tr>
         </table>`);
@@ -150,7 +164,12 @@ ConnectionIndicator.prototype.generateText = function () {
                 "data-i18n='connectionindicator.address'></span></td>" +
                 "<td> N/A</td></tr>";
         } else {
-            var data = {remoteIP: [], localIP:[], remotePort:[], localPort:[]};
+            var data = {
+                remoteIP: [],
+                localIP:[],
+                remotePort:[],
+                localPort:[],
+                transportType:[]};
             for(i = 0; i < this.transport.length; i++) {
                 var ip =  ConnectionIndicator.getIP(this.transport[i].ip);
                 var port = ConnectionIndicator.getPort(this.transport[i].ip);
@@ -173,7 +192,14 @@ ConnectionIndicator.prototype.generateText = function () {
                 if(data.localPort.indexOf(localPort) == -1) {
                     data.localPort.push(localPort);
                 }
+
+                if(data.transportType.indexOf(this.transport[i].type) == -1) {
+                    data.transportType.push(this.transport[i].type);
+                }
             }
+
+            // All of the transports should be either P2P or JVB
+            const isP2P = this.transport.length ? this.transport[0].p2p : false;
 
             var local_address_key = "connectionindicator.localaddress";
             var remote_address_key = "connectionindicator.remoteaddress";
@@ -215,9 +241,18 @@ ConnectionIndicator.prototype.generateText = function () {
             transport += "</td></tr>";
             transport += localTransport + "</td></tr>";
             transport +="<tr>" +
-                "<td><span data-i18n='connectionindicator.transport'>" +
-                    "</span></td>" +
-                "<td>" + this.transport[0].type + "</td></tr>";
+                "<td><span data-i18n='connectionindicator.transport' "
+                    + " data-i18n-options='" +
+                    JSON.stringify({count: data.transportType.length})
+                + "'></span></td>" +
+                "<td>"
+                    + ConnectionIndicator.getStringFromArray(data.transportType);
+            // Append (direct) to indicate the P2P type of transport
+            if (isP2P) {
+                transport += "<span data-i18n='connectionindicator.direct'>";
+            }
+            // Close "type" column and end table row
+            transport += "</td></tr>";
 
         }
 
@@ -321,17 +356,17 @@ ConnectionIndicator.prototype.remove = function() {
  * the user is having connectivity issues.
  */
 ConnectionIndicator.prototype.updateConnectionStatusIndicator
-= function (isActive) {
-    this.isConnectionActive = isActive;
-    if (this.isConnectionActive) {
-        $(this.interruptedIndicator).hide();
-        $(this.emptyIcon).show();
-        $(this.fullIcon).show();
-    } else {
-        $(this.interruptedIndicator).show();
-        $(this.emptyIcon).hide();
-        $(this.fullIcon).hide();
-    }
+    = function (isActive) {
+        this.isConnectionActive = isActive;
+        if (this.isConnectionActive) {
+            $(this.interruptedIndicator).hide();
+            $(this.emptyIcon).show();
+            $(this.fullIcon).show();
+        } else {
+            $(this.interruptedIndicator).show();
+            $(this.emptyIcon).hide();
+            $(this.fullIcon).hide();
+        }
 };
 
 /**
@@ -358,6 +393,8 @@ ConnectionIndicator.prototype.updateConnectionQuality =
         if (object.resolution) {
             this.resolution = object.resolution;
         }
+        if (object.framerate)
+            this.framerate = object.framerate;
     }
 
     let width = qualityToWidth.find(x => percent >= x.percent);
@@ -377,6 +414,15 @@ ConnectionIndicator.prototype.updateConnectionQuality =
 ConnectionIndicator.prototype.updateResolution = function (resolution) {
     this.resolution = resolution;
     this.updateResolutionIndicator();
+    this.updatePopoverData();
+};
+
+/**
+ * Updates the framerate
+ * @param framerate the new resolution
+ */
+ConnectionIndicator.prototype.updateFramerate = function (framerate) {
+    this.framerate = framerate;
     this.updatePopoverData();
 };
 

@@ -36,7 +36,8 @@
         "toggleChat": "Open or close the chat",
         "mute": "Mute or unmute your microphone",
         "fullScreen": "Enter or exit full screen",
-        "videoMute": "Start or stop your camera"
+        "videoMute": "Start or stop your camera",
+        "showSpeakerStats": "Show speaker stats"
     },
     "welcomepage":{
         "disable": "Don't show this page again",
@@ -81,7 +82,7 @@
         "terms": "Terms"
     },
     "startupoverlay": {
-        "policyText": "&nbsp;",
+        "policyText": " ",
         "title": "__app__ needs to use your microphone and camera."
     },
     "suspendedoverlay": {
@@ -177,6 +178,7 @@
         "bitrate": "Bitrate:",
         "packetloss": "Packet loss:",
         "resolution": "Resolution:",
+        "framerate": "Frame rate:",
         "less": "Show less",
         "more": "Show more",
         "address": "Address:",
@@ -189,8 +191,10 @@
         "remoteaddress": "Remote address:",
         "remoteaddress_plural": "Remote addresses:",
         "transport": "Transport:",
+        "transport_plural": "Transports:",
         "bandwidth": "Estimated bandwidth:",
-        "na": "Come back here for connection information once the conference starts"
+        "na": "Come back here for connection information once the conference starts",
+        "direct": " (direct)"
     },
     "notify": {
         "disconnected": "disconnected",
@@ -201,7 +205,7 @@
         "focus": "Conference focus",
         "focusFail": "__component__ not available - retry in __ms__ sec",
         "grantedTo": "Moderator rights granted to __to__!",
-        "grantedToUnknown": "Moderator rights granted to $t(somebody)!",
+        "grantedToUnknown": "Moderator rights granted to $t(notify.somebody)!",
         "muted": "You have started the conversation muted.",
         "mutedTitle": "You're muted!",
         "raisedHand": "Would like to speak."
@@ -333,7 +337,8 @@
         "remoteControlDeniedMessage": "__user__ rejected your remote control request!",
         "remoteControlAllowedMessage": "__user__ accepted your remote control request!",
         "remoteControlErrorMessage": "An error occurred while trying to request remote control permissions from __user__!",
-        "remoteControlStopMessage": "The remote control session ended!"
+        "remoteControlStopMessage": "The remote control session ended!",
+        "close": "Close"
     },
     "email":
     {
@@ -378,7 +383,9 @@
         "FETCH_SESSION_ID": "Obtaining session-id...",
         "GOT_SESSION_ID": "Obtaining session-id... Done",
         "GET_SESSION_ID_ERROR": "Get session-id error: __code__",
-        "USER_CONNECTION_INTERRUPTED": "__displayName__ is having connectivity issues..."
+        "USER_CONNECTION_INTERRUPTED": "__displayName__ is having connectivity issues...",
+        "LOW_BANDWIDTH": "Video for __displayName__ has been turned off to save bandwidth"
+
     },
     "recording":
     {
@@ -402,5 +409,14 @@
         "streamIdHelp": "Where do I find this?",
         "error": "Live streaming failed. Please try again.",
         "busy": "All recorders are currently busy. Please try again later."
+    },
+    "speakerStats":
+    {
+        "hours": "__count__h",
+        "minutes": "__count__m",
+        "name": "Name",
+        "seconds": "__count__s",
+        "speakerStats": "Speaker Stats",
+        "speakerTime": "Speaker Time"
     }
 }

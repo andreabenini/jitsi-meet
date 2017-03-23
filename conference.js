@@ -252,8 +252,8 @@ function maybeRedirectToWelcomePage(options) {
         // save whether current user is guest or not, before navigating
         // to close page
         window.sessionStorage.setItem('guest', APP.tokenData.isGuest);
-        assignWindowLocationPathname(
-                options.feedbackSubmitted ? "close.html" : "close2.html");
+        assignWindowLocationPathname('static/'
+                + (options.feedbackSubmitted ? "close.html" : "close2.html"));
         return;
     }
 
@@ -402,7 +402,7 @@ class ConferenceConnector {
         case ConferenceErrors.NOT_ALLOWED_ERROR:
             {
                 // let's show some auth not allowed page
-                assignWindowLocationPathname('authError.html');
+                assignWindowLocationPathname('static/authError.html');
             }
             break;
 
@@ -714,6 +714,18 @@ export default {
     sendFeedback (overallFeedback, detailedFeedback) {
         return room.sendFeedback (overallFeedback, detailedFeedback);
     },
+
+    /**
+     * Get speaker stats that track total dominant speaker time.
+     *
+     * @returns {object} A hash with keys being user ids and values being the
+     * library's SpeakerStats model used for calculating time as dominant
+     * speaker.
+     */
+    getSpeakerStats() {
+        return room.getSpeakerStats();
+    },
+
     /**
      * Returns the connection times stored in the library.
      */
@@ -728,6 +740,39 @@ export default {
     getConnectionState () {
         return this._room
             && this._room.getConnectionState();
+    },
+    /**
+     * Obtains current P2P ICE connection state.
+     * @return {string|null} ICE connection state or <tt>null</tt> if there's no
+     * P2P connection
+     */
+    getP2PConnectionState () {
+        return this._room
+            && this._room.getP2PConnectionState();
+    },
+    /**
+     * Starts P2P (for tests only)
+     * @private
+     */
+    _startP2P () {
+        try {
+            this._room && this._room.startP2PSession();
+        } catch (error) {
+            logger.error("Start P2P failed", error);
+            throw error;
+        }
+    },
+    /**
+     * Stops P2P (for tests only)
+     * @private
+     */
+    _stopP2P () {
+        try {
+            this._room && this._room.stopP2PSession();
+        } catch (error) {
+            logger.error("Stop P2P failed", error);
+            throw error;
+        }
     },
     /**
      * Checks whether or not our connection is currently in interrupted and
@@ -1271,8 +1316,9 @@ export default {
 */
         room.on(
             ConferenceEvents.LAST_N_ENDPOINTS_CHANGED, (ids, enteringIds) => {
-            APP.UI.handleLastNEndpoints(ids, enteringIds);
+                APP.UI.handleLastNEndpoints(ids, enteringIds);
         });
+
         room.on(
             ConferenceEvents.PARTICIPANT_CONN_STATUS_CHANGED,
             (id, isActive) => {
@@ -1928,5 +1974,18 @@ export default {
      */
     removeListener (eventName, listener) {
         eventEmitter.removeListener(eventName, listener);
+    },
+
+    /**
+     * Checks if the participant given by participantId is currently in the
+     * last N set if there's one supported.
+     *
+     * @param participantId the identifier of the participant
+     * @returns {boolean} {true} if the participant given by the participantId
+     * is currently in the last N set or if there's no last N set at this point
+     * and {false} otherwise
+     */
+    isInLastN (participantId) {
+        return room.isInLastN(participantId);
     }
 };
