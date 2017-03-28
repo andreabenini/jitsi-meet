@@ -10,8 +10,7 @@ import { Symbol } from '../base/react';
  *
  * @protected
  */
-export const _SET_APP_STATE_LISTENER
-    = Symbol('_SET_APP_STATE_LISTENER');
+export const _SET_APP_STATE_LISTENER = Symbol('_SET_APP_STATE_LISTENER');
 
 /**
  * The type of redux action which signals that video will be muted because the
@@ -26,6 +25,18 @@ export const _SET_APP_STATE_LISTENER
  */
 export const _SET_BACKGROUND_VIDEO_MUTED
     = Symbol('_SET_BACKGROUND_VIDEO_MUTED');
+
+/**
+ * The type of redux action which sets the video channel's lastN (value).
+ *
+ * {
+ *      type: _SET_LASTN,
+ *      lastN: boolean
+ * }
+ *
+ * @protected
+ */
+export const _SET_LASTN = Symbol('_SET_LASTN');
 
 /**
  * The type of redux action which signals that the app state has changed (in

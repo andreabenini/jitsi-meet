@@ -65,9 +65,9 @@ export class Video extends Component {
     componentDidMount() {
         // RTCView currently does not support media events, so just fire
         // onPlaying callback when <RTCView> is rendered.
-        if (this.props.onPlaying) {
-            this.props.onPlaying();
-        }
+        const { onPlaying } = this.props;
+
+        onPlaying && onPlaying();
     }
 
     /**
@@ -77,7 +77,7 @@ export class Video extends Component {
      * @returns {ReactElement|null}
      */
     render() {
-        const stream = this.props.stream;
+        const { stream } = this.props;
 
         if (stream) {
             const streamURL = stream.toURL();
@@ -91,18 +91,18 @@ export class Video extends Component {
             const style = styles.video;
             const objectFit = (style && style.objectFit) || 'cover';
 
-            const mirror = this.props.mirror;
+            const { mirror } = this.props;
 
-            // XXX RTCView doesn't currently support mirroring, even when
-            // providing a transform style property. As a workaround, wrap the
-            // RTCView inside another View and apply the transform style
-            // property to that View instead.
+            // XXX RTCView may not support support mirroring, even when
+            // providing a transform style property (e.g. iOS) . As a
+            // workaround, wrap the RTCView inside another View and apply the
+            // transform style property to that View instead.
             const mirrorWorkaround = mirror && !RTCVIEW_SUPPORTS_MIRROR;
 
             // eslint-disable-next-line no-extra-parens
             const video = (
                 <RTCView
-                    mirror = { !mirrorWorkaround }
+                    mirror = { mirrorWorkaround ? false : mirror }
                     objectFit = { objectFit }
                     streamURL = { streamURL }
                     style = { style }
