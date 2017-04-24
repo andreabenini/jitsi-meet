@@ -68,9 +68,10 @@ export function trackAdded(track) {
             type => dispatch(trackVideoTypeChanged(track, type)));
 
         // participantId
+        const local = track.isLocal();
         let participantId;
 
-        if (track.isLocal()) {
+        if (local) {
             const participant = getLocalParticipant(getState);
 
             if (participant) {
@@ -84,9 +85,9 @@ export function trackAdded(track) {
             type: TRACK_ADDED,
             track: {
                 jitsiTrack: track,
-                local: track.isLocal(),
+                local,
                 mediaType: track.getType(),
-                mirrorVideo: _shouldMirror(track),
+                mirror: _shouldMirror(track),
                 muted: track.isMuted(),
                 participantId,
                 videoStarted: false,
@@ -178,10 +179,10 @@ function _addTracks(tracks) {
  * Disposes passed tracks and signals them to be removed.
  *
  * @param {(JitsiLocalTrack|JitsiRemoteTrack)[]} tracks - List of tracks.
- * @private
+ * @protected
  * @returns {Function}
  */
-function _disposeAndRemoveTracks(tracks) {
+export function _disposeAndRemoveTracks(tracks) {
     return dispatch =>
         Promise.all(
             tracks.map(t =>
@@ -274,15 +275,14 @@ function _shouldMirror(track) {
             && track.isLocal()
             && track.isVideoTrack()
 
-            // XXX Type of the return value of
-            // JitsiLocalTrack#getCameraFacingMode() happens to be named
+            // XXX The type of the return value of
+            // JitsiLocalTrack's getCameraFacingMode happens to be named
             // CAMERA_FACING_MODE as well, it's defined by lib-jitsi-meet. Note
             // though that the type of the value on the right side of the
             // equality check is defined by jitsi-meet-react. The type
             // definitions are surely compatible today but that may not be the
             // case tomorrow.
             && track.getCameraFacingMode() === CAMERA_FACING_MODE.USER
-            && !track.isScreenSharing()
     );
 }
 

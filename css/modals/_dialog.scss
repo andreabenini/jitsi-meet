@@ -76,3 +76,16 @@
         border-bottom: 1px solid $auiBorderColor;
     }
 }
+
+.modal-dialog-form {
+    color: $modalTextColor;
+
+    .input-control {
+        background: $modalMockAKInputBackground;
+        border: $modalMockAKInputBorder;
+        color: inherit;
+    }
+}
+.modal-dialog-footer {
+    font-size: $modalButtonFontSize;
+}

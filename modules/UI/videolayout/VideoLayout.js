@@ -1,7 +1,7 @@
 /* global APP, $, interfaceConfig */
 const logger = require("jitsi-meet-logger").getLogger(__filename);
 
-import FilmStrip from "./FilmStrip";
+import Filmstrip from "./Filmstrip";
 import UIEvents from "../../../service/UI/UIEvents";
 import UIUtil from "../util/UIUtil";
 
@@ -270,7 +270,7 @@ var VideoLayout = {
     electLastVisibleVideo () {
         // pick the last visible video in the row
         // if nobody else is left, this picks the local video
-        let remoteThumbs = FilmStrip.getThumbs(true).remoteThumbs;
+        let remoteThumbs = Filmstrip.getThumbs(true).remoteThumbs;
         let thumbs = remoteThumbs.filter('[id!="mixedstream"]');
 
         let lastVisible = thumbs.filter(':visible:last');
@@ -285,7 +285,7 @@ var VideoLayout = {
         }
 
         logger.info("Last visible video no longer exists");
-        thumbs = FilmStrip.getThumbs().remoteThumbs;
+        thumbs = Filmstrip.getThumbs().remoteThumbs;
         if (thumbs.length) {
             let id = getPeerContainerResourceId(thumbs[0]);
             if (remoteVideos[id]) {
@@ -530,9 +530,9 @@ var VideoLayout = {
                         forceUpdate = false,
                         onComplete = null) {
         const { localVideo, remoteVideo }
-            = FilmStrip.calculateThumbnailSize();
+            = Filmstrip.calculateThumbnailSize();
 
-        FilmStrip.resizeThumbnails(localVideo, remoteVideo,
+        Filmstrip.resizeThumbnails(localVideo, remoteVideo,
             animate, forceUpdate)
             .then(function () {
                 if (onComplete && typeof onComplete === "function")
@@ -658,14 +658,18 @@ var VideoLayout = {
      * Shows/hides warning about remote user's connectivity issues.
      *
      * @param {string} id the ID of the remote participant(MUC nickname)
-     * @param {boolean} isActive true if the connection is ok or false when
-     * the user is having connectivity issues.
      */
     // eslint-disable-next-line no-unused-vars
-    onParticipantConnectionStatusChanged (id, isActive) {
+    onParticipantConnectionStatusChanged (id) {
         // Show/hide warning on the large video
         if (this.isCurrentlyOnLarge(id)) {
-            if (largeVideo) {
+            // when pinning and we have lastN enabled, we have rapid connection
+            // status changed between inactive, restoring and active and
+            // if there was a large video update scheduled already it will
+            // reflect the current status and no need to schedule new one
+            // otherwise we end up scheduling updates for endpoints which are
+            // were on large while checking, but a change was already scheduled
+            if (largeVideo && !largeVideo.updateInProcess) {
                 // We have to trigger full large video update to transition from
                 // avatar to video on connectivity restored.
                 this.updateLargeVideo(id, true /* force update */);

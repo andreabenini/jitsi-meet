@@ -2,16 +2,22 @@
 
 import { LIB_DID_DISPOSE, LIB_DID_INIT } from '../lib-jitsi-meet';
 import {
+    CAMERA_FACING_MODE,
     MEDIA_TYPE,
     SET_AUDIO_MUTED,
     SET_CAMERA_FACING_MODE,
     SET_VIDEO_MUTED,
+    TOGGLE_CAMERA_FACING_MODE,
     setAudioMuted,
     setVideoMuted
 } from '../media';
 import { MiddlewareRegistry } from '../redux';
 
-import { createLocalTracks, destroyLocalTracks } from './actions';
+import {
+    _disposeAndRemoveTracks,
+    createLocalTracks,
+    destroyLocalTracks
+} from './actions';
 import { TRACK_UPDATED } from './actionTypes';
 import { getLocalTrack, setTrackMuted } from './functions';
 
@@ -37,7 +43,16 @@ MiddlewareRegistry.register(store => next => action => {
         _setMuted(store, action, MEDIA_TYPE.AUDIO);
         break;
 
-    case SET_CAMERA_FACING_MODE:
+    case SET_CAMERA_FACING_MODE: {
+        // XXX Destroy the local video track before creating a new one or
+        // react-native-webrtc may be slow or get stuck when opening a (video)
+        // capturer twice.
+        const localTrack = _getLocalTrack(store, MEDIA_TYPE.VIDEO);
+
+        if (localTrack) {
+            store.dispatch(_disposeAndRemoveTracks([ localTrack.jitsiTrack ]));
+        }
+
         store.dispatch(
             createLocalTracks({
                 devices: [ MEDIA_TYPE.VIDEO ],
@@ -45,10 +60,37 @@ MiddlewareRegistry.register(store => next => action => {
             })
         );
         break;
+    }
 
     case SET_VIDEO_MUTED:
         _setMuted(store, action, MEDIA_TYPE.VIDEO);
         break;
+
+    case TOGGLE_CAMERA_FACING_MODE: {
+        const localTrack = _getLocalTrack(store, MEDIA_TYPE.VIDEO);
+        let jitsiTrack;
+
+        if (localTrack && (jitsiTrack = localTrack.jitsiTrack)) {
+            // XXX MediaStreamTrack._switchCamera is a custom function
+            // implemented in react-native-webrtc for video which switches
+            // between the cameras via a native WebRTC library implementation
+            // without making any changes to the track.
+            jitsiTrack._switchCamera();
+
+            // Don't mirror the video of the back/environment-facing camera.
+            const mirror
+                = jitsiTrack.getCameraFacingMode() === CAMERA_FACING_MODE.USER;
+
+            store.dispatch({
+                type: TRACK_UPDATED,
+                track: {
+                    jitsiTrack,
+                    mirror
+                }
+            });
+        }
+        break;
+    }
 
     case TRACK_UPDATED:
         return _trackUpdated(store, next, action);

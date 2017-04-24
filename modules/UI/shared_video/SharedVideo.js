@@ -8,8 +8,9 @@ import UIEvents from '../../../service/UI/UIEvents';
 import VideoLayout from "../videolayout/VideoLayout";
 import LargeContainer from '../videolayout/LargeContainer';
 import SmallVideo from '../videolayout/SmallVideo';
-import FilmStrip from '../videolayout/FilmStrip';
-import ToolbarToggler from "../toolbars/ToolbarToggler";
+import Filmstrip from '../videolayout/Filmstrip';
+
+import { dockToolbox, showToolbox } from '../../../react/features/toolbox';
 
 export const SHARED_VIDEO_CONTAINER_TYPE = "sharedvideo";
 
@@ -578,7 +579,7 @@ class SharedVideoContainer extends LargeContainer {
                 self.bodyBackground = document.body.style.background;
                 document.body.style.background = 'black';
                 this.$iframe.css({opacity: 1});
-                ToolbarToggler.dockToolbar(true);
+                APP.store.dispatch(dockToolbox(true));
                 resolve();
             });
         });
@@ -586,7 +587,7 @@ class SharedVideoContainer extends LargeContainer {
 
     hide () {
         let self = this;
-        ToolbarToggler.dockToolbar(false);
+        APP.store.dispatch(dockToolbox(false));
         return new Promise(resolve => {
             this.$iframe.fadeOut(300, () => {
                 document.body.style.background = self.bodyBackground;
@@ -597,7 +598,7 @@ class SharedVideoContainer extends LargeContainer {
     }
 
     onHoverIn () {
-        ToolbarToggler.showToolbar();
+        APP.store.dispatch(showToolbox());
     }
 
     get id () {
@@ -605,7 +606,7 @@ class SharedVideoContainer extends LargeContainer {
     }
 
     resize (containerWidth, containerHeight) {
-        let height = containerHeight - FilmStrip.getFilmStripHeight();
+        let height = containerHeight - Filmstrip.getFilmstripHeight();
 
         let width = containerWidth;
 

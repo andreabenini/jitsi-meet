@@ -1,9 +1,7 @@
+import { LOCKED_LOCALLY, LOCKED_REMOTELY } from '../../room-lock';
+
 import { JitsiConferenceErrors } from '../lib-jitsi-meet';
-import {
-    ReducerRegistry,
-    setStateProperties,
-    setStateProperty
-} from '../redux';
+import { assign, ReducerRegistry, set } from '../redux';
 
 import {
     CONFERENCE_FAILED,
@@ -11,6 +9,8 @@ import {
     CONFERENCE_LEFT,
     CONFERENCE_WILL_LEAVE,
     LOCK_STATE_CHANGED,
+    SET_AUDIO_ONLY,
+    _SET_AUDIO_ONLY_VIDEO_MUTED,
     SET_PASSWORD,
     SET_ROOM
 } from './actionTypes';
@@ -36,6 +36,12 @@ ReducerRegistry.register('features/base/conference', (state = {}, action) => {
 
     case LOCK_STATE_CHANGED:
         return _lockStateChanged(state, action);
+
+    case SET_AUDIO_ONLY:
+        return _setAudioOnly(state, action);
+
+    case _SET_AUDIO_ONLY_VIDEO_MUTED:
+        return _setAudioOnlyVideoMuted(state, action);
 
     case SET_PASSWORD:
         return _setPassword(state, action);
@@ -70,10 +76,20 @@ function _conferenceFailed(state, action) {
             : undefined;
 
     return (
-        setStateProperties(state, {
+        assign(state, {
+            audioOnly: undefined,
+            audioOnlyVideoMuted: undefined,
             conference: undefined,
             leaving: undefined,
-            locked: undefined,
+
+            /**
+             * The indicator of how the conference/room is locked. If falsy, the
+             * conference/room is unlocked; otherwise, it's either
+             * {@code LOCKED_LOCALLY| or {@code LOCKED_REMOTELY}.
+             *
+             * @type {string}
+             */
+            locked: passwordRequired ? LOCKED_REMOTELY : undefined,
             password: undefined,
 
             /**
@@ -102,10 +118,10 @@ function _conferenceJoined(state, action) {
     // i.e. password-protected is private to lib-jitsi-meet. However, the
     // library does not fire LOCK_STATE_CHANGED upon joining a JitsiConference
     // with a password.
-    const locked = conference.room.locked || undefined;
+    const locked = conference.room.locked ? LOCKED_REMOTELY : undefined;
 
     return (
-        setStateProperties(state, {
+        assign(state, {
             /**
              * The JitsiConference instance represented by the Redux state of
              * the feature base/conference.
@@ -143,7 +159,9 @@ function _conferenceLeft(state, action) {
     }
 
     return (
-        setStateProperties(state, {
+        assign(state, {
+            audioOnly: undefined,
+            audioOnlyVideoMuted: undefined,
             conference: undefined,
             leaving: undefined,
             locked: undefined,
@@ -170,7 +188,7 @@ function _conferenceWillLeave(state, action) {
     }
 
     return (
-        setStateProperties(state, {
+        assign(state, {
             /**
              * The JitsiConference instance which is currently in the process of
              * being left.
@@ -197,7 +215,45 @@ function _lockStateChanged(state, action) {
         return state;
     }
 
-    return setStateProperty(state, 'locked', action.locked || undefined);
+    let locked;
+
+    if (action.locked) {
+        locked = state.locked || LOCKED_REMOTELY;
+    }
+
+    return assign(state, {
+        locked,
+        password: action.locked ? state.password : null
+    });
+}
+
+/**
+ * Reduces a specific Redux action SET_AUDIO_ONLY of the feature
+ * base/conference.
+ *
+ * @param {Object} state - The Redux state of the feature base/conference.
+ * @param {Action} action - The Redux action SET_AUDIO_ONLY to reduce.
+ * @private
+ * @returns {Object} The new state of the feature base/conference after the
+ * reduction of the specified action.
+ */
+function _setAudioOnly(state, action) {
+    return set(state, 'audioOnly', action.audioOnly);
+}
+
+/**
+ * Reduces a specific Redux action _SET_AUDIO_ONLY_VIDEO_MUTED of the feature
+ * base/conference.
+ *
+ * @param {Object} state - The Redux state of the feature base/conference.
+ * @param {Action} action - The Redux action SET_AUDIO_ONLY_VIDEO_MUTED to
+ * reduce.
+ * @private
+ * @returns {Object} The new state of the feature base/conference after the
+ * reduction of the specified action.
+ */
+function _setAudioOnlyVideoMuted(state, action) {
+    return set(state, 'audioOnlyVideoMuted', action.muted);
 }
 
 /**
@@ -216,7 +272,9 @@ function _setPassword(state, action) {
     case conference.join:
         if (state.passwordRequired === conference) {
             return (
-                setStateProperties(state, {
+                assign(state, {
+                    locked: LOCKED_REMOTELY,
+
                     /**
                      * The password with which the conference is to be joined.
                      *
@@ -227,6 +285,12 @@ function _setPassword(state, action) {
                 }));
         }
         break;
+
+    case conference.lock:
+        return assign(state, {
+            locked: action.password ? LOCKED_LOCALLY : undefined,
+            password: action.password
+        });
     }
 
     return state;
@@ -256,5 +320,5 @@ function _setRoom(state, action) {
      *
      * @type {string}
      */
-    return setStateProperty(state, 'room', room);
+    return set(state, 'room', room);
 }

@@ -56,6 +56,7 @@ class Dialog extends AbstractDialog {
                 width = { this.props.width || 'medium' }>
                 <div>
                     <form
+                        className = 'modal-dialog-form'
                         id = 'modal-dialog-form'
                         onSubmit = { this._onSubmit }>
                         { this.props.children }
@@ -93,7 +94,7 @@ class Dialog extends AbstractDialog {
      */
     _renderFooter() {
         return (
-            <footer>
+            <footer className = 'modal-dialog-footer'>
                 <AKButtonGroup>
                     { this._renderCancelButton() }
                     { this._renderOKButton() }
@@ -114,7 +115,7 @@ class Dialog extends AbstractDialog {
         return (
             <header>
                 <h2>
-                    { t(this.props.titleKey) }
+                    { this.props.titleString || t(this.props.titleKey) }
                 </h2>
             </header>
         );

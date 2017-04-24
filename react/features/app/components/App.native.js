@@ -2,11 +2,12 @@
 
 import { Linking } from 'react-native';
 
-import '../../audio-mode';
-import '../../background';
 import { Platform } from '../../base/react';
-import '../../full-screen';
-import '../../wake-lock';
+import '../../mobile/audio-mode';
+import '../../mobile/background';
+import '../../mobile/full-screen';
+import '../../mobile/proximity';
+import '../../mobile/wake-lock';
 
 import { AbstractApp } from './AbstractApp';
 
@@ -47,8 +48,8 @@ export class App extends AbstractApp {
      * by this app.
      *
      * @inheritdoc
-     * @see https://facebook.github.io/react-native/docs/linking.html
      * @returns {void}
+     * @see https://facebook.github.io/react-native/docs/linking.html
      */
     componentWillMount() {
         super.componentWillMount();
@@ -61,8 +62,8 @@ export class App extends AbstractApp {
      * handled by this app.
      *
      * @inheritdoc
-     * @see https://facebook.github.io/react-native/docs/linking.html
      * @returns {void}
+     * @see https://facebook.github.io/react-native/docs/linking.html
      */
     componentWillUnmount() {
         Linking.removeEventListener('url', this._onLinkingURL);

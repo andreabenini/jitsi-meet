@@ -1,13 +1,13 @@
 import { JitsiConferenceEvents } from '../lib-jitsi-meet';
+import { setVideoMuted } from '../media';
 import {
-    changeParticipantAvatarID,
-    changeParticipantAvatarURL,
-    changeParticipantEmail,
     dominantSpeakerChanged,
     getLocalParticipant,
+    participantConnectionStatusChanged,
     participantJoined,
     participantLeft,
-    participantRoleChanged
+    participantRoleChanged,
+    participantUpdated
 } from '../participants';
 import { trackAdded, trackRemoved } from '../tracks';
 
@@ -18,7 +18,11 @@ import {
     CONFERENCE_WILL_JOIN,
     CONFERENCE_WILL_LEAVE,
     LOCK_STATE_CHANGED,
+    SET_AUDIO_ONLY,
+    _SET_AUDIO_ONLY_VIDEO_MUTED,
+    SET_LASTN,
     SET_PASSWORD,
+    SET_PASSWORD_FAILED,
     SET_ROOM
 } from './actionTypes';
 import {
@@ -27,6 +31,8 @@ import {
     EMAIL_COMMAND
 } from './constants';
 import { _addLocalTracksToConference } from './functions';
+
+import type { Dispatch } from 'redux';
 
 /**
  * Adds conference (event) listeners.
@@ -37,6 +43,8 @@ import { _addLocalTracksToConference } from './functions';
  * @returns {void}
  */
 function _addConferenceListeners(conference, dispatch) {
+    // Dispatches into features/base/conference follow:
+
     conference.on(
             JitsiConferenceEvents.CONFERENCE_FAILED,
             (...args) => dispatch(conferenceFailed(conference, ...args)));
@@ -48,12 +56,10 @@ function _addConferenceListeners(conference, dispatch) {
             (...args) => dispatch(conferenceLeft(conference, ...args)));
 
     conference.on(
-            JitsiConferenceEvents.DOMINANT_SPEAKER_CHANGED,
-            (...args) => dispatch(dominantSpeakerChanged(...args)));
-
-    conference.on(
             JitsiConferenceEvents.LOCK_STATE_CHANGED,
-            (...args) => dispatch(_lockStateChanged(conference, ...args)));
+            (...args) => dispatch(lockStateChanged(conference, ...args)));
+
+    // Dispatches into features/base/tracks follow:
 
     conference.on(
             JitsiConferenceEvents.TRACK_ADDED,
@@ -61,6 +67,16 @@ function _addConferenceListeners(conference, dispatch) {
     conference.on(
             JitsiConferenceEvents.TRACK_REMOVED,
             t => t && !t.isLocal() && dispatch(trackRemoved(t)));
+
+    // Dispatches into features/base/participants follow:
+
+    conference.on(
+            JitsiConferenceEvents.DOMINANT_SPEAKER_CHANGED,
+            (...args) => dispatch(dominantSpeakerChanged(...args)));
+
+    conference.on(
+            JitsiConferenceEvents.PARTICIPANT_CONN_STATUS_CHANGED,
+            (...args) => dispatch(participantConnectionStatusChanged(...args)));
 
     conference.on(
             JitsiConferenceEvents.USER_JOINED,
@@ -78,13 +94,22 @@ function _addConferenceListeners(conference, dispatch) {
 
     conference.addCommandListener(
             AVATAR_ID_COMMAND,
-            (data, id) => dispatch(changeParticipantAvatarID(id, data.value)));
+            (data, id) => dispatch(participantUpdated({
+                id,
+                avatarID: data.value
+            })));
     conference.addCommandListener(
             AVATAR_URL_COMMAND,
-            (data, id) => dispatch(changeParticipantAvatarURL(id, data.value)));
+            (data, id) => dispatch(participantUpdated({
+                id,
+                avatarURL: data.value
+            })));
     conference.addCommandListener(
             EMAIL_COMMAND,
-            (data, id) => dispatch(changeParticipantEmail(id, data.value)));
+            (data, id) => dispatch(participantUpdated({
+                id,
+                email: data.value
+            })));
 }
 
 /**
@@ -229,13 +254,15 @@ export function createConference() {
 
         dispatch(_conferenceWillJoin(room));
 
-        // TODO Take options from config.
+        const config = state['features/base/config'];
         const conference
             = connection.initJitsiConference(
 
                 // XXX Lib-jitsi-meet does not accept uppercase letters.
                 room.toLowerCase(),
                 {
+                    ...config,
+
                     openSctp: true
 
                     // FIXME I tested H.264 from iPhone 6S during a morning
@@ -266,11 +293,97 @@ export function createConference() {
  *     locked: boolean
  * }}
  */
-function _lockStateChanged(conference, locked) {
+export function lockStateChanged(conference, locked) {
     return {
         type: LOCK_STATE_CHANGED,
         conference,
         locked
+    };
+}
+
+/**
+ * Sets the audio-only flag for the current JitsiConference.
+ *
+ * @param {boolean} audioOnly - True if the conference should be audio only;
+ * false, otherwise.
+ * @private
+ * @returns {{
+ *     type: SET_AUDIO_ONLY,
+ *     audioOnly: boolean
+ * }}
+ */
+function _setAudioOnly(audioOnly) {
+    return {
+        type: SET_AUDIO_ONLY,
+        audioOnly
+    };
+}
+
+/**
+ * Signals that the app should mute video because it's now in audio-only mode,
+ * or unmute it because it no longer is. If video was already muted, nothing
+ * will happen; otherwise, it will be muted. When audio-only mode is disabled,
+ * the previous state will be restored.
+ *
+ * @param {boolean} muted - True if video should be muted; false, otherwise.
+ * @protected
+ * @returns {Function}
+ */
+export function _setAudioOnlyVideoMuted(muted: boolean) {
+    return (dispatch, getState) => {
+        if (muted) {
+            const { video } = getState()['features/base/media'];
+
+            if (video.muted) {
+                // Video is already muted, do nothing.
+                return;
+            }
+        } else {
+            const { audioOnlyVideoMuted }
+                = getState()['features/base/conference'];
+
+            if (!audioOnlyVideoMuted) {
+                // We didn't mute video, do nothing.
+                return;
+            }
+        }
+
+        // Remember that local video was muted due to the audio-only mode
+        // vs user's choice.
+        dispatch({
+            type: _SET_AUDIO_ONLY_VIDEO_MUTED,
+            muted
+        });
+        dispatch(setVideoMuted(muted));
+    };
+}
+
+/**
+ * Sets the video channel's last N (value) of the current conference. A value of
+ * undefined shall be used to reset it to the default value.
+ *
+ * @param {(number|undefined)} lastN - The last N value to be set.
+ * @returns {Function}
+ */
+export function setLastN(lastN: ?number) {
+    return (dispatch: Dispatch<*>, getState: Function) => {
+        if (typeof lastN === 'undefined') {
+            const config = getState()['features/base/config'];
+
+            /* eslint-disable no-param-reassign */
+
+            lastN = config.channelLastN;
+            if (typeof lastN === 'undefined') {
+                lastN = -1;
+            }
+
+            /* eslint-enable no-param-reassign */
+        }
+
+        dispatch({
+            type: SET_LASTN,
+            lastN
+        });
     };
 }
 
@@ -328,7 +441,12 @@ export function setPassword(conference, method, password) {
                             conference,
                             method,
                             password
-                        })));
+                        }))
+                        .catch(error => dispatch({
+                            type: SET_PASSWORD_FAILED,
+                            error
+                        }))
+                );
             }
 
             return Promise.reject();
@@ -343,13 +461,26 @@ export function setPassword(conference, method, password) {
  * @param {(string|undefined)} room - The name of the room of the conference to
  * be joined.
  * @returns {{
- *      type: SET_ROOM,
- *      room: string
- *  }}
+ *     type: SET_ROOM,
+ *     room: string
+ * }}
  */
 export function setRoom(room) {
     return {
         type: SET_ROOM,
         room
+    };
+}
+
+/**
+ * Toggles the audio-only flag for the current JitsiConference.
+ *
+ * @returns {Function}
+ */
+export function toggleAudioOnly() {
+    return (dispatch: Dispatch<*>, getState: Function) => {
+        const { audioOnly } = getState()['features/base/conference'];
+
+        return dispatch(_setAudioOnly(!audioOnly));
     };
 }

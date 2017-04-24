@@ -22,7 +22,8 @@
       "operaGrantPermissions": "Select <b><i>Allow</i></b> when your browser asks for permissions.",
       "iexplorerGrantPermissions": "Select <b><i>OK</i></b> when your browser asks for permissions.",
       "safariGrantPermissions": "Select <b><i>OK</i></b> when your browser asks for permissions.",
-      "nwjsGrantPermissions": "Please grant permissions to use your camera and microphone"
+      "nwjsGrantPermissions": "Please grant permissions to use your camera and microphone",
+      "edgeGrantPermissions": "Select <b><i>Yes</i></b> when your browser asks for permissions."
     },
     "keyboardShortcuts": {
         "keyboardShortcuts": "Keyboard shortcuts",
@@ -152,8 +153,7 @@
         "cameraAndMic": "Camera and microphone",
         "moderator": "MODERATOR",
         "password": "SET PASSWORD",
-        "audioVideo": "AUDIO AND VIDEO",
-        "setPasswordLabel": "Lock your room with a password."
+        "audioVideo": "AUDIO AND VIDEO"
     },
     "profile": {
         "title": "Profile",
@@ -195,7 +195,7 @@
         "transport_plural": "Transports:",
         "bandwidth": "Estimated bandwidth:",
         "na": "Come back here for connection information once the conference starts",
-        "direct": " (direct)"
+        "peer_to_peer": " (p2p)"
     },
     "notify": {
         "disconnected": "disconnected",
@@ -224,8 +224,6 @@
         "connecting": "Connecting",
         "copy": "Copy",
         "error": "Error",
-        "roomLocked": "This call is locked. New callers must have the link and enter the password to join",
-        "addPassword": "Add a password",
         "createPassword": "Create password",
         "detectext": "Error when trying to detect desktopsharing extension.",
         "failtoinstall": "Failed to install desktop sharing extension",
@@ -320,11 +318,11 @@
         "cameraUnknownError": "Cannot use camera for a unknown reason.",
         "cameraPermissionDeniedError": "You have not granted permission to use your camera. You can still join the conference but others won't see you. Use the camera button in the address bar to fix this.",
         "cameraNotFoundError": "Camera was not found.",
-        "cameraConstraintFailedError": "Yor camera does not satisfy some of required constraints.",
+        "cameraConstraintFailedError": "Your camera does not satisfy some of the required constraints.",
         "micUnknownError": "Cannot use microphone for a unknown reason.",
         "micPermissionDeniedError": "You have not granted permission to use your microphone. You can still join the conference but others won't hear you. Use the camera button in the address bar to fix this.",
         "micNotFoundError": "Microphone was not found.",
-        "micConstraintFailedError": "Yor microphone does not satisfy some of required constraints.",
+        "micConstraintFailedError": "Your microphone does not satisfy some of the required constraints.",
         "micNotSendingData": "We are unable to access your microphone. Please select another device from the settings menu or try to restart the application.",
         "cameraNotSendingData": "We are unable to access your camera. Please check if another application is using this device, select another device from the settings menu or try to restart the application.",
         "goToStore": "Go to the webstore",
@@ -338,7 +336,10 @@
         "remoteControlAllowedMessage": "__user__ accepted your remote control request!",
         "remoteControlErrorMessage": "An error occurred while trying to request remote control permissions from __user__!",
         "remoteControlStopMessage": "The remote control session ended!",
-        "close": "Close"
+        "close": "Close",
+        "shareYourScreen": "Share your screen",
+        "yourEntireScreen": "Your entire screen",
+        "applicationWindow": "Application window"
     },
     "email":
     {
@@ -418,5 +419,20 @@
         "seconds": "__count__s",
         "speakerStats": "Speaker Stats",
         "speakerTime": "Speaker Time"
+    },
+    "deviceSelection": {
+        "currentlyVideoMuted": "Video is currently muted",
+        "deviceSettings": "Device settings",
+        "noOtherDevices": "No other devices available",
+        "selectADevice": "Select a device",
+        "testAudio": "Test sound"
+    },
+    "invite": {
+        "addPassword": "Add password",
+        "hidePassword": "Hide password",
+        "inviteTo": "Invite people to __conferenceName__",
+        "locked": "This call is locked. New callers must have the link and enter the password to join.",
+        "showPassword": "Show password",
+        "unlocked": "This call is unlocked. Any new caller with the link may join the call."
     }
 }

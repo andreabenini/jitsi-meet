@@ -4,10 +4,12 @@ const logger = require("jitsi-meet-logger").getLogger(__filename);
 
 var UI = {};
 
+import {
+    updateDeviceList
+} from '../../react/features/base/devices';
+
 import Chat from "./side_pannels/chat/Chat";
 import SidePanels from "./side_pannels/SidePanels";
-import Toolbar from "./toolbars/Toolbar";
-import ToolbarToggler from "./toolbars/ToolbarToggler";
 import Avatar from "./avatar/Avatar";
 import SideContainerToggler from "./side_pannels/SideContainerToggler";
 import UIUtil from "./util/UIUtil";
@@ -17,13 +19,33 @@ import SharedVideoManager from './shared_video/SharedVideo';
 import Recording from "./recording/Recording";
 
 import VideoLayout from "./videolayout/VideoLayout";
-import FilmStrip from "./videolayout/FilmStrip";
+import Filmstrip from "./videolayout/Filmstrip";
 import SettingsMenu from "./side_pannels/settings/SettingsMenu";
 import Profile from "./side_pannels/profile/Profile";
 import Settings from "./../settings/Settings";
 import RingOverlay from "./ring_overlay/RingOverlay";
 import UIErrors from './UIErrors';
 import { debounce } from "../util/helpers";
+
+import {
+    setAudioMuted,
+    setVideoMuted
+} from '../../react/features/base/media';
+import {
+    openDeviceSelectionDialog
+} from '../../react/features/device-selection';
+import {
+    checkAutoEnableDesktopSharing,
+    dockToolbox,
+    setAudioIconEnabled,
+    setToolbarButton,
+    setVideoIconEnabled,
+    showDialPadButton,
+    showEtherpadButton,
+    showSharedVideoButton,
+    showSIPCallButton,
+    showToolbox
+} from '../../react/features/toolbox';
 
 var EventEmitter = require("events");
 UI.messageHandler = require("./util/MessageHandler");
@@ -82,16 +104,6 @@ JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[TrackErrors.CONSTRAINT_FAILED]
     = "dialog.micConstraintFailedError";
 JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[TrackErrors.NO_DATA_FROM_SOURCE]
     = "dialog.micNotSendingData";
-
-/**
- * Initialize toolbars with side panels.
- */
-function setupToolbars() {
-    // Initialize toolbar buttons
-    Toolbar.init(eventEmitter);
-    // Initialize side panels
-    SidePanels.init(eventEmitter);
-}
 
 /**
  * Toggles the application in and out of full screen mode
@@ -196,11 +208,11 @@ UI.setRaisedHandStatus = (participant, raisedHandStatus) => {
 /**
  * Sets the local "raised hand" status.
  */
-UI.setLocalRaisedHandStatus = (raisedHandStatus) => {
-    VideoLayout.setRaisedHandStatus(
+UI.setLocalRaisedHandStatus
+    = raisedHandStatus =>
+        VideoLayout.setRaisedHandStatus(
             APP.conference.getMyUserId(),
             raisedHandStatus);
-};
 
 /**
  * Initialize conference UI.
@@ -231,7 +243,7 @@ UI.initConference = function () {
         UI.setUserAvatarID(id, Settings.getAvatarId());
     }
 
-    Toolbar.checkAutoEnableDesktopSharing();
+    APP.store.dispatch(checkAutoEnableDesktopSharing());
 
     if(!interfaceConfig.filmStripOnly) {
         Feedback.init(eventEmitter);
@@ -253,7 +265,7 @@ UI.mucJoined = function () {
 /***
  * Handler for toggling filmstrip
  */
-UI.handleToggleFilmStrip = () => UI.toggleFilmStrip();
+UI.handleToggleFilmstrip = () => UI.toggleFilmstrip();
 
 /**
  * Sets tooltip defaults.
@@ -294,9 +306,8 @@ UI.start = function () {
     // Set the defaults for tooltips.
     _setTooltipDefaults();
 
-    ToolbarToggler.init();
     SideContainerToggler.init(eventEmitter);
-    FilmStrip.init(eventEmitter);
+    Filmstrip.init(eventEmitter);
 
     VideoLayout.init(eventEmitter);
     if (!interfaceConfig.filmStripOnly) {
@@ -306,19 +317,24 @@ UI.start = function () {
 
     sharedVideoManager = new SharedVideoManager(eventEmitter);
     if (!interfaceConfig.filmStripOnly) {
-        let debouncedShowToolbar = debounce(() => {
-            UI.showToolbar();
-        }, 100, { leading: true, trailing: false });
+        let debouncedShowToolbar
+            = debounce(
+                    () => UI.showToolbar(),
+                    100,
+                    { leading: true, trailing: false });
+
         $("#videoconference_page").mousemove(debouncedShowToolbar);
-        setupToolbars();
 
         // Initialise the recording module.
-        if (config.enableRecording)
+        if (config.enableRecording) {
             Recording.init(eventEmitter, config.recordingType);
+        }
+        // Initialize side panels
+        SidePanels.init(eventEmitter);
     } else {
         $("body").addClass("filmstrip-only");
-        UIUtil.setVisible('mainToolbarContainer', false);
-        FilmStrip.setupFilmStripOnly();
+        UI.showToolbar();
+        Filmstrip.setFilmstripOnly();
         messageHandler.enableNotifications(false);
         JitsiPopover.enabled = false;
     }
@@ -443,7 +459,8 @@ UI.initEtherpad = name => {
     logger.log('Etherpad is enabled');
     etherpadManager
         = new EtherpadManager(config.etherpad_base, name, eventEmitter);
-    Toolbar.showEtherpadButton();
+
+    APP.store.dispatch(showEtherpadButton());
 };
 
 /**
@@ -518,8 +535,9 @@ UI.onPeerVideoTypeChanged
 UI.updateLocalRole = isModerator => {
     VideoLayout.showModeratorIndicator();
 
-    Toolbar.showSipCallButton(isModerator);
-    Toolbar.showSharedVideoButton(isModerator);
+    APP.store.dispatch(showSIPCallButton(isModerator));
+    APP.store.dispatch(showSharedVideoButton());
+
     Recording.showRecordingButton(isModerator);
     SettingsMenu.showStartMutedOptions(isModerator);
     SettingsMenu.showFollowMeOptions(isModerator);
@@ -568,19 +586,19 @@ UI.updateUserRole = user => {
 UI.toggleSmileys = () => Chat.toggleSmileys();
 
 /**
- * Toggles film strip.
+ * Toggles filmstrip.
  */
-UI.toggleFilmStrip = function () {
-    var self = FilmStrip;
-    self.toggleFilmStrip.apply(self, arguments);
+UI.toggleFilmstrip = function () {
+    var self = Filmstrip;
+    self.toggleFilmstrip.apply(self, arguments);
     VideoLayout.resizeVideoArea(true, false);
 };
 
 /**
- * Indicates if the film strip is currently visible or not.
- * @returns {true} if the film strip is currently visible, otherwise
+ * Indicates if the filmstrip is currently visible or not.
+ * @returns {true} if the filmstrip is currently visible, otherwise
  */
-UI.isFilmStripVisible = () => FilmStrip.isFilmStripVisible();
+UI.isFilmstripVisible = () => Filmstrip.isFilmstripVisible();
 
 /**
  * Toggles chat panel.
@@ -673,7 +691,10 @@ UI.askForNickname = function () {
 UI.setAudioMuted = function (id, muted) {
     VideoLayout.onAudioMute(id, muted);
     if (APP.conference.isLocalId(id)) {
-        Toolbar.toggleAudioIcon(muted);
+        APP.store.dispatch(setAudioMuted(muted));
+        APP.store.dispatch(setToolbarButton('microphone', {
+            toggled: muted
+        }));
     }
 };
 
@@ -683,7 +704,10 @@ UI.setAudioMuted = function (id, muted) {
 UI.setVideoMuted = function (id, muted) {
     VideoLayout.onVideoMute(id, muted);
     if (APP.conference.isLocalId(id)) {
-        Toolbar.toggleVideoIcon(muted);
+        APP.store.dispatch(setVideoMuted(muted));
+        APP.store.dispatch(setToolbarButton('camera', {
+            toggled: muted
+        }));
     }
 };
 
@@ -713,9 +737,7 @@ UI.removeListener = function (type, listener) {
  * @param type the type of the event we're emitting
  * @param options the parameters for the event
  */
-UI.emitEvent = function (type, options) {
-    eventEmitter.emit(type, options);
-};
+UI.emitEvent = (type, ...options) => eventEmitter.emit(type, ...options);
 
 UI.clickOnVideo = function (videoNumber) {
     let videos = $("#remoteVideos .videocontainer:not(#mixedstream)");
@@ -728,15 +750,11 @@ UI.clickOnVideo = function (videoNumber) {
     videos[videoIndex].click();
 };
 
-//Used by torture
-UI.showToolbar = function (timeout) {
-    return ToolbarToggler.showToolbar(timeout);
-};
+// Used by torture.
+UI.showToolbar = timeout => APP.store.dispatch(showToolbox(timeout));
 
-//Used by torture
-UI.dockToolbar = function (isDock) {
-    ToolbarToggler.dockToolbar(isDock);
-};
+// Used by torture.
+UI.dockToolbar = dock => APP.store.dispatch(dockToolbox(dock));
 
 /**
  * Updates the avatar for participant.
@@ -762,6 +780,9 @@ UI.setUserEmail = function (id, email) {
     Avatar.setUserEmail(id, email);
 
     changeAvatar(id, Avatar.getAvatarUrl(id));
+    if (APP.conference.isLocalId(id)) {
+        Profile.changeEmail(email);
+    }
 };
 
 /**
@@ -845,11 +866,9 @@ UI.handleLastNEndpoints = function (leavingIds, enteringIds) {
  * Will handle notification about participant's connectivity status change.
  *
  * @param {string} id the id of remote participant(MUC jid)
- * @param {boolean} isActive true if the connection is ok or false if the user
- * is having connectivity issues.
  */
-UI.participantConnectionStatusChanged = function (id, isActive) {
-    VideoLayout.onParticipantConnectionStatusChanged(id, isActive);
+UI.participantConnectionStatusChanged = function (id) {
+    VideoLayout.onParticipantConnectionStatusChanged(id);
 };
 
 /**
@@ -910,16 +929,18 @@ UI.promptDisplayName = () => {
  * @param {string} id user id
  * @param {number} lvl audio level
  */
-UI.setAudioLevel = function (id, lvl) {
-    VideoLayout.setAudioLevel(id, lvl);
-};
+UI.setAudioLevel = (id, lvl) => VideoLayout.setAudioLevel(id, lvl);
 
 /**
  * Update state of desktop sharing buttons.
+ *
+ * @returns {void}
  */
-UI.updateDesktopSharingButtons = function () {
-    Toolbar.updateDesktopSharingButtonState();
-};
+UI.updateDesktopSharingButtons
+    = () =>
+        APP.store.dispatch(setToolbarButton('desktop', {
+            toggled: APP.conference.isSharingScreen
+        }));
 
 /**
  * Hide connection quality statistics from UI.
@@ -970,11 +991,8 @@ UI.addMessage = function (from, displayName, message, stamp) {
     Chat.updateChatConversation(from, displayName, message, stamp);
 };
 
-// eslint-disable-next-line no-unused-vars
-UI.updateDTMFSupport = function (isDTMFSupported) {
-    //TODO: enable when the UI is ready
-    //Toolbar.showDialPadButton(isDTMFSupported);
-};
+UI.updateDTMFSupport
+    = isDTMFSupported => APP.store.dispatch(showDialPadButton(isDTMFSupported));
 
 /**
  * Show user feedback dialog if its required and enabled after pressing the
@@ -1073,29 +1091,7 @@ UI.onLocalRaiseHandChanged = function (isRaisedHand) {
  * @param {object[]} devices new list of available devices
  */
 UI.onAvailableDevicesChanged = function (devices) {
-    SettingsMenu.changeDevicesList(devices);
-};
-
-/**
- * Sets microphone's <select> element to select microphone ID from settings.
- */
-UI.setSelectedMicFromSettings = function () {
-    SettingsMenu.setSelectedMicFromSettings();
-};
-
-/**
- * Sets camera's <select> element to select camera ID from settings.
- */
-UI.setSelectedCameraFromSettings = function () {
-    SettingsMenu.setSelectedCameraFromSettings();
-};
-
-/**
- * Sets audio outputs's <select> element to select audio output ID from
- * settings.
- */
-UI.setSelectedAudioOutputFromSettings = function () {
-    SettingsMenu.setSelectedAudioOutputFromSettings();
+    APP.store.dispatch(updateDeviceList(devices));
 };
 
 /**
@@ -1315,7 +1311,8 @@ UI.onSharedVideoStop = function (id, attributes) {
  * @param {boolean} enabled indicates if the camera button should be enabled
  * or disabled
  */
-UI.setCameraButtonEnabled = enabled => Toolbar.setVideoIconEnabled(enabled);
+UI.setCameraButtonEnabled
+    = enabled => APP.store.dispatch(setVideoIconEnabled(enabled));
 
 /**
  * Enables / disables microphone toolbar button.
@@ -1323,17 +1320,18 @@ UI.setCameraButtonEnabled = enabled => Toolbar.setVideoIconEnabled(enabled);
  * @param {boolean} enabled indicates if the microphone button should be
  * enabled or disabled
  */
-UI.setMicrophoneButtonEnabled = enabled => Toolbar.setAudioIconEnabled(enabled);
+UI.setMicrophoneButtonEnabled
+    = enabled => APP.store.dispatch(setAudioIconEnabled(enabled));
 
 UI.showRingOverlay = function () {
     RingOverlay.show(APP.tokenData.callee, interfaceConfig.DISABLE_RINGING);
-    FilmStrip.toggleFilmStrip(false, false);
+    Filmstrip.toggleFilmstrip(false, false);
 };
 
 UI.hideRingOverLay = function () {
     if (!RingOverlay.hide())
         return;
-    FilmStrip.toggleFilmStrip(true, false);
+    Filmstrip.toggleFilmstrip(true, false);
 };
 
 /**
@@ -1374,7 +1372,18 @@ const UIListeners = new Map([
         UI.toggleChat
     ], [
         UIEvents.TOGGLE_SETTINGS,
-        () => UI.toggleSidePanel("settings_container")
+        () => {
+            // Opening of device selection is special-cased as it is a dialog
+            // opened through a button in settings and not directly displayed in
+            // settings itself. As it is not useful to only have a settings menu
+            // with a button to open a dialog, open the dialog directly instead.
+            if (interfaceConfig.SETTINGS_SECTIONS.length === 1
+                    && UIUtil.isSettingEnabled('devices')) {
+                APP.store.dispatch(openDeviceSelectionDialog());
+            } else {
+                UI.toggleSidePanel("settings_container");
+            }
+        }
     ], [
         UIEvents.TOGGLE_CONTACT_LIST,
         UI.toggleContactList
@@ -1382,8 +1391,8 @@ const UIListeners = new Map([
         UIEvents.TOGGLE_PROFILE,
         () => APP.tokenData.isGuest && UI.toggleSidePanel("profile_container")
     ], [
-        UIEvents.TOGGLE_FILM_STRIP,
-        UI.handleToggleFilmStrip
+        UIEvents.TOGGLE_FILMSTRIP,
+        UI.handleToggleFilmstrip
     ], [
         UIEvents.FOLLOW_ME_ENABLED,
         enabled => (followMeHandler && followMeHandler.enableFollowMe(enabled))

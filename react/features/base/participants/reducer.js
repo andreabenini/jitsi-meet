@@ -1,4 +1,4 @@
-import { ReducerRegistry, setStateProperty } from '../redux';
+import { ReducerRegistry, set } from '../redux';
 import { randomHexString } from '../util';
 
 import {
@@ -55,10 +55,7 @@ function _participant(state, action) {
     case DOMINANT_SPEAKER_CHANGED:
         // Only one dominant speaker is allowed.
         return (
-            setStateProperty(
-                    state,
-                    'dominantSpeaker',
-                    state.id === action.participant.id));
+            set(state, 'dominantSpeaker', state.id === action.participant.id));
 
     case PARTICIPANT_ID_CHANGED:
         if (state.id === action.oldValue) {
@@ -71,8 +68,15 @@ function _participant(state, action) {
 
     case PARTICIPANT_JOINED: {
         const participant = action.participant; // eslint-disable-line no-shadow
-        const { avatarURL, dominantSpeaker, email, local, pinned, role }
-            = participant;
+        const {
+            avatarURL,
+            connectionStatus,
+            dominantSpeaker,
+            email,
+            local,
+            pinned,
+            role
+        } = participant;
         let { avatarID, id, name } = participant;
 
         // avatarID
@@ -100,6 +104,7 @@ function _participant(state, action) {
         return {
             avatarID,
             avatarURL,
+            connectionStatus,
             dominantSpeaker: dominantSpeaker || false,
             email,
             id,
@@ -112,7 +117,12 @@ function _participant(state, action) {
 
     case PARTICIPANT_UPDATED: {
         const participant = action.participant; // eslint-disable-line no-shadow
-        const { id } = participant;
+        const { local } = participant;
+        let { id } = participant;
+
+        if (!id && local) {
+            id = LOCAL_PARTICIPANT_DEFAULT_ID;
+        }
 
         if (state.id === id) {
             const newState = { ...state };
@@ -132,11 +142,7 @@ function _participant(state, action) {
 
     case PIN_PARTICIPANT:
         // Currently, only one pinned participant is allowed.
-        return (
-            setStateProperty(
-                    state,
-                    'pinned',
-                    state.id === action.participant.id));
+        return set(state, 'pinned', state.id === action.participant.id);
     }
 
     return state;

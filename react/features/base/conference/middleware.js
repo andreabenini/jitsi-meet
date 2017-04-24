@@ -8,7 +8,12 @@ import {
 import { MiddlewareRegistry } from '../redux';
 import { TRACK_ADDED, TRACK_REMOVED } from '../tracks';
 
-import { createConference } from './actions';
+import {
+    createConference,
+    _setAudioOnlyVideoMuted,
+    setLastN
+} from './actions';
+import { SET_AUDIO_ONLY, SET_LASTN } from './actionTypes';
 import {
     _addLocalTracksToConference,
     _handleParticipantError,
@@ -28,6 +33,12 @@ MiddlewareRegistry.register(store => next => action => {
 
     case PIN_PARTICIPANT:
         return _pinParticipant(store, next, action);
+
+    case SET_AUDIO_ONLY:
+        return _setAudioOnly(store, next, action);
+
+    case SET_LASTN:
+        return _setLastN(store, next, action);
 
     case TRACK_ADDED:
     case TRACK_REMOVED:
@@ -106,6 +117,62 @@ function _pinParticipant(store, next, action) {
             conference.pinParticipant(id);
         } catch (err) {
             _handleParticipantError(err);
+        }
+    }
+
+    return next(action);
+}
+
+/**
+ * Sets the audio-only flag for the current conference. When audio-only is set,
+ * local video is muted and last N is set to 0 to avoid receiving remote video.
+ *
+ * @param {Store} store - The Redux store in which the specified action is being
+ * dispatched.
+ * @param {Dispatch} next - The Redux dispatch function to dispatch the
+ * specified action to the specified store.
+ * @param {Action} action - The Redux action SET_AUDIO_ONLY which is being
+ * dispatched in the specified store.
+ * @private
+ * @returns {Object} The new state that is the result of the reduction of the
+ * specified action.
+ */
+function _setAudioOnly(store, next, action) {
+    const result = next(action);
+
+    const { audioOnly } = action;
+
+    // Set lastN to 0 in case audio-only is desired; leave it as undefined,
+    // otherwise, and the default lastN value will be chosen automatically.
+    store.dispatch(setLastN(audioOnly ? 0 : undefined));
+
+    // Mute local video
+    store.dispatch(_setAudioOnlyVideoMuted(audioOnly));
+
+    return result;
+}
+
+/**
+ * Sets the last N (value) of the video channel in the conference.
+ *
+ * @param {Store} store - The Redux store in which the specified action is being
+ * dispatched.
+ * @param {Dispatch} next - The Redux dispatch function to dispatch the
+ * specified action to the specified store.
+ * @param {Action} action - The Redux action SET_LASTN which is being dispatched
+ * in the specified store.
+ * @private
+ * @returns {Object} The new state that is the result of the reduction of the
+ * specified action.
+ */
+function _setLastN(store, next, action) {
+    const { conference } = store.getState()['features/base/conference'];
+
+    if (conference) {
+        try {
+            conference.setLastN(action.lastN);
+        } catch (err) {
+            console.error(`Failed to set lastN: ${err}`);
         }
     }
 

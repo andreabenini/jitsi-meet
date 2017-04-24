@@ -69,6 +69,41 @@ export const CONFERENCE_WILL_LEAVE = Symbol('CONFERENCE_WILL_LEAVE');
 export const LOCK_STATE_CHANGED = Symbol('LOCK_STATE_CHANGED');
 
 /**
+ * The type of the Redux action which sets the audio-only flag for the current
+ * conference.
+ *
+ * {
+ *     type: SET_AUDIO_ONLY,
+ *     audioOnly: boolean
+ * }
+ */
+export const SET_AUDIO_ONLY = Symbol('SET_AUDIO_ONLY');
+
+/**
+ * The type of redux action which signals that video will be muted because the
+ * audio-only mode was enabled / disabled.
+ *
+ * {
+ *     type: _SET_AUDIO_ONLY_VIDEO_MUTED,
+ *     muted: boolean
+ * }
+ *
+ * @protected
+ */
+export const _SET_AUDIO_ONLY_VIDEO_MUTED
+    = Symbol('_SET_AUDIO_ONLY_VIDEO_MUTED');
+
+/**
+ * The type of redux action which sets the video channel's lastN (value).
+ *
+ * {
+ *     type: SET_LASTN,
+ *     lastN: number
+ * }
+ */
+export const SET_LASTN = Symbol('SET_LASTN');
+
+/**
  * The type of the Redux action which sets the password to join or lock a
  * specific JitsiConference.
  *
@@ -80,6 +115,17 @@ export const LOCK_STATE_CHANGED = Symbol('LOCK_STATE_CHANGED');
  * }
  */
 export const SET_PASSWORD = Symbol('SET_PASSWORD');
+
+/**
+ * The type of Redux action which signals that setting a password on a
+ * JitsiConference failed (with an error).
+ *
+ * {
+ *     type: SET_PASSWORD_FAILED,
+ *     error: string
+ * }
+ */
+export const SET_PASSWORD_FAILED = Symbol('SET_PASSWORD_FAILED');
 
 /**
  * The type of the Redux action which sets the name of the room of the

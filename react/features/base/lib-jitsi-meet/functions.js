@@ -1,5 +1,7 @@
 import { loadScript } from '../../base/util';
 
+import URLProcessor from '../../../../modules/config/URLProcessor';
+
 import JitsiMeetJS from './_';
 
 declare var APP: Object;
@@ -38,6 +40,12 @@ export function loadConfig(host: string, path: string = '/config.js') {
     // being used for the React Native app because the old/current Web app uses
     // config from the global scope.
     if (typeof APP !== 'undefined') {
+        // FIXME The following call to setConfigParametersFromUrl is bad design
+        // but URLProcessor still deals with the global variables config,
+        // interfaceConfig, and loggingConfig and loadConfig. As the latter will
+        // surely change in the future, so will the former then.
+        URLProcessor.setConfigParametersFromUrl();
+
         return Promise.resolve(window.config);
     }
 
@@ -59,4 +67,25 @@ export function loadConfig(host: string, path: string = '/config.js') {
 
             throw err;
         });
+}
+
+/**
+ * Creates a JitsiLocalTrack model from the given device id.
+ *
+ * @param {string} type - The media type of track being created. Expected values
+ * are "video" or "audio".
+ * @param {string} deviceId - The id of the target media source.
+ * @returns {Promise<JitsiLocalTrack>}
+ */
+export function createLocalTrack(type, deviceId) {
+    return JitsiMeetJS.createLocalTracks({
+        cameraDeviceId: deviceId,
+        devices: [ type ],
+
+        // eslint-disable-next-line camelcase
+        firefox_fake_device:
+            window.config && window.config.firefox_fake_device,
+        micDeviceId: deviceId
+    })
+        .then(([ jitsiLocalTrack ]) => jitsiLocalTrack);
 }

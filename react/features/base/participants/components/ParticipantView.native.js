@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
+import { JitsiParticipantConnectionStatus } from '../../lib-jitsi-meet';
 import {
     MEDIA_TYPE,
     shouldRenderVideoTrack,
@@ -33,6 +34,15 @@ class ParticipantView extends Component {
          * @private
          */
         _avatar: React.PropTypes.string,
+
+        /**
+         * The connection status of the participant. Her video will only be
+         * rendered if the connection status is 'active'; otherwise, the avatar
+         * will be rendered. If undefined, 'active' is presumed.
+         *
+         * @private
+         */
+        _connectionStatus: React.PropTypes.string,
 
         /**
          * The video Track of the participant with {@link #participantId}.
@@ -85,20 +95,23 @@ class ParticipantView extends Component {
      * @returns {ReactElement}
      */
     render() {
-        // Is the video to be rendered?
-        const videoTrack = this.props._videoTrack;
+        const {
+            _avatar: avatar,
+            _connectionStatus: connectionStatus,
+            _videoTrack: videoTrack
+        } = this.props;
 
+        // Is the video to be rendered?
         // FIXME It's currently impossible to have true as the value of
         // waitForVideoStarted because videoTrack's state videoStarted will be
         // updated only after videoTrack is rendered.
         const waitForVideoStarted = false;
         const renderVideo
-            = shouldRenderVideoTrack(videoTrack, waitForVideoStarted);
+            = (connectionStatus === JitsiParticipantConnectionStatus.ACTIVE)
+                && shouldRenderVideoTrack(videoTrack, waitForVideoStarted);
 
         // Is the avatar to be rendered?
-        const avatar = this.props._avatar;
-        const renderAvatar
-            = !renderVideo && typeof avatar !== 'undefined' && avatar !== '';
+        const renderAvatar = Boolean(!renderVideo && avatar);
 
         return (
             <Container
@@ -158,6 +171,7 @@ function _toBoolean(value, undefinedValue) {
  * @private
  * @returns {{
  *     _avatar: string,
+ *     _connectionStatus: string,
  *     _videoTrack: Track
  * }}
  */
@@ -167,9 +181,19 @@ function _mapStateToProps(state, ownProps) {
         = getParticipantById(
             state['features/base/participants'],
             participantId);
+    let avatar;
+    let connectionStatus;
+
+    if (participant) {
+        avatar = getAvatarURL(participant);
+        connectionStatus = participant.connectionStatus;
+    }
 
     return {
-        _avatar: participant && getAvatarURL(participant),
+        _avatar: avatar,
+        _connectionStatus:
+            connectionStatus
+                || JitsiParticipantConnectionStatus.ACTIVE,
         _videoTrack:
             getTrackByMediaTypeAndParticipant(
                 state['features/base/tracks'],

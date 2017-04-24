@@ -1,28 +1,26 @@
 /* global __dirname */
 
-require('babel-polyfill'); // Define Object.assign() from ES6 in ES5.
+const HasteResolverPlugin = require('haste-resolver-webpack-plugin');
+const process = require('process');
+const webpack = require('webpack');
 
-var HasteResolverPlugin = require('haste-resolver-webpack-plugin');
-var process = require('process');
-var webpack = require('webpack');
-
-var aui_css = __dirname + '/node_modules/@atlassian/aui/dist/aui/css/';
+const aui_css = __dirname + '/node_modules/@atlassian/aui/dist/aui/css/';
 
 /**
  * The URL of the Jitsi Meet deployment to be proxy to in the context of
  * development with webpack-dev-server.
  */
-var devServerProxyTarget
+const devServerProxyTarget
     = process.env.WEBPACK_DEV_SERVER_PROXY_TARGET || 'https://beta.meet.jit.si';
 
-var minimize
+const minimize
     = process.argv.indexOf('-p') !== -1
         || process.argv.indexOf('--optimize-minimize') !== -1;
-var node_modules = __dirname + '/node_modules/';
-var plugins = [
+const node_modules = __dirname + '/node_modules/';
+const plugins = [
     new HasteResolverPlugin()
 ];
-var strophe = /\/node_modules\/strophe(js-plugins)?\/.*\.js$/;
+const strophe = /\/node_modules\/strophe(js-plugins)?\/.*\.js$/;
 
 if (minimize) {
     // XXX Webpack's command line argument -p is not enough. Further
@@ -54,7 +52,7 @@ if (minimize) {
 
 // The base Webpack configuration to bundle the JavaScript artifacts of
 // jitsi-meet such as app.bundle.js and external_api.js.
-var config = {
+const config = {
     devServer: {
         https: true,
         inline: true,
@@ -160,16 +158,30 @@ var config = {
     }
 };
 
-var configs = [
+const configs = [
 
     // The Webpack configuration to bundle app.bundle.js (aka APP).
     Object.assign({}, config, {
         entry: {
-            'app.bundle': './app.js'
+            'app.bundle': [
+                // XXX Requried by at least IE11 at the time of this writing.
+                'babel-polyfill',
+                './app.js'
+            ]
         },
         output: Object.assign({}, config.output, {
             library: 'APP'
         })
+    }),
+
+    // The Webpack configuration to bundle do_external_connect.js (which
+    // attempts to optimize Jitsi Meet's XMPP connection and, consequently, is
+    // also known as HTTP pre-bind).
+    Object.assign({}, config, {
+        entry: {
+            'do_external_connect':
+                './connection_optimization/do_external_connect.js'
+        }
     }),
 
     // The Webpack configuration to bundle external_api.js (aka
@@ -196,7 +208,7 @@ module.exports = configs;
  * target, undefined; otherwise, the path to the local file to be served.
  */
 function devServerProxyBypass(request) {
-    var path = request.path;
+    let path = request.path;
 
     // Use local files from the css and libs directories.
     if (path.startsWith('/css/')) {
