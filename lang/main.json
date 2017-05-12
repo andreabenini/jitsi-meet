@@ -14,6 +14,11 @@
     "defaultNickname": "ex. Jane Pink",
     "defaultLink": "e.g. __url__",
     "callingName": "__name__",
+    "audioOnly": {
+        "audioOnly": "Audio only",
+        "featureToggleDisabled": "Toggling of __feature__ is disabled while in audio only mode",
+        "howToDisable": "Audio only mode is currently enabled. Click the audio only button in the toolbar to disable the feature."
+    },
     "userMedia": {
       "react-nativeGrantPermissions": "Select <b><i>Allow</i></b> when your browser asks for permissions.",
       "chromeGrantPermissions": "Select <b><i>Allow</i></b> when your browser asks for permissions.",
@@ -92,6 +97,7 @@
         "rejoinKeyTitle": "Rejoin"
     },
     "toolbar": {
+        "audioonly": "Enable / Disable audio only mode (saves bandwidth)",
         "mute": "Mute / Unmute",
         "videomute": "Start / Stop camera",
         "authenticate": "Authenticate",
@@ -212,6 +218,7 @@
     },
     "dialog": {
         "add": "Add",
+        "allow": "Allow",
         "kickMessage": "Ouch! You have been kicked out of the meet!",
         "popupError": "Your browser is blocking popup windows from this site. Please enable popups in your browser's security settings and try again.",
         "passwordErrorTitle": "Password Error",
@@ -330,7 +337,9 @@
         "muteParticipantTitle": "Mute this participant?",
         "muteParticipantBody": "You won't be able to unmute them, but they can unmute themselves at any time.",
         "muteParticipantButton": "Mute",
-        "remoteControlTitle": "Remote Control",
+        "remoteControlTitle": "Remote desktop control",
+        "remoteControlRequestMessage": "Will you allow __user__ to remotely control your desktop?",
+        "remoteControlShareScreenWarning": "Note that if you press \"Allow\" you will share your screen!",
         "remoteControlDeniedMessage": "__user__ rejected your remote control request!",
         "remoteControlAllowedMessage": "__user__ accepted your remote control request!",
         "remoteControlErrorMessage": "An error occurred while trying to request remote control permissions from __user__!",
@@ -420,9 +429,9 @@
         "speakerTime": "Speaker Time"
     },
     "deviceSelection": {
-        "currentlyVideoMuted": "Video is currently muted",
         "deviceSettings": "Device settings",
         "noPermission": "Permission not granted",
+        "previewUnavailable": "Preview unavailable",
         "selectADevice": "Select a device",
         "testAudio": "Test sound"
     },
