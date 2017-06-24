@@ -43,6 +43,11 @@ import {
     participantUpdated
 } from './react/features/base/participants';
 import {
+    replaceLocalTrack,
+    trackAdded,
+    trackRemoved
+} from './react/features/base/tracks';
+import {
     showDesktopPicker
 } from  './react/features/desktop-picker';
 import {
@@ -386,9 +391,8 @@ class ConferenceConnector {
     _onConferenceFailed(err, ...params) {
         APP.store.dispatch(conferenceFailed(room, err, ...params));
         logger.error('CONFERENCE FAILED:', err, ...params);
-        APP.UI.hideRingOverlay();
-        switch (err) {
 
+        switch (err) {
         case ConferenceErrors.CONNECTION_ERROR:
             {
                 let [msg] = params;
@@ -1023,16 +1027,9 @@ export default {
      * @returns {Promise}
      */
     useVideoStream(newStream) {
-        return room.replaceTrack(localVideo, newStream)
+        return APP.store.dispatch(
+            replaceLocalTrack(localVideo, newStream, room))
             .then(() => {
-                // We call dispose after doing the replace because
-                //  dispose will try and do a new o/a after the
-                //  track removes itself.  Doing it after means
-                //  the JitsiLocalTrack::conference member is already
-                //  cleared, so it won't try and do the o/a
-                if (localVideo) {
-                    localVideo.dispose();
-                }
                 localVideo = newStream;
                 if (newStream) {
                     this.videoMuted = newStream.isMuted();
@@ -1058,16 +1055,9 @@ export default {
      * @returns {Promise}
      */
     useAudioStream(newStream) {
-        return room.replaceTrack(localAudio, newStream)
+        return APP.store.dispatch(
+            replaceLocalTrack(localAudio, newStream, room))
             .then(() => {
-                // We call dispose after doing the replace because
-                //  dispose will try and do a new o/a after the
-                //  track removes itself.  Doing it after means
-                //  the JitsiLocalTrack::conference member is already
-                //  cleared, so it won't try and do the o/a
-                if (localAudio) {
-                    localAudio.dispose();
-                }
                 localAudio = newStream;
                 if (newStream) {
                     this.audioMuted = newStream.isMuted();
@@ -1328,38 +1318,16 @@ export default {
             if(!track || track.isLocal())
                 return;
 
-            track.on(TrackEvents.TRACK_VIDEOTYPE_CHANGED, (type) => {
-                APP.UI.onPeerVideoTypeChanged(track.getParticipantId(), type);
-            });
-            APP.UI.addRemoteStream(track);
+            APP.store.dispatch(trackAdded(track));
         });
 
         room.on(ConferenceEvents.TRACK_REMOVED, (track) => {
             if(!track || track.isLocal())
                 return;
 
-            APP.UI.removeRemoteStream(track);
+            APP.store.dispatch(trackRemoved(track));
         });
 
-        room.on(ConferenceEvents.TRACK_MUTE_CHANGED, (track) => {
-            if(!track)
-                return;
-            const handler = (track.getType() === "audio")?
-                APP.UI.setAudioMuted : APP.UI.setVideoMuted;
-            let id;
-            const mute = track.isMuted();
-            if(track.isLocal()){
-                id = APP.conference.getMyUserId();
-                if(track.getType() === "audio") {
-                    this.audioMuted = mute;
-                } else {
-                    this.videoMuted = mute;
-                }
-            } else {
-                id = track.getParticipantId();
-            }
-            handler(id , mute);
-        });
         room.on(ConferenceEvents.TRACK_AUDIO_LEVEL_CHANGED, (id, lvl) => {
             if(this.isLocalId(id) && localAudio && localAudio.isMuted()) {
                 lvl = 0;
@@ -2027,7 +1995,7 @@ export default {
      */
     hangup(requestFeedback = false) {
         eventEmitter.emit(JitsiMeetConferenceEvents.BEFORE_HANGUP);
-        APP.UI.hideRingOverlay();
+
         let requestFeedbackPromise = requestFeedback
                 ? APP.UI.requestFeedbackOnHangup()
                 // false - because the thank you dialog shouldn't be displayed
@@ -2052,7 +2020,7 @@ export default {
      * @param email {string} the new email
      */
     changeLocalEmail(email = '') {
-        email = email.trim();
+        email = String(email).trim();
 
         if (email === APP.settings.getEmail()) {
             return;
@@ -2076,7 +2044,7 @@ export default {
      * @param url {string} the new url
      */
     changeLocalAvatarUrl(url = '') {
-        url = url.trim();
+        url = String(url).trim();
 
         if (url === APP.settings.getAvatarUrl()) {
             return;
@@ -2126,18 +2094,6 @@ export default {
         eventEmitter.removeListener(eventName, listener);
     },
 
-    /**
-     * Checks if the participant given by participantId is currently in the
-     * last N set if there's one supported.
-     *
-     * @param participantId the identifier of the participant
-     * @returns {boolean} {true} if the participant given by the participantId
-     * is currently in the last N set or if there's no last N set at this point
-     * and {false} otherwise
-     */
-    isInLastN(participantId) {
-        return room.isInLastN(participantId);
-    },
     /**
      * Changes the display name for the local user
      * @param nickname {string} the new display name

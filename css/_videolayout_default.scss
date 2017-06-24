@@ -12,6 +12,16 @@
     overflow: hidden;
 }
 
+.video_blurred_container {
+    height: 100%;
+    filter: blur(40px);
+    left: 0;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    width: 100%;
+}
+
 .videocontainer {
     position: relative;
     text-align: center;
@@ -97,6 +107,11 @@
                     color: #FFFFFF;/*#15A1ED*/
                     overflow: hidden;
                 }
+
+                &_ninja
+                {
+                    font-size: 1.5em;
+                }
             }
 
             .icon-connection,
@@ -146,6 +161,10 @@
 #largeVideoContainer {
     overflow: hidden;
     text-align: center;
+}
+
+#largeVideoWrapper {
+    box-shadow: 0 0 20px -2px #444;
 }
 
 #largeVideo,
@@ -299,7 +318,8 @@
 /**
  * Audio indicator on video thumbnails.
  */
-.videocontainer>span.audioindicator {
+.videocontainer>span.audioindicator,
+.videocontainer>.audioindicator-container {
     position: absolute;
     display: inline-block;
     left: 6px;

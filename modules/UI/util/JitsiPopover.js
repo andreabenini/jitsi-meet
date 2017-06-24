@@ -1,5 +1,13 @@
 /* global $ */
 
+/* eslint-disable no-unused-vars */
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+import { I18nextProvider } from 'react-i18next';
+
+import { i18next } from '../../../react/features/base/i18n';
+/* eslint-enable no-unused-vars */
+
 const positionConfigurations = {
     left: {
 
@@ -29,16 +37,15 @@ const positionConfigurations = {
 
             $('.jitsipopover').css({
                 display: 'table',
-                left: position.left,
-                top: position.top
+                left: element.left,
+                top: element.top
             });
 
             // Move additional padding to the right edge of the popover and
             // allow css to take care of width. The padding is used to maintain
             // a hover state between the target and the popover.
-            $('.jitsipopover > .jitsipopover__menu-padding').css({
-                left: element.width
-            });
+            $('.jitsipopover > .jitsipopover__menu-padding')
+                .css({ left: element.width });
 
             // Find the distance from the top of the popover to the center of
             // the target and use that value to position the arrow to point to
@@ -59,17 +66,25 @@ const positionConfigurations = {
         at: "top",
         collision: "fit",
         using: function setPositionTop(position, elements) {
-            var calcLeft = elements.target.left - elements.element.left +
-                elements.target.width/2;
-            $(".jitsipopover").css(
-                {top: position.top, left: position.left, display: "table"});
-            $(".jitsipopover > .arrow").css({left: calcLeft});
-            $(".jitsipopover > .jitsipopover__menu-padding").css(
-                {left: calcLeft - 50});
+            const { element, target } = elements;
+            const calcLeft = target.left - element.left + target.width / 2;
+            const paddingLeftPosition = calcLeft - 50;
+            const $jistiPopover = $('.jitsipopover');
+
+            $jistiPopover.css({
+                display: 'table',
+                left: element.left,
+                top: element.top
+            });
+            $jistiPopover.find('.arrow').css({ left: calcLeft });
+            $jistiPopover.find('.jitsipopover__menu-padding')
+                .css({ left: paddingLeftPosition });
+            $jistiPopover.find('.jitsipopover__menu-padding-top')
+                .css({ left: paddingLeftPosition });
         }
     }
 };
-var JitsiPopover = (function () {
+export default (function () {
     /**
      * The default options
      */
@@ -85,8 +100,6 @@ var JitsiPopover = (function () {
      * Constructs new JitsiPopover and attaches it to the element
      * @param element jquery selector
      * @param options the options for the popover.
-     *  - {Function} onBeforePosition - function executed just before
-     *      positioning the popover. Useful for translation.
      * @constructor
      */
     function JitsiPopover(element, options)
@@ -124,6 +137,7 @@ var JitsiPopover = (function () {
 
         return  (
             `<div class="jitsipopover ${skin} ${position}">
+                <div class="jitsipopover__menu-padding-top"></div>
                 ${arrow}
                 <div class="jitsipopover__content"></div>
                 <div class="jitsipopover__menu-padding"></div>
@@ -155,7 +169,7 @@ var JitsiPopover = (function () {
      * Hides the popover and clears the document elements added by popover.
      */
     JitsiPopover.prototype.forceHide = function () {
-        $(".jitsipopover").remove();
+        this.remove();
         this.popoverShown = false;
         if(this.popoverIsHovered) { //the browser is not firing hover events
             //when the element was on hover if got removed.
@@ -168,27 +182,41 @@ var JitsiPopover = (function () {
      * Creates the popover html.
      */
     JitsiPopover.prototype.createPopover = function () {
-        $("body").append(this.template);
-        let popoverElem = $(".jitsipopover > .jitsipopover__content");
-        popoverElem.html(this.options.content);
-        if(typeof this.options.onBeforePosition === "function") {
-            this.options.onBeforePosition($(".jitsipopover"));
-        }
-        var self = this;
-        $(".jitsipopover").on("mouseenter", function () {
-            self.popoverIsHovered = true;
-            if(typeof self.onHoverPopover === "function") {
-                self.onHoverPopover(self.popoverIsHovered);
-            }
-        }).on("mouseleave", function () {
-            self.popoverIsHovered = false;
-            self.hide();
-            if(typeof self.onHoverPopover === "function") {
-                self.onHoverPopover(self.popoverIsHovered);
-            }
-        });
+        let $popover = $('.jitsipopover');
 
-        this.refreshPosition();
+        if (!$popover.length) {
+            $('body').append(this.template);
+
+            $popover = $('.jitsipopover');
+
+            $popover.on('mouseenter', () => {
+                this.popoverIsHovered = true;
+                if (typeof this.onHoverPopover === 'function') {
+                    this.onHoverPopover(this.popoverIsHovered);
+                }
+            });
+
+            $popover.on('mouseleave', () => {
+                this.popoverIsHovered = false;
+                this.hide();
+                if (typeof this.onHoverPopover === 'function') {
+                    this.onHoverPopover(this.popoverIsHovered);
+                }
+            });
+        }
+
+        const $popoverContent = $popover.find('.jitsipopover__content');
+
+        /* jshint ignore:start */
+        ReactDOM.render(
+            <I18nextProvider i18n = { i18next }>
+                { this.options.content }
+            </I18nextProvider>,
+            $popoverContent.get(0),
+            () => {
+                this.refreshPosition();
+            });
+        /* jshint ignore:end */
     };
 
     /**
@@ -218,15 +246,31 @@ var JitsiPopover = (function () {
      */
     JitsiPopover.prototype.updateContent = function (content) {
         this.options.content = content;
-        if(!this.popoverShown)
+        if (!this.popoverShown) {
             return;
-        $(".jitsipopover").remove();
+        }
         this.createPopover();
+    };
+
+    /**
+     * Unmounts any present child React Component and removes the popover itself
+     * from the DOM.
+     *
+     * @returns {void}
+     */
+    JitsiPopover.prototype.remove = function () {
+        const $popover = $('.jitsipopover');
+        const $popoverContent = $popover.find('.jitsipopover__content');
+
+        if ($popoverContent.length) {
+            ReactDOM.unmountComponentAtNode($popoverContent.get(0));
+        }
+
+        $popover.off();
+        $popover.remove();
     };
 
     JitsiPopover.enabled = true;
 
     return JitsiPopover;
 })();
-
-module.exports = JitsiPopover;
