@@ -2,7 +2,10 @@
 
 /* eslint-disable no-unused-vars */
 import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
 
+import { PresenceLabel } from '../../../react/features/presence-status';
 import {
     MuteButton,
     KickButton,
@@ -15,7 +18,6 @@ import {
 
 const logger = require("jitsi-meet-logger").getLogger(__filename);
 
-import ConnectionIndicator from './ConnectionIndicator';
 
 import SmallVideo from "./SmallVideo";
 import UIUtils from "../util/UIUtil";
@@ -48,7 +50,7 @@ function RemoteVideo(user, VideoLayout, emitter) {
     this.hasRemoteVideoMenu = false;
     this._supportsRemoteControl = false;
     this.addRemoteVideoContainer();
-    this.connectionIndicator = new ConnectionIndicator(this, this.id);
+    this.updateIndicators();
     this.setDisplayName();
     this.bindHoverHandler();
     this.flipX = false;
@@ -99,6 +101,8 @@ RemoteVideo.prototype.addRemoteVideoContainer = function() {
     this.VideoLayout.resizeThumbnails(false, true);
 
     this.addAudioLevelIndicator();
+
+    this.addPresenceLabel();
 
     return this.container;
 };
@@ -248,7 +252,7 @@ RemoteVideo.prototype._requestRemoteControlPermissions = function () {
             return;
         }
         this.updateRemoteVideoMenu(this.isAudioMuted, true);
-        APP.UI.messageHandler.openMessageDialog(
+        APP.UI.messageHandler.notify(
             "dialog.remoteControlTitle",
             (result === false) ? "dialog.remoteControlDeniedMessage"
                 : "dialog.remoteControlAllowedMessage",
@@ -265,7 +269,7 @@ RemoteVideo.prototype._requestRemoteControlPermissions = function () {
     }, error => {
         logger.error(error);
         this.updateRemoteVideoMenu(this.isAudioMuted, true);
-        APP.UI.messageHandler.openMessageDialog(
+        APP.UI.messageHandler.notify(
             "dialog.remoteControlTitle",
             "dialog.remoteControlErrorMessage",
             {user: this.user.getDisplayName()
@@ -397,7 +401,7 @@ RemoteVideo.prototype.addRemoteVideoMenu = function () {
     this.container.appendChild(spanElement);
 
     var menuElement = document.createElement('i');
-    menuElement.className = 'icon-menu-up';
+    menuElement.className = 'icon-thumb-menu';
     menuElement.title = 'Remote user controls';
     spanElement.appendChild(menuElement);
 
@@ -431,11 +435,12 @@ RemoteVideo.prototype.removeRemoteStreamElement = function (stream) {
 
     // when removing only the video element and we are on stage
     // update the stage
-    if (isVideo && this.isCurrentlyOnLargeVideo())
+    if (isVideo && this.isCurrentlyOnLargeVideo()) {
         this.VideoLayout.updateLargeVideo(this.id);
-    else
+    } else {
         // Missing video stream will affect display mode
         this.updateView();
+    }
 };
 
 /**
@@ -497,10 +502,7 @@ RemoteVideo.prototype.updateConnectionStatusIndicator = function () {
     // FIXME rename 'mutedWhileDisconnected' to 'mutedWhileNotRendering'
     // Update 'mutedWhileDisconnected' flag
     this._figureOutMutedWhileDisconnected();
-    if(this.connectionIndicator) {
-        this.connectionIndicator.updateConnectionStatusIndicator(
-            connectionStatus);
-    }
+    this.updateConnectionStatus(connectionStatus);
 
     const isInterrupted
         = connectionStatus === ParticipantConnectionStatus.INTERRUPTED;
@@ -519,7 +521,23 @@ RemoteVideo.prototype.remove = function () {
 
     this.removeAudioLevelIndicator();
 
+    const toolbarContainer
+        = this.container.querySelector('.videocontainer__toolbar');
+
+    if (toolbarContainer) {
+        ReactDOM.unmountComponentAtNode(toolbarContainer);
+    }
+
     this.removeConnectionIndicator();
+
+    this.removeDisplayName();
+
+    this.removeAvatar();
+
+    this.removePresenceLabel();
+
+    this._unmountIndicators();
+
     // Make sure that the large video is updated if are removing its
     // corresponding small video.
     this.VideoLayout.updateAfterThumbRemoved(this.id);
@@ -620,32 +638,6 @@ RemoteVideo.prototype.addRemoteStreamElement = function (stream) {
     }
 };
 
-RemoteVideo.prototype.updateResolution = function (resolution) {
-    if (this.connectionIndicator) {
-        this.connectionIndicator.updateResolution(resolution);
-    }
-};
-
-/**
- * Updates this video framerate indication.
- * @param framerate the value to update
- */
-RemoteVideo.prototype.updateFramerate = function (framerate) {
-    if (this.connectionIndicator) {
-        this.connectionIndicator.updateFramerate(framerate);
-    }
-};
-
-RemoteVideo.prototype.removeConnectionIndicator = function () {
-    if (this.connectionIndicator)
-        this.connectionIndicator.remove();
-};
-
-RemoteVideo.prototype.hideConnectionIndicator = function () {
-    if (this.connectionIndicator)
-        this.connectionIndicator.hide();
-};
-
 /**
  * Sets the display name for the given video span id.
  *
@@ -658,31 +650,11 @@ RemoteVideo.prototype.setDisplayName = function(displayName) {
         return;
     }
 
-    var nameSpan = $('#' + this.videoSpanId + ' .displayname');
-
-    // If we already have a display name for this video.
-    if (nameSpan.length > 0) {
-        if (displayName && displayName.length > 0) {
-            var displaynameSpan = $('#' + this.videoSpanId + '_name');
-            if (displaynameSpan.text() !== displayName)
-                displaynameSpan.text(displayName);
-        }
-        else
-            $('#' + this.videoSpanId + '_name').text(
-                interfaceConfig.DEFAULT_REMOTE_DISPLAY_NAME);
-    } else {
-        nameSpan = document.createElement('span');
-        nameSpan.className = 'displayname';
-        $('#' + this.videoSpanId)[0]
-            .appendChild(nameSpan);
-
-        if (displayName && displayName.length > 0) {
-            $(nameSpan).text(displayName);
-        } else {
-            nameSpan.innerHTML = interfaceConfig.DEFAULT_REMOTE_DISPLAY_NAME;
-        }
-        nameSpan.id = this.videoSpanId + '_name';
-    }
+    this.updateDisplayName({
+        displayName: displayName || interfaceConfig.DEFAULT_REMOTE_DISPLAY_NAME,
+        elementID: `${this.videoSpanId}_name`,
+        participantID: this.id
+    });
 };
 
 /**
@@ -697,6 +669,41 @@ RemoteVideo.prototype.removeRemoteVideoMenu = function() {
         this.popover.forceHide();
         menuSpan.remove();
         this.hasRemoteVideoMenu = false;
+    }
+};
+
+/**
+ * Mounts the {@code PresenceLabel} for displaying the participant's current
+ * presence status.
+ *
+ * @return {void}
+ */
+RemoteVideo.prototype.addPresenceLabel = function () {
+    const presenceLabelContainer
+        = this.container.querySelector('.presence-label-container');
+
+    if (presenceLabelContainer) {
+        /* jshint ignore:start */
+        ReactDOM.render(
+            <Provider store = { APP.store }>
+                <PresenceLabel participantID = { this.id } />
+            </Provider>,
+            presenceLabelContainer);
+        /* jshint ignore:end */
+    }
+};
+
+/**
+ * Unmounts the {@code PresenceLabel} component.
+ *
+ * @return {void}
+ */
+RemoteVideo.prototype.removePresenceLabel = function () {
+    const presenceLabelContainer
+        = this.container.querySelector('.presence-label-container');
+
+    if (presenceLabelContainer) {
+        ReactDOM.unmountComponentAtNode(presenceLabelContainer);
     }
 };
 
@@ -720,6 +727,18 @@ RemoteVideo.createContainer = function (spanId) {
     let overlay = document.createElement('div');
     overlay.className = "videocontainer__hoverOverlay";
     container.appendChild(overlay);
+
+    const displayNameContainer = document.createElement('div');
+    displayNameContainer.className = 'displayNameContainer';
+    container.appendChild(displayNameContainer);
+
+    const avatarContainer = document.createElement('div');
+    avatarContainer.className = 'avatar-container';
+    container.appendChild(avatarContainer);
+
+    const presenceLabelContainer = document.createElement('div');
+    presenceLabelContainer.className = 'presence-label-container';
+    container.appendChild(presenceLabelContainer);
 
     var remotes = document.getElementById('filmstripRemoteVideosContainer');
     return remotes.appendChild(container);

@@ -8,6 +8,7 @@ import '../../mobile/audio-mode';
 import '../../mobile/background';
 import '../../mobile/external-api';
 import '../../mobile/full-screen';
+import '../../mobile/image-cache';
 import '../../mobile/proximity';
 import '../../mobile/wake-lock';
 
@@ -130,8 +131,8 @@ export class App extends AbstractApp {
      * @private
      * @returns {void}
      */
-    _onLinkingURL(event) {
-        this._openURL(event.url);
+    _onLinkingURL({ url }) {
+        this._openURL(url);
     }
 }
 

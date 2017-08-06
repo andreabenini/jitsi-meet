@@ -25,6 +25,9 @@
 
 @property (nonatomic) BOOL welcomePageEnabled;
 
++             (BOOL)application:(UIApplication *_Nonnull)application
+  didFinishLaunchingWithOptions:(NSDictionary *_Nonnull)launchOptions;
+
 +    (BOOL)application:(UIApplication * _Nonnull)application
   continueUserActivity:(NSUserActivity * _Nonnull)userActivity
     restorationHandler:(void (^ _Nullable)(NSArray * _Nullable))restorationHandler;
@@ -35,5 +38,9 @@
          annotation:(id _Nullable)annotation;
 
 - (void)loadURL:(NSURL * _Nullable)url;
+
+- (void)loadURLObject:(NSDictionary * _Nullable)urlObject;
+
+- (void)loadURLString:(NSString * _Nullable)urlString;
 
 @end

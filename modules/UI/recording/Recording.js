@@ -22,6 +22,7 @@ import VideoLayout from '../videolayout/VideoLayout';
 import Feedback from '../feedback/Feedback.js';
 
 import { setToolboxEnabled } from '../../../react/features/toolbox';
+import { setNotificationsEnabled } from '../../../react/features/notifications';
 
 /**
  * The dialog for user input.
@@ -133,7 +134,7 @@ function _requestLiveStreamId() {
  */
 function _requestRecordingToken() {
     let titleKey = "dialog.recordingToken";
-    let messageString = (
+    let msgString = (
         `<input name="recordingToken" type="text"
                 data-i18n="[placeholder]dialog.token"
                 class="input-control"
@@ -142,7 +143,7 @@ function _requestRecordingToken() {
     return new Promise(function (resolve, reject) {
         dialog = APP.UI.messageHandler.openTwoButtonDialog({
             titleKey,
-            messageString,
+            msgString,
             leftButtonKey: 'dialog.Save',
             submitFunction: function (e, v, m, f) {
                 if (v && f.recordingToken) {
@@ -309,7 +310,7 @@ var Recording = {
             VideoLayout.setLocalVideoVisible(false);
             Feedback.enableFeedback(false);
             APP.store.dispatch(setToolboxEnabled(false));
-            APP.UI.messageHandler.enableNotifications(false);
+            APP.store.dispatch(setNotificationsEnabled(false));
             APP.UI.messageHandler.enablePopups(false);
         }
 

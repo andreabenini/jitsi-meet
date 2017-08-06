@@ -35,7 +35,8 @@ RCTFatalHandler _RCTFatal = ^(NSError *error) {
     @try {
         NSString *name
             = [NSString stringWithFormat:@"%@: %@",
-               RCTFatalExceptionName, error.localizedDescription];
+                        RCTFatalExceptionName,
+                        error.localizedDescription];
         NSString *message
             = RCTFormatError(error.localizedDescription, jsStackTrace, 75);
         [NSException raise:name format:@"%@", message];
@@ -111,10 +112,25 @@ void registerFatalErrorHandler() {
 static RCTBridgeWrapper *bridgeWrapper;
 
 /**
+ * Copy of the {@code launchOptions} dictionary that the application was started
+ * with. It is required for the initial URL to be used if a (Universal) link was
+ * used to launch a new instance of the application.
+ */
+static NSDictionary *_launchOptions;
+
+/**
  * The {@code JitsiMeetView}s associated with their {@code ExternalAPI} scopes
  * (i.e. unique identifiers within the process).
  */
 static NSMapTable<NSString *, JitsiMeetView *> *views;
+
++             (BOOL)application:(UIApplication *)application
+  didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    // Store launch options, will be used when we create the bridge.
+    _launchOptions = [launchOptions copy];
+
+    return YES;
+}
 
 #pragma mark Linking delegate helpers
 // https://facebook.github.io/react-native/docs/linking.html
@@ -123,6 +139,17 @@ static NSMapTable<NSString *, JitsiMeetView *> *views;
   continueUserActivity:(NSUserActivity *)userActivity
     restorationHandler:(void (^)(NSArray *restorableObjects))restorationHandler
 {
+    // XXX At least twice we received bug reports about malfunctioning loadURL
+    // in the Jitsi Meet SDK while the Jitsi Meet app seemed to functioning as
+    // expected in our testing. But that was to be expected because the app does
+    // not exercise loadURL. In order to increase the test coverage of loadURL,
+    // channel Universal linking through loadURL.
+    if ([userActivity.activityType
+                isEqualToString:NSUserActivityTypeBrowsingWeb]
+            && [JitsiMeetView loadURLInViews:userActivity.webpageURL]) {
+        return YES;
+    }
+
     return [RCTLinkingManager application:application
                      continueUserActivity:userActivity
                        restorationHandler:restorationHandler];
@@ -132,6 +159,15 @@ static NSMapTable<NSString *, JitsiMeetView *> *views;
             openURL:(NSURL *)url
   sourceApplication:(NSString *)sourceApplication
          annotation:(id)annotation {
+    // XXX At least twice we received bug reports about malfunctioning loadURL
+    // in the Jitsi Meet SDK while the Jitsi Meet app seemed to functioning as
+    // expected in our testing. But that was to be expected because the app does
+    // not exercise loadURL. In order to increase the test coverage of loadURL,
+    // channel Universal linking through loadURL.
+    if ([JitsiMeetView loadURLInViews:url]) {
+        return YES;
+    }
+
     return [RCTLinkingManager application:application
                                   openURL:url
                         sourceApplication:sourceApplication
@@ -139,6 +175,15 @@ static NSMapTable<NSString *, JitsiMeetView *> *views;
 }
 
 #pragma mark Initializers
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        [self initWithXXX];
+    }
+
+    return self;
+}
 
 - (instancetype)initWithCoder:(NSCoder *)coder {
     self = [super initWithCoder:coder];
@@ -161,20 +206,38 @@ static NSMapTable<NSString *, JitsiMeetView *> *views;
 #pragma mark API
 
 /**
- * Loads the given URL and joins the specified conference. If the specified URL
- * is null, the welcome page is shown.
+ * Loads a specific {@link NSURL} which may identify a conference to join. If
+ * the specified {@code NSURL} is {@code nil} and the Welcome page is enabled,
+ * the Welcome page is displayed instead.
+ *
+ * @param url - The {@code NSURL} to load which may identify a conference to
+ * join.
  */
 - (void)loadURL:(NSURL *)url {
+    [self loadURLString:url ? url.absoluteString : nil];
+}
+
+/**
+ * Loads a specific URL which may identify a conference to join. The URL is
+ * specified in the form of an {@link NSDictionary} of properties which (1)
+ * internally are sufficient to construct a URL {@code NSString} while (2)
+ * abstracting the specifics of constructing the URL away from API
+ * clients/consumers. If the specified URL is {@code nil} and the Welcome page
+ * is enabled, the Welcome page is displayed instead.
+ *
+ * @param urlObject - The URL to load which may identify a conference to join.
+ */
+- (void)loadURLObject:(NSDictionary *)urlObject {
     NSMutableDictionary *props = [[NSMutableDictionary alloc] init];
 
-    // externalAPIScope
     [props setObject:externalAPIScope forKey:@"externalAPIScope"];
-    // url
-    if (url) {
-        [props setObject:url.absoluteString forKey:@"url"];
-    }
-    // welcomePageEnabled
     [props setObject:@(self.welcomePageEnabled) forKey:@"welcomePageEnabled"];
+
+    // XXX url must not be set when nil, so it appears as undefined in JS and we
+    // check the launch parameters.
+    if (urlObject) {
+        [props setObject:urlObject forKey:@"url"];
+    }
 
     if (rootView == nil) {
         rootView
@@ -192,7 +255,45 @@ static NSMapTable<NSString *, JitsiMeetView *> *views;
     }
 }
 
+/**
+ * Loads a specific URL {@link NSString} which may identify a conference to
+ * join. If the specified URL {@code NSString} is {@code nil} and the Welcome
+ * page is enabled, the Welcome page is displayed instead.
+ *
+ * @param urlString - The URL {@code NSString} to load which may identify a
+ * conference to join.
+ */
+- (void)loadURLString:(NSString *)urlString {
+    [self loadURLObject:urlString ? @{ @"url": urlString } : nil];
+}
+
 #pragma mark Private methods
+
+/**
+ * Loads a specific {@link NSURL} in all existing {@code JitsiMeetView}s.
+ *
+ * @param url - The {@code NSURL} to load in all existing
+ * {@code JitsiMeetView}s.
+ * @return {@code YES} if the specified {@code url} was submitted for loading
+ * in at least one {@code JitsiMeetView}; otherwise, {@code NO}.
+ */
++ (BOOL)loadURLInViews:(NSURL *)url {
+    BOOL handled = NO;
+
+    if (views) {
+        for (NSString *externalAPIScope in views) {
+            JitsiMeetView *view
+                = [JitsiMeetView viewForExternalAPIScope:externalAPIScope];
+
+            if (view) {
+                [view loadURL:url];
+                handled = YES;
+            }
+        }
+    }
+
+    return handled;
+}
 
 + (instancetype)viewForExternalAPIScope:(NSString *)externalAPIScope {
     return [views objectForKey:externalAPIScope];
@@ -201,7 +302,7 @@ static NSMapTable<NSString *, JitsiMeetView *> *views;
 /**
  * Internal initialization:
  *
- * - sets the backgroudn color
+ * - sets the background color
  * - creates the React bridge
  * - loads the necessary custom fonts
  * - registers a custom fatal error error handler for React
@@ -211,7 +312,8 @@ static NSMapTable<NSString *, JitsiMeetView *> *views;
 
     dispatch_once(&dispatchOncePredicate, ^{
         // Initialize the static state of JitsiMeetView.
-        bridgeWrapper = [[RCTBridgeWrapper alloc] init];
+        bridgeWrapper
+            = [[RCTBridgeWrapper alloc] initWithLaunchOptions:_launchOptions];
         views = [NSMapTable strongToWeakObjectsMapTable];
 
         // Dynamically load custom bundled fonts.
@@ -222,8 +324,10 @@ static NSMapTable<NSString *, JitsiMeetView *> *views;
     });
 
     // Hook this JitsiMeetView into ExternalAPI.
-    externalAPIScope = [NSUUID UUID].UUIDString;
-    [views setObject:self forKey:externalAPIScope];
+    if (!externalAPIScope) {
+        externalAPIScope = [NSUUID UUID].UUIDString;
+        [views setObject:self forKey:externalAPIScope];
+    }
 
     // Set a background color which is in accord with the JavaScript and
     // Android parts of the application and causes less perceived visual

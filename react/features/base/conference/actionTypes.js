@@ -36,7 +36,7 @@ export const CONFERENCE_LEFT = Symbol('CONFERENCE_LEFT');
  *
  * {
  *     type: CONFERENCE_WILL_JOIN,
- *     room: string
+ *     conference: JitsiConference
  * }
  */
 export const CONFERENCE_WILL_JOIN = Symbol('CONFERENCE_WILL_JOIN');
@@ -74,20 +74,6 @@ export const LOCK_STATE_CHANGED = Symbol('LOCK_STATE_CHANGED');
  * }
  */
 export const SET_AUDIO_ONLY = Symbol('SET_AUDIO_ONLY');
-
-/**
- * The type of (redux) action which signals that video will be muted because the
- * audio-only mode was enabled/disabled.
- *
- * {
- *     type: _SET_AUDIO_ONLY_VIDEO_MUTED,
- *     muted: boolean
- * }
- *
- * @protected
- */
-export const _SET_AUDIO_ONLY_VIDEO_MUTED
-    = Symbol('_SET_AUDIO_ONLY_VIDEO_MUTED');
 
 /**
  * The type of (redux) action to set whether or not the displayed large video is

@@ -1,7 +1,4 @@
-import JitsiMeetJS, {
-    JitsiTrackErrors,
-    JitsiTrackEvents
-} from '../lib-jitsi-meet';
+import { JitsiTrackErrors, JitsiTrackEvents } from '../lib-jitsi-meet';
 import {
     CAMERA_FACING_MODE,
     MEDIA_TYPE,
@@ -10,11 +7,8 @@ import {
 } from '../media';
 import { getLocalParticipant } from '../participants';
 
-import {
-    TRACK_ADDED,
-    TRACK_REMOVED,
-    TRACK_UPDATED
-} from './actionTypes';
+import { TRACK_ADDED, TRACK_REMOVED, TRACK_UPDATED } from './actionTypes';
+import { createLocalTracks } from './functions';
 
 /**
  * Request to start capturing local audio and/or video. By default, the user
@@ -23,19 +17,45 @@ import {
  * @param {Object} [options] - For info @see JitsiMeetJS.createLocalTracks.
  * @returns {Function}
  */
-export function createLocalTracks(options = {}) {
-    return dispatch =>
-        JitsiMeetJS.createLocalTracks({
-            cameraDeviceId: options.cameraDeviceId,
-            devices: options.devices || [ MEDIA_TYPE.AUDIO, MEDIA_TYPE.VIDEO ],
-            facingMode: options.facingMode || CAMERA_FACING_MODE.USER,
-            micDeviceId: options.micDeviceId
-        })
-        .then(localTracks => dispatch(_updateLocalTracks(localTracks)))
-        .catch(err => {
-            console.error(
-                `JitsiMeetJS.createLocalTracks.catch rejection reason: ${err}`);
-        });
+export function createInitialLocalTracks(options = {}) {
+    return (dispatch, getState) => {
+        const devices
+            = options.devices || [ MEDIA_TYPE.AUDIO, MEDIA_TYPE.VIDEO ];
+        const store = {
+            dispatch,
+            getState
+        };
+
+        // The following executes on React Native only at the time of this
+        // writing. The effort to port Web's createInitialLocalTracksAndConnect
+        // is significant and that's where the function createLocalTracks got
+        // born. I started with the idea a porting so that we could inherit the
+        // ability to getUserMedia for audio only or video only if getUserMedia
+        // for audio and video fails. Eventually though, I realized that on
+        // mobile we do not have combined permission prompts implemented anyway
+        // (either because there are no such prompts or it does not make sense
+        // to implement them) and the right thing to do is to ask for each
+        // device separately.
+        for (const device of devices) {
+            createLocalTracks(
+                {
+                    cameraDeviceId: options.cameraDeviceId,
+                    devices: [ device ],
+                    facingMode: options.facingMode || CAMERA_FACING_MODE.USER,
+                    micDeviceId: options.micDeviceId
+                },
+                /* firePermissionPromptIsShownEvent */ false,
+                store)
+            .then(localTracks => dispatch(_updateLocalTracks(localTracks)));
+
+            // TODO The function createLocalTracks logs the rejection reason of
+            // JitsiMeetJS.createLocalTracks so there is no real benefit to
+            // logging it here as well. Technically though,
+            // _updateLocalTracks may cause a rejection so it may be nice to log
+            // it. It's not too big of a concern at the time of this writing
+            // because React Native warns on unhandled Promise rejections.
+        }
+    };
 }
 
 /**
@@ -55,31 +75,33 @@ export function destroyLocalTracks() {
 
 /**
  * Replaces one track with another for one renegotiation instead of invoking
- * two renegotations with a separate removeTrack and addTrack. Disposes the
+ * two renegotiations with a separate removeTrack and addTrack. Disposes the
  * removed track as well.
  *
  * @param {JitsiLocalTrack|null} oldTrack - The track to dispose.
  * @param {JitsiLocalTrack|null} newTrack - The track to use instead.
  * @param {JitsiConference} [conference] - The conference from which to remove
- * and add the tracks. If one is not provied, the conference in the redux store
+ * and add the tracks. If one is not provided, the conference in the redux store
  * will be used.
  * @returns {Function}
  */
 export function replaceLocalTrack(oldTrack, newTrack, conference) {
     return (dispatch, getState) => {
-        const currentConference = conference
-            || getState()['features/base/conference'].conference;
+        conference
 
-        return currentConference.replaceTrack(oldTrack, newTrack)
+            // eslint-disable-next-line no-param-reassign
+            || (conference = getState()['features/base/conference'].conference);
+
+        return conference.replaceTrack(oldTrack, newTrack)
             .then(() => {
-                // We call dispose after doing the replace because
-                //  dispose will try and do a new o/a after the
-                //  track removes itself.  Doing it after means
-                //  the JitsiLocalTrack::conference member is already
-                //  cleared, so it won't try and do the o/a
-                const disposePromise = oldTrack
-                    ? dispatch(_disposeAndRemoveTracks([ oldTrack ]))
-                    : Promise.resolve();
+                // We call dispose after doing the replace because dispose will
+                // try and do a new o/a after the track removes itself. Doing it
+                // after means the JitsiLocalTrack.conference is already
+                // cleared, so it won't try and do the o/a.
+                const disposePromise
+                    = oldTrack
+                        ? dispatch(_disposeAndRemoveTracks([ oldTrack ]))
+                        : Promise.resolve();
 
                 return disposePromise
                     .then(() => {
@@ -93,10 +115,12 @@ export function replaceLocalTrack(oldTrack, newTrack, conference) {
                             // track's mute state. If this is not done, the
                             // current mute state of the app will be reflected
                             // on the track, not vice-versa.
-                            const muteAction = newTrack.isVideoTrack()
-                                ? setVideoMuted : setAudioMuted;
+                            const setMuted
+                                = newTrack.isVideoTrack()
+                                    ? setVideoMuted
+                                    : setAudioMuted;
 
-                            return dispatch(muteAction(newTrack.isMuted()));
+                            return dispatch(setMuted(newTrack.isMuted()));
                         }
                     })
                     .then(() => {
@@ -159,7 +183,10 @@ export function trackAdded(track) {
  * changed.
  *
  * @param {(JitsiLocalTrack|JitsiRemoteTrack)} track - JitsiTrack instance.
- * @returns {{ type: TRACK_UPDATED, track: Track }}
+ * @returns {{
+ *     type: TRACK_UPDATED,
+ *     track: Track
+ * }}
  */
 export function trackMutedChanged(track) {
     return {
@@ -176,9 +203,15 @@ export function trackMutedChanged(track) {
  * conference.
  *
  * @param {(JitsiLocalTrack|JitsiRemoteTrack)} track - JitsiTrack instance.
- * @returns {{ type: TRACK_REMOVED, track: Track }}
+ * @returns {{
+ *     type: TRACK_REMOVED,
+ *     track: Track
+ * }}
  */
 export function trackRemoved(track) {
+    track.removeAllListeners(JitsiTrackEvents.TRACK_MUTE_CHANGED);
+    track.removeAllListeners(JitsiTrackEvents.TRACK_VIDEOTYPE_CHANGED);
+
     return {
         type: TRACK_REMOVED,
         track: {
@@ -191,7 +224,10 @@ export function trackRemoved(track) {
  * Signal that track's video started to play.
  *
  * @param {(JitsiLocalTrack|JitsiRemoteTrack)} track - JitsiTrack instance.
- * @returns {{ type: TRACK_UPDATED, track: Track }}
+ * @returns {{
+ *     type: TRACK_UPDATED,
+ *     track: Track
+ * }}
  */
 export function trackVideoStarted(track) {
     return {
@@ -208,7 +244,10 @@ export function trackVideoStarted(track) {
  *
  * @param {(JitsiLocalTrack|JitsiRemoteTrack)} track - JitsiTrack instance.
  * @param {VIDEO_TYPE|undefined} videoType - Video type.
- * @returns {{ type: TRACK_UPDATED, track: Track }}
+ * @returns {{
+ *     type: TRACK_UPDATED,
+ *     track: Track
+ * }}
  */
 export function trackVideoTypeChanged(track, videoType) {
     return {
@@ -228,8 +267,7 @@ export function trackVideoTypeChanged(track, videoType) {
  * @returns {Function}
  */
 function _addTracks(tracks) {
-    return dispatch =>
-        Promise.all(tracks.map(t => dispatch(trackAdded(t))));
+    return dispatch => Promise.all(tracks.map(t => dispatch(trackAdded(t))));
 }
 
 /**
@@ -285,8 +323,8 @@ function _getLocalTrack(tracks, mediaType) {
  * tracks.
  * @private
  * @returns {{
- *      tracksToAdd: JitsiLocalTrack[],
- *      tracksToRemove: JitsiLocalTrack[]
+ *     tracksToAdd: JitsiLocalTrack[],
+ *     tracksToRemove: JitsiLocalTrack[]
  * }}
  */
 function _getLocalTracksToChange(currentTracks, newTracks) {
@@ -307,6 +345,53 @@ function _getLocalTracksToChange(currentTracks, newTracks) {
     return {
         tracksToAdd,
         tracksToRemove
+    };
+}
+
+/**
+ * Mutes or unmutes a specific <tt>JitsiLocalTrack</tt>. If the muted state of
+ * the specified <tt>track</tt> is already in accord with the specified
+ * <tt>muted</tt> value, then does nothing. In case the actual muting/unmuting
+ * fails, a rollback action will be dispatched to undo the muting/unmuting.
+ *
+ * @param {JitsiLocalTrack} track - The <tt>JitsiLocalTrack</tt> to mute or
+ * unmute.
+ * @param {boolean} muted - If the specified <tt>track</tt> is to be muted, then
+ * <tt>true</tt>; otherwise, <tt>false</tt>.
+ * @returns {Function}
+ */
+export function setTrackMuted(track, muted) {
+    return dispatch => {
+        muted = Boolean(muted); // eslint-disable-line no-param-reassign
+
+        if (track.isMuted() === muted) {
+            return Promise.resolve();
+        }
+
+        const f = muted ? 'mute' : 'unmute';
+
+        return track[f]().catch(error => {
+            console.error(`set track ${f} failed`, error);
+
+            if (navigator.product === 'ReactNative') {
+                // Synchronizing the state of base/tracks into the state of
+                // base/media is not required in React (and, respectively, React
+                // Native) because base/media expresses the app's and the user's
+                // desires/expectations/intents and base/tracks expresses
+                // practice/reality. Unfortunately, the old Web does not comply
+                // and/or does the opposite.
+                return;
+            }
+
+            const setMuted
+                = track.mediaType === MEDIA_TYPE.AUDIO
+                    ? setAudioMuted
+                    : setVideoMuted;
+
+            // FIXME The following disregards VIDEO_MUTISM_AUTHORITY (in the
+            // case of setVideoMuted, of course).
+            dispatch(setMuted(!muted));
+        });
     };
 }
 
@@ -337,8 +422,7 @@ function _shouldMirror(track) {
             // of the value on the right side of the equality check is defined
             // by jitsi-meet. The type definitions are surely compatible today
             // but that may not be the case tomorrow.
-            && track.getCameraFacingMode() === CAMERA_FACING_MODE.USER
-    );
+            && track.getCameraFacingMode() === CAMERA_FACING_MODE.USER);
 }
 
 /**

@@ -1,4 +1,4 @@
-/* global $, APP, interfaceConfig */
+/* global $, interfaceConfig */
 /* jshint -W101 */
 
 import Filmstrip from './Filmstrip';
@@ -10,22 +10,6 @@ import UIUtil from "../util/UIUtil";
 export const VIDEO_CONTAINER_TYPE = "camera";
 
 const FADE_DURATION_MS = 300;
-
-/**
- * Get stream id.
- * @param {JitsiTrack?} stream
- */
-function getStreamOwnerId(stream) {
-    if (!stream) {
-        return;
-    }
-    // local stream doesn't have method "getParticipantId"
-    if (stream.isLocal()) {
-        return APP.conference.getMyUserId();
-    } else {
-        return stream.getParticipantId();
-    }
-}
 
 /**
  * Returns an array of the video dimensions, so that it keeps it's aspect
@@ -171,7 +155,7 @@ export class VideoContainer extends LargeContainer {
     }
 
     get id () {
-        return getStreamOwnerId(this.stream);
+        return this.userId;
     }
 
     /**
@@ -184,6 +168,7 @@ export class VideoContainer extends LargeContainer {
     constructor (resizeContainer, emitter) {
         super();
         this.stream = null;
+        this.userId = null;
         this.videoType = null;
         this.localFlipX = true;
         this.emitter = emitter;
@@ -203,6 +188,8 @@ export class VideoContainer extends LargeContainer {
          * @type {jQuery|HTMLElement}
          */
         this.$remoteConnectionMessage = $('#remoteConnectionMessage');
+
+        this.$remotePresenceMessage = $('#remotePresenceMessage');
 
         /**
          * Indicates whether or not the video stream attached to the video
@@ -270,6 +257,14 @@ export class VideoContainer extends LargeContainer {
     }
 
     /**
+     * Obtains media stream ID of the underlying {@link JitsiTrack}.
+     * @return {string|null}
+     */
+    getStreamID() {
+        return this.stream ? this.stream.getId() : null;
+    }
+
+    /**
      * Get size of video element.
      * @returns {{width, height}}
      */
@@ -328,27 +323,35 @@ export class VideoContainer extends LargeContainer {
     }
 
     /**
-     * Update position of the remote connection message which describes that
-     * the remote user is having connectivity issues.
+     * Updates the positioning of the remote connection presence message and the
+     * connection status message which escribes that the remote user is having
+     * connectivity issues.
+     *
+     * @returns {void}
      */
-    positionRemoteConnectionMessage () {
+    positionRemoteStatusMessages() {
+        this._positionParticipantStatus(this.$remoteConnectionMessage);
+        this._positionParticipantStatus(this.$remotePresenceMessage);
+    }
 
+    /**
+     * Modifies the position of the passed in jQuery object so it displays
+     * in the middle of the video container or below the avatar.
+     *
+     * @private
+     * @returns {void}
+     */
+    _positionParticipantStatus($element) {
         if (this.avatarDisplayed) {
             let $avatarImage = $("#dominantSpeakerAvatar");
-            this.$remoteConnectionMessage.css(
+            $element.css(
                 'top',
                 $avatarImage.offset().top + $avatarImage.height() + 10);
         } else {
-            let height = this.$remoteConnectionMessage.height();
-            let parentHeight = this.$remoteConnectionMessage.parent().height();
-            this.$remoteConnectionMessage.css(
-                'top', (parentHeight/2) - (height/2));
+            let height = $element.height();
+            let parentHeight = $element.parent().height();
+            $element.css('top', (parentHeight/2) - (height/2));
         }
-
-        let width = this.$remoteConnectionMessage.width();
-        let parentWidth = this.$remoteConnectionMessage.parent().width();
-        this.$remoteConnectionMessage.css(
-            'left', ((parentWidth/2) - (width/2)));
     }
 
     resize (containerWidth, containerHeight, animate = false) {
@@ -379,7 +382,7 @@ export class VideoContainer extends LargeContainer {
 
         this.$avatar.css('top', top);
 
-        this.positionRemoteConnectionMessage();
+        this.positionRemoteStatusMessages();
 
         this.$wrapper.animate({
             width: width,
@@ -410,10 +413,12 @@ export class VideoContainer extends LargeContainer {
 
     /**
      * Update video stream.
+     * @param {string} userID
      * @param {JitsiTrack?} stream new stream
      * @param {string} videoType video type
      */
-    setStream (stream, videoType) {
+    setStream (userID, stream, videoType) {
+        this.userId = userID;
         if (this.stream === stream) {
             // Handles the use case for the remote participants when the
             // videoType is received with delay after turning on/off the

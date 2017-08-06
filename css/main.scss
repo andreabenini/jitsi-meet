@@ -33,7 +33,6 @@
 /* Modules BEGIN */
 
 @import 'dial-out';
-@import 'toastr';
 @import 'base';
 @import 'utils';
 @import 'overlay/overlay';
@@ -73,6 +72,7 @@
 @import 'policy';
 @import 'filmstrip';
 @import 'unsupported-browser/main';
+@import 'modals/invite/add-people';
 @import 'vertical_filmstrip_overrides';
 
 /* Modules END */
