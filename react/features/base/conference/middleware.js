@@ -2,10 +2,12 @@
 import UIEvents from '../../../../service/UI/UIEvents';
 
 import { CONNECTION_ESTABLISHED } from '../connection';
+import JitsiMeetJS from '../lib-jitsi-meet';
 import { setVideoMuted, VIDEO_MUTISM_AUTHORITY } from '../media';
 import {
     getLocalParticipant,
     getParticipantById,
+    getPinnedParticipant,
     PIN_PARTICIPANT
 } from '../participants';
 import { MiddlewareRegistry } from '../redux';
@@ -14,14 +16,17 @@ import { TRACK_ADDED, TRACK_REMOVED } from '../tracks';
 import {
     createConference,
     setAudioOnly,
-    setLastN
+    setLastN,
+    toggleAudioOnly
 } from './actions';
 import {
     CONFERENCE_FAILED,
     CONFERENCE_JOINED,
     CONFERENCE_LEFT,
+    DATA_CHANNEL_OPENED,
     SET_AUDIO_ONLY,
-    SET_LASTN
+    SET_LASTN,
+    SET_RECEIVE_VIDEO_QUALITY
 } from './actionTypes';
 import {
     _addLocalTracksToConference,
@@ -47,6 +52,9 @@ MiddlewareRegistry.register(store => next => action => {
     case CONFERENCE_JOINED:
         return _conferenceJoined(store, next, action);
 
+    case DATA_CHANNEL_OPENED:
+        return _syncReceiveVideoQuality(store, next, action);
+
     case PIN_PARTICIPANT:
         return _pinParticipant(store, next, action);
 
@@ -55,6 +63,9 @@ MiddlewareRegistry.register(store => next => action => {
 
     case SET_LASTN:
         return _setLastN(store, next, action);
+
+    case SET_RECEIVE_VIDEO_QUALITY:
+        return _setReceiveVideoQuality(store, next, action);
 
     case TRACK_ADDED:
     case TRACK_REMOVED:
@@ -159,27 +170,44 @@ function _conferenceJoined(store, next, action) {
  */
 function _pinParticipant(store, next, action) {
     const state = store.getState();
+    const { conference } = state['features/base/conference'];
     const participants = state['features/base/participants'];
     const id = action.participant.id;
     const participantById = getParticipantById(participants, id);
     let pin;
 
-    // The following condition prevents signaling to pin local participant. The
-    // logic is:
+    if (typeof APP !== 'undefined') {
+        const pinnedParticipant = getPinnedParticipant(participants);
+        const actionName = action.participant.id ? 'pinned' : 'unpinned';
+        let videoType;
+
+        if ((participantById && participantById.local)
+            || (!id && pinnedParticipant && pinnedParticipant.local)) {
+            videoType = 'local';
+        } else {
+            videoType = 'remote';
+        }
+
+        JitsiMeetJS.analytics.sendEvent(
+                `${actionName}.${videoType}`,
+                { value: conference.getParticipantCount() });
+    }
+
+    // The following condition prevents signaling to pin local participant and
+    // shared videos. The logic is:
     // - If we have an ID, we check if the participant identified by that ID is
-    //   local.
+    //   local or a bot/fake participant (such as with shared video).
     // - If we don't have an ID (i.e. no participant identified by an ID), we
     //   check for local participant. If she's currently pinned, then this
     //   action will unpin her and that's why we won't signal here too.
     if (participantById) {
-        pin = !participantById.local;
+        pin = !participantById.local && !participantById.isBot;
     } else {
         const localParticipant = getLocalParticipant(participants);
 
         pin = !localParticipant || !localParticipant.pinned;
     }
     if (pin) {
-        const { conference } = state['features/base/conference'];
 
         try {
             conference.pinParticipant(id);
@@ -215,7 +243,11 @@ function _setAudioOnly({ dispatch, getState }, next, action) {
     dispatch(setLastN(audioOnly ? 0 : undefined));
 
     // Mute/unmute the local video.
-    dispatch(setVideoMuted(audioOnly, VIDEO_MUTISM_AUTHORITY.AUDIO_ONLY));
+    dispatch(
+        setVideoMuted(
+            audioOnly,
+            VIDEO_MUTISM_AUTHORITY.AUDIO_ONLY,
+            /* ensureTrack */ true));
 
     if (typeof APP !== 'undefined') {
         // TODO This should be a temporary solution that lasts only until
@@ -254,6 +286,33 @@ function _setLastN(store, next, action) {
 }
 
 /**
+ * Sets the maximum receive video quality and will turn off audio only mode if
+ * enabled.
+ *
+ * @param {Store} store - The Redux store in which the specified action is being
+ * dispatched.
+ * @param {Dispatch} next - The Redux dispatch function to dispatch the
+ * specified action to the specified store.
+ * @param {Action} action - The Redux action SET_RECEIVE_VIDEO_QUALITY which is
+ * being dispatched in the specified store.
+ * @private
+ * @returns {Object} The new state that is the result of the reduction of the
+ * specified action.
+ */
+function _setReceiveVideoQuality(store, next, action) {
+    const { audioOnly, conference }
+        = store.getState()['features/base/conference'];
+
+    conference.setReceiverVideoConstraint(action.receiveVideoQuality);
+
+    if (audioOnly) {
+        store.dispatch(toggleAudioOnly());
+    }
+
+    return next(action);
+}
+
+/**
  * Synchronizes local tracks from state with local tracks in JitsiConference
  * instance.
  *
@@ -280,6 +339,27 @@ function _syncConferenceLocalTracksWithState(store, action) {
     }
 
     return promise || Promise.resolve();
+}
+
+/**
+ * Sets the maximum receive video quality.
+ *
+ * @param {Store} store - The Redux store in which the specified action is being
+ * dispatched.
+ * @param {Dispatch} next - The Redux dispatch function to dispatch the
+ * specified action to the specified store.
+ * @param {Action} action - The Redux action DATA_CHANNEL_STATUS_CHANGED which
+ * is being dispatched in the specified store.
+ * @private
+ * @returns {Object} The new state that is the result of the reduction of the
+ * specified action.
+ */
+function _syncReceiveVideoQuality(store, next, action) {
+    const state = store.getState()['features/base/conference'];
+
+    state.conference.setReceiverVideoConstraint(state.receiveVideoQuality);
+
+    return next(action);
 }
 
 /**

@@ -3,7 +3,10 @@
 import React, { Component } from 'react';
 
 import { Watermarks } from '../../base/react';
-import { VideoStatusLabel } from '../../video-status-label';
+import { VideoQualityLabel } from '../../video-quality';
+import { RecordingLabel } from '../../recording';
+
+declare var interfaceConfig: Object;
 
 /**
  * Implements a React {@link Component} which represents the large video (a.k.a.
@@ -65,18 +68,8 @@ export default class LargeVideo extends Component {
                     </div>
                 </div>
                 <span id = 'localConnectionMessage' />
-
-                <VideoStatusLabel />
-
-                <span
-                    className = 'video-state-indicator centeredVideoLabel'
-                    id = 'recordingLabel'>
-                    <span id = 'recordingLabelText' />
-                    <img
-                        className = 'recordingSpinner'
-                        id = 'recordingSpinner'
-                        src = 'images/spin.svg' />
-                </span>
+                { interfaceConfig.filmStripOnly ? null : <VideoQualityLabel /> }
+                <RecordingLabel />
             </div>
         );
     }

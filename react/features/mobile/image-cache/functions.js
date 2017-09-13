@@ -1,4 +1,4 @@
-import { ImageCache } from 'react-native-img-cache';
+import { ImageCache } from './';
 
 /**
  * Notifies about the successful download of an <tt>Image</tt> source. The name
@@ -27,5 +27,5 @@ function _onLoad() {
  * @returns {void}
  */
 export function prefetch(source) {
-    ImageCache.get().on(source, /* observer */ _onLoad, /* immutable */ true);
+    ImageCache && ImageCache.get().on(source, _onLoad, /* immutable */ true);
 }

@@ -1,22 +1,24 @@
 import React, { Component } from 'react';
 import { View } from 'react-native';
-import { CachedImage, ImageCache } from 'react-native-img-cache';
 
+import { CachedImage, ImageCache } from '../../../mobile/image-cache';
 import { Platform } from '../../react';
 import { ColorPalette } from '../../styles';
 
-// FIXME @lyubomir: The string images/avatar2.png appears three times in our
-// source code at the time of this writing. Firstly, it presents a maintenance
-// obstacle which increases the risks of inconsistency. Secondly, it is
-// repulsive (when enlarged, especially, on mobile/React Native, for example).
 /**
  * The default image/source to be used in case none is specified or the
  * specified one fails to load.
  *
+ * XXX The relative path to the default/stock (image) file is defined by the
+ * <tt>const</tt> <tt>DEFAULT_AVATAR_RELATIVE_PATH</tt>. Unfortunately, the
+ * packager of React Native cannot deal with it early enough for the following
+ * <tt>require</tt> to succeed at runtime. Anyway, be sure to synchronize the
+ * relative path on Web and mobile for the purposes of consistency.
+ *
  * @private
  * @type {string}
  */
-const _DEFAULT_SOURCE = require('../../../../../images/avatar2.png');
+const _DEFAULT_SOURCE = require('../../../../../images/avatar.png');
 
 /**
  * Implements an avatar as a React Native/mobile {@link Component}.
@@ -72,8 +74,9 @@ export default class Avatar extends Component {
         // uri
         const prevURI = this.props && this.props.uri;
         const nextURI = nextProps && nextProps.uri;
+        const assignState = !this.state;
 
-        if (prevURI !== nextURI || !this.state) {
+        if (prevURI !== nextURI || assignState) {
             const nextState = {
                 backgroundColor: this._getBackgroundColor(nextProps),
 
@@ -90,10 +93,10 @@ export default class Avatar extends Component {
                 source: _DEFAULT_SOURCE
             };
 
-            if (this.state) {
-                this.setState(nextState);
-            } else {
+            if (assignState) {
                 this.state = nextState;
+            } else {
+                this.setState(nextState);
             }
 
             // XXX @lyubomir: My logic for the character # bellow is as follows:
@@ -111,22 +114,32 @@ export default class Avatar extends Component {
             // an image retrieval action.
             if (nextURI && !nextURI.startsWith('#')) {
                 const nextSource = { uri: nextURI };
+                const observer = () => {
+                    this._unmounted || this.setState((prevState, props) => {
+                        if (props.uri === nextURI
+                                && (!prevState.source
+                                    || prevState.source.uri !== nextURI)) {
+                            return { source: nextSource };
+                        }
+
+                        return {};
+                    });
+                };
 
                 // Wait for the source/URI to load.
-                ImageCache.get().on(
-                    nextSource,
-                    /* observer */ () => {
-                        this._unmounted || this.setState((prevState, props) => {
-                            if (props.uri === nextURI
-                                    && (!prevState.source
-                                        || prevState.source.uri !== nextURI)) {
-                                return { source: nextSource };
-                            }
-
-                            return {};
-                        });
-                    },
-                    /* immutable */ true);
+                if (ImageCache) {
+                    ImageCache.get().on(
+                        nextSource,
+                        observer,
+                        /* immutable */ true);
+                } else if (assignState) {
+                    this.state = {
+                        ...this.state,
+                        source: nextSource
+                    };
+                } else {
+                    observer();
+                }
             }
         }
     }

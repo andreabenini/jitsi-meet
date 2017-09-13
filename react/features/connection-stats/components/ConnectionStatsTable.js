@@ -292,7 +292,7 @@ class ConnectionStatsTable extends Component {
 
         return (
             <a
-                className = 'jitsipopover__showmore link'
+                className = 'showmore link'
                 onClick = { this.props.onShowMore } >
                 { this.props.t(translationKey) }
             </a>
@@ -476,6 +476,10 @@ class ConnectionStatsTable extends Component {
  * @returns {string}
  */
 function getIP(value) {
+    if (!value) {
+        return '';
+    }
+
     return value.substring(0, value.lastIndexOf(':'));
 }
 
@@ -488,6 +492,10 @@ function getIP(value) {
  * @returns {string}
  */
 function getPort(value) {
+    if (!value) {
+        return '';
+    }
+
     return value.substring(value.lastIndexOf(':') + 1, value.length);
 }
 

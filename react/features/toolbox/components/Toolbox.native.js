@@ -7,7 +7,8 @@ import {
     MEDIA_TYPE,
     setAudioMuted,
     setVideoMuted,
-    toggleCameraFacingMode
+    toggleCameraFacingMode,
+    VIDEO_MUTISM_AUTHORITY
 } from '../../base/media';
 import { Container } from '../../base/react';
 import { ColorPalette } from '../../base/styles';
@@ -20,6 +21,16 @@ import {
 } from '../functions';
 import styles from './styles';
 import ToolbarButton from './ToolbarButton';
+
+/**
+ * The indicator which determines (at bundle time) whether there should be a
+ * {@code ToolbarButton} in {@code Toolbox} to expose the functionality of the
+ * feature share-room in the user interface of the app.
+ *
+ * @private
+ * @type {boolean}
+ */
+const _SHARE_ROOM_TOOLBAR_BUTTON = true;
 
 /**
  * Implements the conference toolbox on React Native.
@@ -167,7 +178,11 @@ class Toolbox extends Component {
         // sets the state of base/media. Whether the user's intention will turn
         // into reality is a whole different story which is of no concern to the
         // tapping.
-        this.props.dispatch(setAudioMuted(!this.props._audioMuted));
+        this.props.dispatch(
+            setAudioMuted(
+                !this.props._audioMuted,
+                VIDEO_MUTISM_AUTHORITY.USER,
+                /* ensureTrack */ true));
     }
 
     /**
@@ -182,7 +197,11 @@ class Toolbox extends Component {
         // sets the state of base/media. Whether the user's intention will turn
         // into reality is a whole different story which is of no concern to the
         // tapping.
-        this.props.dispatch(setVideoMuted(!this.props._videoMuted));
+        this.props.dispatch(
+            setVideoMuted(
+                !this.props._videoMuted,
+                VIDEO_MUTISM_AUTHORITY.USER,
+                /* ensureTrack */ true));
     }
 
     /**
@@ -264,12 +283,15 @@ class Toolbox extends Component {
                     onClick = { this.props._onToggleAudioOnly }
                     style = { style }
                     underlayColor = { underlayColor } />
-                <ToolbarButton
-                    iconName = 'link'
-                    iconStyle = { iconStyle }
-                    onClick = { this.props._onShareRoom }
-                    style = { style }
-                    underlayColor = { underlayColor } />
+                {
+                    _SHARE_ROOM_TOOLBAR_BUTTON
+                        && <ToolbarButton
+                            iconName = 'link'
+                            iconStyle = { iconStyle }
+                            onClick = { this.props._onShareRoom }
+                            style = { style }
+                            underlayColor = { underlayColor } />
+                }
             </View>
         );
 
@@ -309,7 +331,7 @@ function _mapDispatchToProps(dispatch) {
          * Sets the lock i.e. password protection of the conference/room.
          *
          * @private
-         * @returns {Object} Dispatched action.
+         * @returns {void}
          * @type {Function}
          */
         _onRoomLock() {
@@ -320,7 +342,7 @@ function _mapDispatchToProps(dispatch) {
          * Begins the UI procedure to share the conference/room URL.
          *
          * @private
-         * @returns {void} Dispatched action.
+         * @returns {void}
          * @type {Function}
          */
         _onShareRoom() {
@@ -331,7 +353,7 @@ function _mapDispatchToProps(dispatch) {
          * Toggles the audio-only flag of the conference.
          *
          * @private
-         * @returns {Object} Dispatched action.
+         * @returns {void}
          * @type {Function}
          */
         _onToggleAudioOnly() {
@@ -343,7 +365,7 @@ function _mapDispatchToProps(dispatch) {
          * cameras.
          *
          * @private
-         * @returns {Object} Dispatched action.
+         * @returns {void}
          * @type {Function}
          */
         _onToggleCameraFacingMode() {

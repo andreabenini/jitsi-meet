@@ -7,8 +7,47 @@ import {
 } from '../media';
 import { getLocalParticipant } from '../participants';
 
-import { TRACK_ADDED, TRACK_REMOVED, TRACK_UPDATED } from './actionTypes';
-import { createLocalTracks } from './functions';
+import {
+    TRACK_ADDED,
+    TRACK_PERMISSION_ERROR,
+    TRACK_REMOVED,
+    TRACK_UPDATED
+} from './actionTypes';
+import { createLocalTracksF } from './functions';
+
+/**
+ * Requests the creating of the desired media type tracks. Desire is expressed
+ * by base/media unless the function caller specifies desired media types
+ * explicitly and thus override base/media. Dispatches a
+ * {@code createLocalTracksA} action for the desired media types for which there
+ * are no existing tracks yet.
+ *
+ * @returns {Function}
+ */
+export function createDesiredLocalTracks(...desiredTypes) {
+    return (dispatch, getState) => {
+        const state = getState();
+
+        if (desiredTypes.length === 0) {
+            const { audio, video } = state['features/base/media'];
+
+            audio.muted || desiredTypes.push(MEDIA_TYPE.AUDIO);
+            Boolean(video.muted) || desiredTypes.push(MEDIA_TYPE.VIDEO);
+        }
+
+        const availableTypes
+            = state['features/base/tracks']
+                .filter(t => t.local)
+                .map(t => t.mediaType);
+
+        // We need to create the desired tracks which are not already available.
+        const createTypes
+            = desiredTypes.filter(type => availableTypes.indexOf(type) === -1);
+
+        createTypes.length
+            && dispatch(createLocalTracksA({ devices: createTypes }));
+    };
+}
 
 /**
  * Request to start capturing local audio and/or video. By default, the user
@@ -17,7 +56,7 @@ import { createLocalTracks } from './functions';
  * @param {Object} [options] - For info @see JitsiMeetJS.createLocalTracks.
  * @returns {Function}
  */
-export function createInitialLocalTracks(options = {}) {
+export function createLocalTracksA(options = {}) {
     return (dispatch, getState) => {
         const devices
             = options.devices || [ MEDIA_TYPE.AUDIO, MEDIA_TYPE.VIDEO ];
@@ -28,7 +67,7 @@ export function createInitialLocalTracks(options = {}) {
 
         // The following executes on React Native only at the time of this
         // writing. The effort to port Web's createInitialLocalTracksAndConnect
-        // is significant and that's where the function createLocalTracks got
+        // is significant and that's where the function createLocalTracksF got
         // born. I started with the idea a porting so that we could inherit the
         // ability to getUserMedia for audio only or video only if getUserMedia
         // for audio and video fails. Eventually though, I realized that on
@@ -37,7 +76,7 @@ export function createInitialLocalTracks(options = {}) {
         // to implement them) and the right thing to do is to ask for each
         // device separately.
         for (const device of devices) {
-            createLocalTracks(
+            createLocalTracksF(
                 {
                     cameraDeviceId: options.cameraDeviceId,
                     devices: [ device ],
@@ -46,14 +85,10 @@ export function createInitialLocalTracks(options = {}) {
                 },
                 /* firePermissionPromptIsShownEvent */ false,
                 store)
-            .then(localTracks => dispatch(_updateLocalTracks(localTracks)));
-
-            // TODO The function createLocalTracks logs the rejection reason of
-            // JitsiMeetJS.createLocalTracks so there is no real benefit to
-            // logging it here as well. Technically though,
-            // _updateLocalTracks may cause a rejection so it may be nice to log
-            // it. It's not too big of a concern at the time of this writing
-            // because React Native warns on unhandled Promise rejections.
+            .then(
+                localTracks => dispatch(_updateLocalTracks(localTracks)),
+                reason =>
+                    dispatch(_onCreateLocalTracksRejected(reason, device)));
         }
     };
 }
@@ -349,49 +384,48 @@ function _getLocalTracksToChange(currentTracks, newTracks) {
 }
 
 /**
- * Mutes or unmutes a specific <tt>JitsiLocalTrack</tt>. If the muted state of
- * the specified <tt>track</tt> is already in accord with the specified
- * <tt>muted</tt> value, then does nothing. In case the actual muting/unmuting
- * fails, a rollback action will be dispatched to undo the muting/unmuting.
+ * Implements the <tt>Promise</tt> rejection handler of
+ * <tt>createLocalTracksA</tt> and <tt>createLocalTracksF</tt>.
  *
- * @param {JitsiLocalTrack} track - The <tt>JitsiLocalTrack</tt> to mute or
- * unmute.
- * @param {boolean} muted - If the specified <tt>track</tt> is to be muted, then
- * <tt>true</tt>; otherwise, <tt>false</tt>.
+ * @param {Object} reason - The <tt>Promise</tt> rejection reason.
+ * @param {string} device - The device/<tt>MEDIA_TYPE</tt> associated with the
+ * rejection.
+ * @private
  * @returns {Function}
  */
-export function setTrackMuted(track, muted) {
+function _onCreateLocalTracksRejected({ gum }, device) {
     return dispatch => {
-        muted = Boolean(muted); // eslint-disable-line no-param-reassign
+        // If permissions are not allowed, alert the user.
+        if (gum) {
+            const { error } = gum;
 
-        if (track.isMuted() === muted) {
-            return Promise.resolve();
-        }
+            if (error) {
+                // FIXME For whatever reason (which is probably an
+                // implementation fault), react-native-webrtc will give the
+                // error in one of the following formats depending on whether it
+                // is attached to a remote debugger or not. (The remote debugger
+                // scenario suggests that react-native-webrtc is at fault
+                // because the remote debugger is Google Chrome and then its
+                // JavaScript engine will define DOMException. I suspect I wrote
+                // react-native-webrtc to return the error in the alternative
+                // format if DOMException is not defined.)
+                let trackPermissionError;
 
-        const f = muted ? 'mute' : 'unmute';
+                switch (error.name) {
+                case 'DOMException':
+                    trackPermissionError = error.message === 'NotAllowedError';
+                    break;
 
-        return track[f]().catch(error => {
-            console.error(`set track ${f} failed`, error);
-
-            if (navigator.product === 'ReactNative') {
-                // Synchronizing the state of base/tracks into the state of
-                // base/media is not required in React (and, respectively, React
-                // Native) because base/media expresses the app's and the user's
-                // desires/expectations/intents and base/tracks expresses
-                // practice/reality. Unfortunately, the old Web does not comply
-                // and/or does the opposite.
-                return;
+                case 'NotAllowedError':
+                    trackPermissionError = error instanceof DOMException;
+                    break;
+                }
+                trackPermissionError && dispatch({
+                    type: TRACK_PERMISSION_ERROR,
+                    trackType: device
+                });
             }
-
-            const setMuted
-                = track.mediaType === MEDIA_TYPE.AUDIO
-                    ? setAudioMuted
-                    : setVideoMuted;
-
-            // FIXME The following disregards VIDEO_MUTISM_AUTHORITY (in the
-            // case of setVideoMuted, of course).
-            dispatch(setMuted(!muted));
-        });
+        }
     };
 }
 

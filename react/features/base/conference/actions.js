@@ -17,12 +17,14 @@ import {
     CONFERENCE_LEFT,
     CONFERENCE_WILL_JOIN,
     CONFERENCE_WILL_LEAVE,
+    DATA_CHANNEL_OPENED,
     LOCK_STATE_CHANGED,
+    P2P_STATUS_CHANGED,
     SET_AUDIO_ONLY,
-    SET_LARGE_VIDEO_HD_STATUS,
     SET_LASTN,
     SET_PASSWORD,
     SET_PASSWORD_FAILED,
+    SET_RECEIVE_VIDEO_QUALITY,
     SET_ROOM
 } from './actionTypes';
 import {
@@ -168,28 +170,19 @@ export function conferenceFailed(conference, error) {
 }
 
 /**
- * Attach any pre-existing local media to the conference once the conference has
- * been joined.
+ * Signals that a specific conference has been joined.
  *
  * @param {JitsiConference} conference - The JitsiConference instance which was
  * joined by the local participant.
- * @returns {Function}
+ * @returns {{
+ *     type: CONFERENCE_JOINED,
+ *     conference: JitsiConference
+ * }}
  */
 export function conferenceJoined(conference) {
-    return (dispatch, getState) => {
-        const localTracks
-            = getState()['features/base/tracks']
-                .filter(t => t.local)
-                .map(t => t.jitsiTrack);
-
-        if (localTracks.length) {
-            _addLocalTracksToConference(conference, localTracks);
-        }
-
-        dispatch({
-            type: CONFERENCE_JOINED,
-            conference
-        });
+    return {
+        type: CONFERENCE_JOINED,
+        conference
     };
 }
 
@@ -211,20 +204,29 @@ export function conferenceLeft(conference) {
 }
 
 /**
- * Signals the intention of the application to have the local participant join a
- * specific conference. Similar in fashion to {@code CONFERENCE_JOINED}.
+ * Attaches any pre-existing local media to the conference, before
+ * the conference will be joined. Then signals the intention of the application
+ * to have the local participant join a specific conference.
  *
  * @param {JitsiConference} conference - The JitsiConference instance the
  * local participant will (try to) join.
- * @returns {{
- *     type: CONFERENCE_WILL_JOIN,
- *     conference: JitsiConference
- * }}
+ * @returns {Function}
  */
 function _conferenceWillJoin(conference) {
-    return {
-        type: CONFERENCE_WILL_JOIN,
-        conference
+    return (dispatch, getState) => {
+        const localTracks
+            = getState()['features/base/tracks']
+                .filter(t => t.local)
+                .map(t => t.jitsiTrack);
+
+        if (localTracks.length) {
+            _addLocalTracksToConference(conference, localTracks);
+        }
+
+        dispatch({
+            type: CONFERENCE_WILL_JOIN,
+            conference
+        });
     };
 }
 
@@ -287,6 +289,19 @@ export function createConference() {
 }
 
 /**
+ * Signals the data channel with the bridge has successfully opened.
+ *
+ * @returns {{
+ *     type: DATA_CHANNEL_OPENED
+ * }}
+ */
+export function dataChannelOpened() {
+    return {
+        type: DATA_CHANNEL_OPENED
+    };
+}
+
+/**
  * Signals that the lock state of a specific JitsiConference changed.
  *
  * @param {JitsiConference} conference - The JitsiConference which had its lock
@@ -308,6 +323,22 @@ export function lockStateChanged(conference, locked) {
 }
 
 /**
+ * Sets whether or not peer2peer is currently enabled.
+ *
+ * @param {boolean} p2p - Whether or not peer2peer is currently active.
+ * @returns {{
+ *     type: P2P_STATUS_CHANGED,
+ *     p2p: boolean
+ * }}
+ */
+export function p2pStatusChanged(p2p) {
+    return {
+        type: P2P_STATUS_CHANGED,
+        p2p
+    };
+}
+
+/**
  * Sets the audio-only flag for the current JitsiConference.
  *
  * @param {boolean} audioOnly - True if the conference should be audio only;
@@ -321,23 +352,6 @@ export function setAudioOnly(audioOnly) {
     return {
         type: SET_AUDIO_ONLY,
         audioOnly
-    };
-}
-
-/**
- * Action to set whether or not the currently displayed large video is in
- * high-definition.
- *
- * @param {boolean} isLargeVideoHD - True if the large video is high-definition.
- * @returns {{
- *     type: SET_LARGE_VIDEO_HD_STATUS,
- *     isLargeVideoHD: boolean
- * }}
- */
-export function setLargeVideoHDStatus(isLargeVideoHD) {
-    return {
-        type: SET_LARGE_VIDEO_HD_STATUS,
-        isLargeVideoHD
     };
 }
 
@@ -435,6 +449,22 @@ export function setPassword(conference, method, password) {
             return Promise.reject();
         }
         }
+    };
+}
+
+/**
+ * Sets the max frame height to receive from remote participant videos.
+ *
+ * @param {number} receiveVideoQuality - The max video resolution to receive.
+ * @returns {{
+ *     type: SET_RECEIVE_VIDEO_QUALITY,
+ *     receiveVideoQuality: number
+ * }}
+ */
+export function setReceiveVideoQuality(receiveVideoQuality) {
+    return {
+        type: SET_RECEIVE_VIDEO_QUALITY,
+        receiveVideoQuality
     };
 }
 

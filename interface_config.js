@@ -35,7 +35,7 @@ var interfaceConfig = { // eslint-disable-line no-unused-vars
         //main toolbar
         'microphone', 'camera', 'desktop', 'invite', 'fullscreen', 'fodeviceselection', 'hangup', // jshint ignore:line
         //extended toolbar
-        'profile', 'addtocall', 'contacts', 'chat', 'recording', 'etherpad', 'sharedvideo', 'dialout', 'settings', 'raisehand', 'filmstrip'], // jshint ignore:line
+        'profile', 'addtocall', 'contacts', 'chat', 'recording', 'etherpad', 'sharedvideo', 'dialout', 'settings', 'raisehand', 'videoquality', 'filmstrip'], // jshint ignore:line
     /**
      * Main Toolbar Buttons
      * All of them should be in TOOLBAR_BUTTONS
@@ -47,7 +47,7 @@ var interfaceConfig = { // eslint-disable-line no-unused-vars
     // screen, 'width' would fit the original video width to the width of the
     // screen respecting ratio.
     VIDEO_LAYOUT_FIT: 'both',
-    SHOW_CONTACTLIST_AVATARS: false,
+    SHOW_CONTACTLIST_AVATARS: true,
     /**
      * Whether to only show the filmstrip (and hide the toolbar).
      */
