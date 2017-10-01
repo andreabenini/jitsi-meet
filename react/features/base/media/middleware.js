@@ -1,6 +1,6 @@
 /* @flow */
 
-import { SET_ROOM } from '../conference';
+import { SET_ROOM, setAudioOnly } from '../conference';
 import { parseURLParams } from '../config';
 import { MiddlewareRegistry } from '../redux';
 import { setTrackMuted, TRACK_ADDED } from '../tracks';
@@ -46,24 +46,30 @@ MiddlewareRegistry.register(store => next => action => {
  * specified {@code action}.
  */
 function _setRoom({ dispatch, getState }, next, action) {
+    const { room } = action;
+
+    // Read the config.
+
     const state = getState();
+    let urlParams;
     let audioMuted;
     let videoMuted;
 
-    if (action.room) {
-        // The Jitsi Meet client may override the Jitsi Meet deployment on the
-        // subject of startWithAudioMuted and/or startWithVideoMuted in the
-        // (location) URL.
-        const urlParams
+    if (room) {
+        // The Jitsi Meet client may override the Jitsi Meet deployment in the
+        // (location) URL on the subject of the following:
+        // - startAudioOnly
+        // - startWithAudioMuted
+        // - startWithVideoMuted
+        urlParams
             = parseURLParams(state['features/base/connection'].locationURL);
 
         audioMuted = urlParams['config.startWithAudioMuted'];
         videoMuted = urlParams['config.startWithVideoMuted'];
     }
 
-    // Of course, the Jitsi Meet deployment may define startWithAudioMuted
-    // and/or startWithVideoMuted through config.js which should be respected if
-    // the client did not override it.
+    // Of course, the Jitsi Meet deployment defines config.js which should be
+    // respected if the client did not override it.
     const config = state['features/base/config'];
 
     typeof audioMuted === 'undefined'
@@ -71,16 +77,28 @@ function _setRoom({ dispatch, getState }, next, action) {
     typeof videoMuted === 'undefined'
         && (videoMuted = config.startWithVideoMuted);
 
-    // Apply startWithAudioMuted and startWithVideoMuted.
-    audioMuted = Boolean(audioMuted);
-    videoMuted = Boolean(videoMuted);
+    // Apply the config.
 
     // Unconditionally express the desires/expectations/intents of the app and
     // the user i.e. the state of base/media. Eventually, practice/reality i.e.
     // the state of base/tracks will or will not agree with the desires.
-    dispatch(setAudioMuted(audioMuted));
+    dispatch(setAudioMuted(Boolean(audioMuted)));
     dispatch(setCameraFacingMode(CAMERA_FACING_MODE.USER));
-    dispatch(setVideoMuted(videoMuted));
+    dispatch(setVideoMuted(Boolean(videoMuted)));
+
+    // config.startAudioOnly
+    //
+    // FIXME Technically, the audio-only feature is owned by base/conference,
+    // not base/media so the following should be in base/conference.
+    // Practically, I presume it was easier to write the source code here
+    // because it looks like config.startWithAudioMuted and
+    // config.startWithVideoMuted.
+    if (room) {
+        let audioOnly = urlParams && urlParams['config.startAudioOnly'];
+
+        typeof audioOnly === 'undefined' && (audioOnly = config.startAudioOnly);
+        dispatch(setAudioOnly(Boolean(audioOnly)));
+    }
 
     return next(action);
 }

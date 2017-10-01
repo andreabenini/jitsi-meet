@@ -1,7 +1,7 @@
-import { LOCKED_LOCALLY, LOCKED_REMOTELY } from '../../room-lock';
-
+import { CONNECTION_WILL_CONNECT } from '../connection';
 import { JitsiConferenceErrors } from '../lib-jitsi-meet';
 import { assign, ReducerRegistry, set } from '../redux';
+import { LOCKED_LOCALLY, LOCKED_REMOTELY } from '../../room-lock';
 
 import {
     CONFERENCE_FAILED,
@@ -16,9 +16,7 @@ import {
     SET_RECEIVE_VIDEO_QUALITY,
     SET_ROOM
 } from './actionTypes';
-import {
-    VIDEO_QUALITY_LEVELS
-} from './constants';
+import { VIDEO_QUALITY_LEVELS } from './constants';
 import { isRoomValid } from './functions';
 
 /**
@@ -41,6 +39,9 @@ ReducerRegistry.register('features/base/conference', (state = {}, action) => {
 
     case CONFERENCE_WILL_LEAVE:
         return _conferenceWillLeave(state, action);
+
+    case CONNECTION_WILL_CONNECT:
+        return set(state, 'authRequired', undefined);
 
     case LOCK_STATE_CHANGED:
         return _lockStateChanged(state, action);
@@ -79,12 +80,21 @@ function _conferenceFailed(state, { conference, error }) {
         return state;
     }
 
-    const passwordRequired
-        = JitsiConferenceErrors.PASSWORD_REQUIRED === error
-            ? conference
-            : undefined;
+    let authRequired;
+    let passwordRequired;
+
+    switch (error) {
+    case JitsiConferenceErrors.AUTHENTICATION_REQUIRED:
+        authRequired = conference;
+        break;
+
+    case JitsiConferenceErrors.PASSWORD_REQUIRED:
+        passwordRequired = conference;
+        break;
+    }
 
     return assign(state, {
+        authRequired,
         conference: undefined,
         joining: undefined,
         leaving: undefined,
@@ -126,6 +136,8 @@ function _conferenceJoined(state, { conference }) {
     const locked = conference.room.locked ? LOCKED_REMOTELY : undefined;
 
     return assign(state, {
+        authRequired: undefined,
+
         /**
          * The JitsiConference instance represented by the Redux state of the
          * feature base/conference.
@@ -170,6 +182,7 @@ function _conferenceLeft(state, { conference }) {
     }
 
     return assign(state, {
+        authRequired: undefined,
         conference: undefined,
         joining: undefined,
         leaving: undefined,
@@ -209,6 +222,7 @@ function _conferenceWillLeave(state, { conference }) {
     }
 
     return assign(state, {
+        authRequired: undefined,
         joining: undefined,
 
         /**

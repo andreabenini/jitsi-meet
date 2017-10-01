@@ -35,7 +35,7 @@ var interfaceConfig = { // eslint-disable-line no-unused-vars
         //main toolbar
         'microphone', 'camera', 'desktop', 'invite', 'fullscreen', 'fodeviceselection', 'hangup', // jshint ignore:line
         //extended toolbar
-        'profile', 'addtocall', 'contacts', 'chat', 'recording', 'etherpad', 'sharedvideo', 'dialout', 'settings', 'raisehand', 'videoquality', 'filmstrip'], // jshint ignore:line
+        'profile', 'addtocall', 'contacts', 'info', 'chat', 'recording', 'etherpad', 'sharedvideo', 'dialout', 'settings', 'raisehand', 'videoquality', 'filmstrip'], // jshint ignore:line
     /**
      * Main Toolbar Buttons
      * All of them should be in TOOLBAR_BUTTONS
@@ -98,11 +98,30 @@ var interfaceConfig = { // eslint-disable-line no-unused-vars
      *
      * @type {number}
      */
-    MAXIMUM_ZOOMING_COEFFICIENT: 1.3
+    MAXIMUM_ZOOMING_COEFFICIENT: 1.3,
 
     /*
      * If indicated some of the error dialogs may point to the support URL for
      * help.
      */
-    // SUPPORT_URL: ""
+    // SUPPORT_URL: "",
+
+    /**
+     * Whether the connection indicator icon should hide itself based on
+     * connection strength. If true, the connection indicator will remain
+     * displayed while the participant has a weak connection and will hide
+     * itself after the CONNECTION_INDICATOR_HIDE_TIMEOUT when the connection is
+     * strong.
+     *
+     * @type {boolean}
+     */
+    CONNECTION_INDICATOR_AUTO_HIDE_ENABLED: false,
+
+    /**
+     * How long the connection indicator should remain displayed before hiding.
+     * Used in conjunction with CONNECTION_INDICATOR_AUTOHIDE_ENABLED.
+     *
+     * @type {number}
+     */
+    CONNECTION_INDICATOR_AUTO_HIDE_TIMEOUT: 5000
 };

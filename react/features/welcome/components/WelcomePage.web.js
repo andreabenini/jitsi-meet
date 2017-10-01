@@ -38,7 +38,8 @@ class WelcomePage extends AbstractWelcomePage {
     }
 
     /**
-     * This method is executed when comonent is mounted.
+     * Implements React's {@link Component#componentDidMount()}. Invoked
+     * immediately after this component is mounted.
      *
      * @inheritdoc
      * @returns {void}
@@ -84,7 +85,7 @@ class WelcomePage extends AbstractWelcomePage {
     }
 
     /**
-     * Handles <tt>change</tt> event of the checkbox which allows specifying
+     * Handles {@code change} event of the checkbox which allows specifying
      * whether the WelcomePage is disabled.
      *
      * @param {Event} event - The (HTML) Event which details the change such as

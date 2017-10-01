@@ -1,8 +1,9 @@
-import React, { Component } from 'react';
-import { Immutable } from 'nuclear-js';
-import { connect } from 'react-redux';
 import Avatar from '@atlaskit/avatar';
 import InlineMessage from '@atlaskit/inline-message';
+import { Immutable } from 'nuclear-js';
+import PropTypes from 'prop-types';
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
 import { getInviteURL } from '../../base/connection';
 import { Dialog, hideDialog } from '../../base/dialog';
@@ -10,11 +11,9 @@ import { translate } from '../../base/i18n';
 import MultiSelectAutocomplete
     from '../../base/react/components/web/MultiSelectAutocomplete';
 
-import { invitePeople, searchPeople } from '../functions';
+import { invitePeople, inviteRooms, searchPeople } from '../functions';
 
 declare var interfaceConfig: Object;
-
-const { PropTypes } = React;
 
 /**
  * The dialog that allows to invite people to the call.
@@ -26,6 +25,12 @@ class AddPeopleDialog extends Component {
      * @static
      */
     static propTypes = {
+        /**
+         * The {@link JitsiMeetConference} which will be used to invite "room"
+         * participants through the SIP Jibri (Video SIP gateway).
+         */
+        _conference: PropTypes.object,
+
         /**
          * The URL pointing to the service allowing for people invite.
          */
@@ -229,11 +234,17 @@ class AddPeopleDialog extends Component {
                 addToCallInProgress: true
             });
 
+            this.props._conference
+                && inviteRooms(
+                    this.props._conference,
+                    this.state.inviteItems.filter(
+                        i => i.type === 'videosipgw'));
+
             invitePeople(
                 this.props._inviteServiceUrl,
                 this.props._inviteUrl,
                 this.props._jwt,
-                this.state.inviteItems)
+                this.state.inviteItems.filter(i => i.type === 'user'))
             .then(() => {
                 this.setState({
                     addToCallInProgress: false
@@ -313,11 +324,12 @@ class AddPeopleDialog extends Component {
  * @param {Object} state - The Redux state.
  * @private
  * @returns {{
- *     _peopleSearchUrl: React.PropTypes.string,
- *     _jwt: React.PropTypes.string
+ *     _jwt: string,
+ *     _peopleSearchUrl: string
  * }}
  */
 function _mapStateToProps(state) {
+    const { conference } = state['features/base/conference'];
     const {
         inviteServiceUrl,
         peopleSearchQueryTypes,
@@ -325,6 +337,7 @@ function _mapStateToProps(state) {
      } = state['features/base/config'];
 
     return {
+        _conference: conference,
         _jwt: state['features/jwt'].jwt,
         _inviteUrl: getInviteURL(state),
         _inviteServiceUrl: inviteServiceUrl,
