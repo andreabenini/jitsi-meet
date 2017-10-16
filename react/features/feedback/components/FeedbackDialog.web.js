@@ -4,16 +4,16 @@ import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
+import { sendEvent } from '../../analytics';
 import { Dialog } from '../../base/dialog';
 import { translate } from '../../base/i18n';
-import JitsiMeetJS from '../../base/lib-jitsi-meet';
 
 import { cancelFeedback, submitFeedback } from '../actions';
 
 declare var interfaceConfig: Object;
 
-const scoreAnimationClass = interfaceConfig.ENABLE_FEEDBACK_ANIMATION
-    ? 'shake-rotate' : '';
+const scoreAnimationClass
+    = interfaceConfig.ENABLE_FEEDBACK_ANIMATION ? 'shake-rotate' : '';
 
 /**
  * The scores to display for selecting. The score is the index in the array and
@@ -145,7 +145,7 @@ class FeedbackDialog extends Component {
      * @inheritdoc
      */
     componentDidMount() {
-        JitsiMeetJS.analytics.sendEvent('feedback.open');
+        sendEvent('feedback.open');
     }
 
     /**

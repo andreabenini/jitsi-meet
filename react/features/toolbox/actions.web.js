@@ -187,7 +187,7 @@ export function hideToolbox(force: boolean = false): Function {
 
         if (!force
                 && (hovered
-                    || state['features/jwt'].callOverlayVisible
+                    || state['features/base/jwt'].callOverlayVisible
                     || SideContainerToggler.isVisible())) {
             dispatch(
                 setToolboxTimeout(
@@ -317,29 +317,6 @@ export function showSharedVideoButton(): Function {
 
         if (isButtonEnabled(buttonName)
                 && !config.disableThirdPartyRequests) {
-            dispatch(setToolbarButton(buttonName, {
-                hidden: false
-            }));
-        }
-    };
-}
-
-/**
- * Shows the dial out button if it's required and appropriate
- * flag is passed.
- *
- * @param {boolean} show - Flag showing whether to show button or not.
- * @returns {Function}
- */
-export function showDialOutButton(show: boolean): Function {
-    return (dispatch: Dispatch<*>, getState: Function) => {
-        const buttonName = 'dialout';
-
-        if (show
-                && APP.conference.sipGatewayEnabled()
-                && isButtonEnabled(buttonName)
-                && (!config.enableUserRolesBasedOnToken
-                    || !getState()['features/jwt'].isGuest)) {
             dispatch(setToolbarButton(buttonName, {
                 hidden: false
             }));

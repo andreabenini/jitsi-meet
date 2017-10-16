@@ -45,6 +45,33 @@ class Dialog extends AbstractDialog {
         bodyKey: PropTypes.string
     };
 
+    state = {
+        /**
+         * The text of the {@link TextInput} rendered by {@link Prompt} in
+         * general and by this {@code Dialog} in particular if no
+         * {@code children} are specified to it. It mimics/reimplements the
+         * functionality of {@code Prompt} because this {@code Dialog} does not
+         * really render the (whole) {@code Prompt}.
+         *
+         * @type {string}
+         */
+        text: ''
+    };
+
+    /**
+     * Initailizes a new {@code Dialog} instance.
+     *
+     * @param {Object} props - The read-only React {@code Component} props with
+     * which the new instance is to be initialized.
+     */
+    constructor(props: Object) {
+        super(props);
+
+        // Bind event handlers so they are only bound once per instance.
+        this._onChangeText = this._onChangeText.bind(this);
+        this._onSubmit = this._onSubmit.bind(this);
+    }
+
     /**
      * Implements React's {@link Component#render()}.
      *
@@ -78,11 +105,14 @@ class Dialog extends AbstractDialog {
             <Prompt
                 cancelButtonTextStyle = { cancelButtonTextStyle }
                 cancelText = { t(cancelTitleKey) }
+                defaultValue = { this.state.text }
                 onCancel = { this._onCancel }
+                onChangeText = { this._onChangeText }
                 onSubmit = { this._onSubmit }
                 placeholder = { t(bodyKey) }
                 submitButtonTextStyle = { submitButtonTextStyle }
                 submitText = { t(okTitleKey) }
+                textInputProps = { this.props.textInputProps }
                 title = { titleString || t(titleKey) }
                 visible = { true } />
         );
@@ -108,14 +138,9 @@ class Dialog extends AbstractDialog {
                 //   Secondly, we cannot get Prompt's default behavior anyway
                 //   because we've removed Prompt and we're preserving whatever
                 //   it's rendered only.
-                return (
-                    React.cloneElement(
-                        element,
-                        /* props */ {
-                            onRequestClose: this._onCancel
-                        },
-                        ...React.Children.toArray(element.props.children))
-                );
+                return this._cloneElement(element, /* props */ {
+                    onRequestClose: this._onCancel
+                });
             }
 
             if (type === TextInput) {
@@ -146,14 +171,9 @@ class Dialog extends AbstractDialog {
                         break;
                     }
 
-                    return (
-                        React.cloneElement(
-                            element,
-                            /* props */ {
-                                style: set(style, _TAG_KEY, undefined)
-                            },
-                            ...React.Children.toArray(element.props.children))
-                    );
+                    return this._cloneElement(element, /* props */ {
+                        style: set(style, _TAG_KEY, undefined)
+                    });
                 }
             }
 
@@ -161,6 +181,23 @@ class Dialog extends AbstractDialog {
         });
 
         return element;
+    }
+
+    /**
+     * Clones a specific {@code ReactElement} and adds/merges specific props
+     * into the clone.
+     *
+     * @param {ReactElement} element - The {@code ReactElement} to clone.
+     * @param {Object} props - The props to add/merge into the clone.
+     * @returns {ReactElement} The close of the specified {@code element} with
+     * the specified {@code props} added/merged.
+     */
+    _cloneElement(element, props) {
+        return (
+            React.cloneElement(
+                element,
+                props,
+                ...React.Children.toArray(element.props.children)));
     }
 
     /**
@@ -201,6 +238,32 @@ class Dialog extends AbstractDialog {
         }
 
         return mapped;
+    }
+
+    _onChangeText: (string) => void;
+
+    /**
+     * Notifies this {@code Dialog} that the text/value of the {@code TextInput}
+     * rendered by {@code Prompt} has changed.
+     *
+     * @param {string} text - The new text/value of the {@code TextInput}
+     * rendered by {@code Prompt}.
+     * @returns {void}
+     */
+    _onChangeText(text: string) {
+        this.setState({ text });
+    }
+
+    /**
+     * Submits this {@code Dialog} with the value of the {@link TextInput}
+     * rendered by {@link Prompt} unless a value is explicitly specified.
+     *
+     * @override
+     * @param {string} [value] - The submitted value if any.
+     * @returns {void}
+     */
+    _onSubmit(value: ?string) {
+        super._onSubmit(value || this.state.text);
     }
 }
 

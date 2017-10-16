@@ -19,10 +19,9 @@
 //
 
 #import <AVFoundation/AVFoundation.h>
+#import <CallKit/CallKit.h>
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-
-@import CallKit;
 
 #import <React/RCTBridge.h>
 #import <React/RCTConvert.h>
@@ -260,7 +259,10 @@ RCT_EXPORT_METHOD(updateCall:(NSString *)callUUID
     // iconTemplateImageData
     NSString *iconTemplateImageName = dictionary[@"iconTemplateImageName"];
     if (iconTemplateImageName) {
-        UIImage *iconTemplateImage = [UIImage imageNamed:iconTemplateImageName];
+        UIImage *iconTemplateImage
+            = [UIImage imageNamed:iconTemplateImageName
+                         inBundle:[NSBundle bundleForClass:self.class]
+    compatibleWithTraitCollection:nil];
         if (iconTemplateImage) {
             providerConfiguration.iconTemplateImageData
                 = UIImagePNGRepresentation(iconTemplateImage);

@@ -1,8 +1,9 @@
-/* @flow */
+// @flow
 
 import { NativeModules } from 'react-native';
 import uuid from 'uuid';
 
+import { sendEvent } from '../../analytics';
 import { APP_WILL_MOUNT, APP_WILL_UNMOUNT, appNavigate } from '../../app';
 import {
     CONFERENCE_FAILED,
@@ -83,7 +84,7 @@ function _appWillMount({ dispatch, getState }, next, action) {
     const result = next(action);
 
     CallKit.setProviderConfiguration({
-        iconTemplateImageName: 'AppIcon40x40',
+        iconTemplateImageName: 'CallKitIcon',
         localizedName: NativeModules.AppInfo.name
     });
 
@@ -209,18 +210,22 @@ function _conferenceLeft(store, next, action) {
 function _conferenceWillJoin({ getState }, next, action) {
     const result = next(action);
 
-    const conference = action.conference;
-    const url = getInviteURL(getState);
-    const hasVideo = !isVideoMutedByAudioOnly(getState);
+    const { conference } = action;
+    const state = getState();
+    const url = getInviteURL(state);
+    const hasVideo = !isVideoMutedByAudioOnly(state);
 
     // When assigning the call UUID, do so in upper case, since iOS will
     // return it upper cased.
     conference.callUUID = uuid.v4().toUpperCase();
     CallKit.startCall(conference.callUUID, url.toString(), hasVideo)
         .then(() => {
-            const { room } = getState()['features/base/conference'];
+            const { room } = state['features/base/conference'];
+            const { callee } = state['features/base/jwt'];
 
-            CallKit.updateCall(conference.callUUID, { displayName: room });
+            CallKit.updateCall(
+                conference.callUUID,
+                { displayName: (callee && callee.name) || room });
         });
 
     return result;
@@ -238,9 +243,9 @@ function _onPerformEndCallAction({ callUUID }) {
     const conference = getCurrentConference(getState);
 
     if (conference && conference.callUUID === callUUID) {
-        // We arrive here when a call is ended by the system, for
-        // example when another incoming call is received and the user
-        // selects "End & Accept".
+        // We arrive here when a call is ended by the system, for example, when
+        // another incoming call is received and the user selects "End &
+        // Accept".
         delete conference.callUUID;
         dispatch(appNavigate(undefined));
     }
@@ -264,7 +269,10 @@ function _onPerformSetMutedCallAction({ callUUID, muted: newValue }) {
         const { muted: oldValue } = getState()['features/base/media'].audio;
 
         if (oldValue !== newValue) {
-            dispatch(setAudioMuted(Boolean(newValue)));
+            const value = Boolean(newValue);
+
+            sendEvent(`callkit.audio.${value ? 'muted' : 'unmuted'}`);
+            dispatch(setAudioMuted(value));
         }
     }
 }

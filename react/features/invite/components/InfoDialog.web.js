@@ -3,9 +3,10 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
 import { getInviteURL } from '../../base/connection';
+import { openDialog } from '../../base/dialog';
 import { translate } from '../../base/i18n';
 
-import { openAddPeopleDialog } from '../actions';
+import AddPeopleDialog from './AddPeopleDialog';
 
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
@@ -157,7 +158,7 @@ class InfoDialog extends Component {
      * @returns {void}
      */
     _onOpenInviteDialog() {
-        this.props.dispatch(openAddPeopleDialog());
+        this.props.dispatch(openDialog(AddPeopleDialog));
 
         if (this.props.onClose) {
             this.props.onClose();
@@ -191,7 +192,7 @@ class InfoDialog extends Component {
 function _mapStateToProps(state) {
     return {
         _inviteURL: getInviteURL(state),
-        _showAddPeople: !state['features/jwt'].isGuest
+        _showAddPeople: !state['features/base/jwt'].isGuest
     };
 }
 

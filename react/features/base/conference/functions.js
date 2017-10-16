@@ -1,5 +1,14 @@
+// @flow
+
 import { JitsiTrackErrors } from '../lib-jitsi-meet';
+import { getLocalParticipant } from '../participants';
 import { toState } from '../redux';
+
+import {
+    AVATAR_ID_COMMAND,
+    AVATAR_URL_COMMAND,
+    EMAIL_COMMAND
+} from './constants';
 
 /**
  * Attach a set of local tracks to a conference.
@@ -9,7 +18,9 @@ import { toState } from '../redux';
  * @protected
  * @returns {Promise}
  */
-export function _addLocalTracksToConference(conference, localTracks) {
+export function _addLocalTracksToConference(
+        conference: { addTrack: Function, getLocalTracks: Function },
+        localTracks: Array<Object>) {
     const conferenceLocalTracks = conference.getLocalTracks();
     const promises = [];
 
@@ -39,7 +50,7 @@ export function _addLocalTracksToConference(conference, localTracks) {
  * {@code getState} function.
  * @returns {JitsiConference|undefined}
  */
-export function getCurrentConference(stateful) {
+export function getCurrentConference(stateful: Function | Object) {
     const { conference, joining, leaving }
         = toState(stateful)['features/base/conference'];
 
@@ -58,7 +69,7 @@ export function getCurrentConference(stateful) {
  * @protected
  * @returns {void}
  */
-export function _handleParticipantError(err) {
+export function _handleParticipantError(err: { message: ?string }) {
     // XXX DataChannels are initialized at some later point when the conference
     // has multiple participants, but code that pins or selects a participant
     // might be executed before. So here we're swallowing a particular error.
@@ -77,7 +88,7 @@ export function _handleParticipantError(err) {
  * @returns {boolean} If the specified room name is valid, then true; otherwise,
  * false.
  */
-export function isRoomValid(room) {
+export function isRoomValid(room: ?string) {
     return typeof room === 'string' && room !== '';
 }
 
@@ -89,7 +100,9 @@ export function isRoomValid(room) {
  * @protected
  * @returns {Promise}
  */
-export function _removeLocalTracksFromConference(conference, localTracks) {
+export function _removeLocalTracksFromConference(
+        conference: { removeTrack: Function },
+        localTracks: Array<Object>) {
     return Promise.all(localTracks.map(track =>
         conference.removeTrack(track)
             .catch(err => {
@@ -120,4 +133,32 @@ function _reportError(msg, err) {
     // TODO This is a good point to call some global error handler when we have
     // one.
     console.error(msg, err);
+}
+
+/**
+ * Sends a representation of the local participant such as her avatar (URL),
+ * e-mail address, and display name to (the remote participants of) a specific
+ * conference.
+ *
+ * @param {Function|Object} stateful - The redux store, state, or
+ * {@code getState} function.
+ * @param {JitsiConference} conference - The {@code JitsiConference} to which
+ * the representation of the local participant is to be sent.
+ * @returns {void}
+ */
+export function sendLocalParticipant(
+        stateful: Function | Object,
+        conference: { sendCommand: Function, setDisplayName: Function }) {
+    const { avatarID, avatarURL, email, name } = getLocalParticipant(stateful);
+
+    avatarID && conference.sendCommand(AVATAR_ID_COMMAND, {
+        value: avatarID
+    });
+    avatarURL && conference.sendCommand(AVATAR_URL_COMMAND, {
+        value: avatarURL
+    });
+    email && conference.sendCommand(EMAIL_COMMAND, {
+        value: email
+    });
+    conference.setDisplayName(name);
 }
