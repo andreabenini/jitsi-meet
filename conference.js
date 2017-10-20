@@ -1,5 +1,4 @@
 /* global $, APP, JitsiMeetJS, config, interfaceConfig */
-const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 import { openConnection } from './connection';
 
@@ -16,7 +15,7 @@ import UIEvents from './service/UI/UIEvents';
 import UIUtil from './modules/UI/util/UIUtil';
 import * as JitsiMeetConferenceEvents from './ConferenceEvents';
 
-import { initAnalytics, sendEvent } from './react/features/analytics';
+import { initAnalytics, sendAnalyticsEvent } from './react/features/analytics';
 
 import EventEmitter from 'events';
 
@@ -87,6 +86,8 @@ import {
     isButtonEnabled,
     showDesktopSharingButton
 } from './react/features/toolbox';
+
+const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 const eventEmitter = new EventEmitter();
 
@@ -211,10 +212,12 @@ function maybeRedirectToWelcomePage(options) {
 
     // if Welcome page is enabled redirect to welcome page after 3 sec.
     if (config.enableWelcomePage) {
-        setTimeout(() => {
-            APP.settings.setWelcomePageEnabled(true);
-            assignWindowLocationPathname('./');
-        }, 3000);
+        setTimeout(
+            () => {
+                APP.settings.setWelcomePageEnabled(true);
+                assignWindowLocationPathname('./');
+            },
+            3000);
     }
 }
 
@@ -595,10 +598,8 @@ export default {
                         // Try audio only...
                         audioAndVideoError = err;
 
-                        return createLocalTracksF(
-                            { devices: [ 'audio' ] },
-                            true
-                        );
+                        return (
+                            createLocalTracksF({ devices: [ 'audio' ] }, true));
                     } else if (requestedAudio && !requestedVideo) {
                         audioOnlyError = err;
 
@@ -718,12 +719,12 @@ export default {
             .then(([ tracks, con ]) => {
                 tracks.forEach(track => {
                     if (track.isAudioTrack() && this.isLocalAudioMuted()) {
-                        sendEvent('conference.audio.initiallyMuted');
+                        sendAnalyticsEvent('conference.audio.initiallyMuted');
                         logger.log('Audio mute: initially muted');
                         track.mute();
                     } else if (track.isVideoTrack()
                                     && this.isLocalVideoMuted()) {
-                        sendEvent('conference.video.initiallyMuted');
+                        sendAnalyticsEvent('conference.video.initiallyMuted');
                         logger.log('Video mute: initially muted');
                         track.mute();
                     }
@@ -949,9 +950,9 @@ export default {
     isParticipantModerator(id) {
         const user = room.getParticipantById(id);
 
-
         return user && user.isModerator();
     },
+
     get membersCount() {
         return room.getParticipants().length + 1;
     },
@@ -1084,7 +1085,6 @@ export default {
     getParticipantConnectionStatus(id) {
         const participant = this.getParticipantById(id);
 
-
         return participant ? participant.getConnectionStatus() : null;
     },
 
@@ -1109,12 +1109,10 @@ export default {
         }
 
         return interfaceConfig.DEFAULT_REMOTE_DISPLAY_NAME;
-
-
     },
+
     getMyUserId() {
-        return this._room
-            && this._room.myUserId();
+        return this._room && this._room.myUserId();
     },
 
     /**
@@ -1287,14 +1285,22 @@ export default {
         const options = config;
 
         if (config.enableRecording && !config.recordingType) {
-            options.recordingType = config.hosts
-                && (typeof config.hosts.jirecon !== 'undefined')
-                ? 'jirecon' : 'colibri';
+            options.recordingType
+                = config.hosts && (typeof config.hosts.jirecon !== 'undefined')
+                    ? 'jirecon'
+                    : 'colibri';
         }
+
+        const nick = APP.settings.getDisplayName();
+
+        if (nick) {
+            options.displayName = nick;
+        }
+
+        options.applicationName = interfaceConfig.APP_NAME;
 
         return options;
     },
-
 
     /**
      * Start using provided video stream.
@@ -1417,7 +1423,7 @@ export default {
             promise = createLocalTracksF({ devices: [ 'video' ] })
                 .then(([ stream ]) => this.useVideoStream(stream))
                 .then(() => {
-                    sendEvent(
+                    sendAnalyticsEvent(
                         'conference.sharingDesktop.stop');
                     logger.log('switched back to local video');
                     if (!this.localVideo && wasVideoMuted) {
@@ -1484,7 +1490,6 @@ export default {
         }
 
         return this._untoggleScreenSharing();
-
     },
 
     /**
@@ -1595,34 +1600,34 @@ export default {
         this.videoSwitchInProgress = true;
 
         return this._createDesktopTrack(options)
-        .then(stream => this.useVideoStream(stream))
-        .then(() => {
-            this.videoSwitchInProgress = false;
-            sendEvent('conference.sharingDesktop.start');
-            logger.log('sharing local desktop');
-        })
-        .catch(error => {
-            this.videoSwitchInProgress = false;
+            .then(stream => this.useVideoStream(stream))
+            .then(() => {
+                this.videoSwitchInProgress = false;
+                sendAnalyticsEvent('conference.sharingDesktop.start');
+                logger.log('sharing local desktop');
+            })
+            .catch(error => {
+                this.videoSwitchInProgress = false;
 
-            // Pawel: With this call I'm trying to preserve the original
-            // behaviour although it is not clear why would we "untoggle"
-            // on failure. I suppose it was to restore video in case there
-            // was some problem during "this.useVideoStream(desktopStream)".
-            // It's important to note that the handler will not be available
-            // if we fail early on trying to get desktop media (which makes
-            // sense, because the camera video is still being used, so
-            // nothing to "untoggle").
-            if (this._untoggleScreenSharing) {
-                this._untoggleScreenSharing();
-            }
+                // Pawel: With this call I'm trying to preserve the original
+                // behaviour although it is not clear why would we "untoggle"
+                // on failure. I suppose it was to restore video in case there
+                // was some problem during "this.useVideoStream(desktopStream)".
+                // It's important to note that the handler will not be available
+                // if we fail early on trying to get desktop media (which makes
+                // sense, because the camera video is still being used, so
+                // nothing to "untoggle").
+                if (this._untoggleScreenSharing) {
+                    this._untoggleScreenSharing();
+                }
 
-            // FIXME the code inside of _handleScreenSharingError is
-            // asynchronous, but does not return a Promise and is not part
-            // of the current Promise chain.
-            this._handleScreenSharingError(error);
+                // FIXME the code inside of _handleScreenSharingError is
+                // asynchronous, but does not return a Promise and is not part
+                // of the current Promise chain.
+                this._handleScreenSharingError(error);
 
-            return Promise.reject(error);
-        });
+                return Promise.reject(error);
+            });
     },
 
     /**
@@ -1891,7 +1896,7 @@ export default {
 
                     room.selectParticipant(id);
                 } catch (e) {
-                    sendEvent(
+                    sendAnalyticsEvent(
                         'selectParticipant.failed');
                     reportError(e);
                 }
@@ -2133,7 +2138,7 @@ export default {
                 // Longer delays will be caused by something else and will just
                 // poison the data.
                 if (delay < 2000) {
-                    sendEvent('stream.switch.delay', { value: delay });
+                    sendAnalyticsEvent('stream.switch.delay', { value: delay });
                 }
             });
 
@@ -2166,7 +2171,7 @@ export default {
         APP.UI.addListener(
             UIEvents.VIDEO_DEVICE_CHANGED,
             cameraDeviceId => {
-                sendEvent('settings.changeDevice.video');
+                sendAnalyticsEvent('settings.changeDevice.video');
                 createLocalTracksF({
                     devices: [ 'video' ],
                     cameraDeviceId,
@@ -2194,7 +2199,7 @@ export default {
         APP.UI.addListener(
             UIEvents.AUDIO_DEVICE_CHANGED,
             micDeviceId => {
-                sendEvent(
+                sendAnalyticsEvent(
                     'settings.changeDevice.audioIn');
                 createLocalTracksF({
                     devices: [ 'audio' ],
@@ -2215,7 +2220,7 @@ export default {
         APP.UI.addListener(
             UIEvents.AUDIO_OUTPUT_DEVICE_CHANGED,
             audioOutputDeviceId => {
-                sendEvent(
+                sendAnalyticsEvent(
                     'settings.changeDevice.audioOut');
                 APP.settings.setAudioOutputDeviceId(audioOutputDeviceId)
                     .then(() => logger.log('changed audio output device'))
@@ -2423,7 +2428,7 @@ export default {
                     if (audioWasMuted
                         || currentDevices.audioinput.length
                         > availableAudioInputDevices.length) {
-                        sendEvent('deviceListChanged.audio.muted');
+                        sendAnalyticsEvent('deviceListChanged.audio.muted');
                         logger.log('Audio mute: device list changed');
                         muteLocalAudio(true);
                     }
@@ -2434,7 +2439,7 @@ export default {
                         && (videoWasMuted
                             || currentDevices.videoinput.length
                                 > availableVideoInputDevices.length)) {
-                        sendEvent('deviceListChanged.video.muted');
+                        sendAnalyticsEvent('deviceListChanged.video.muted');
                         logger.log('Video mute: device list changed');
                         muteLocalVideo(true);
                     }
@@ -2530,7 +2535,7 @@ export default {
      * NOTE: Should be used after conference.init
      */
     logEvent(name, value, label) {
-        sendEvent(name, {
+        sendAnalyticsEvent(name, {
             value,
             label
         });
