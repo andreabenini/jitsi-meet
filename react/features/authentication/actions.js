@@ -1,7 +1,7 @@
 // @flow
 
 import { appNavigate } from '../app';
-import { checkIfCanJoin } from '../base/conference';
+import { checkIfCanJoin, conferenceLeft } from '../base/conference';
 import { openDialog } from '../base/dialog';
 
 import {
@@ -82,8 +82,19 @@ export function cancelLogin() {
  * @returns {Function}
  */
 export function cancelWaitForOwner() {
-    return (dispatch: Dispatch<*>) => {
+    return (dispatch: Dispatch<*>, getState: Function) => {
         dispatch(stopWaitForOwner());
+
+        // XXX The error associated with CONFERENCE_FAILED was marked as
+        // recoverable by the feature room-lock and, consequently,
+        // recoverable-aware features such as mobile's external-api did not
+        // deliver the CONFERENCE_FAILED to the SDK clients/consumers. Since the
+        // app/user is going to nativate to WelcomePage, the SDK
+        // clients/consumers need an event.
+        const { authRequired } = getState()['features/base/conference'];
+
+        authRequired && dispatch(conferenceLeft(authRequired));
+
         dispatch(appNavigate(undefined));
     };
 }

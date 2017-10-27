@@ -183,19 +183,34 @@ function _conferenceJoined(state, { conference }) {
  * reduction of the specified action.
  */
 function _conferenceLeft(state, { conference }) {
-    if (state.conference !== conference) {
-        return state;
+    let nextState = state;
+
+    if (state.authRequired === conference) {
+        nextState = set(nextState, 'authRequired', undefined);
+    }
+    if (state.conference === conference) {
+        nextState = assign(nextState, {
+            conference: undefined,
+            joining: undefined,
+            leaving: undefined,
+
+            // XXX Clear/unset locked & password here for a conference which has
+            // been LOCKED_LOCALLY.
+            locked: undefined,
+            password: undefined
+        });
+    }
+    if (state.passwordRequired === conference) {
+        nextState = assign(nextState, {
+            // XXX Clear/unset locked & password here for a conference which has
+            // been LOCKED_REMOTELY.
+            locked: undefined,
+            password: undefined,
+            passwordRequired: undefined
+        });
     }
 
-    return assign(state, {
-        authRequired: undefined,
-        conference: undefined,
-        joining: undefined,
-        leaving: undefined,
-        locked: undefined,
-        password: undefined,
-        passwordRequired: undefined
-    });
+    return nextState;
 }
 
 /**
