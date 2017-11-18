@@ -42,14 +42,16 @@ import {
  */
 export const RECORDING_TRANSLATION_KEYS = {
     failedToStartKey: 'recording.failedToStart',
-    recordingBusy: 'liveStreaming.busy',
+    recordingBusy: 'recording.busy',
+    recordingBusyTitle: 'recording.busyTitle',
     recordingButtonTooltip: 'recording.buttonTooltip',
     recordingErrorKey: 'recording.error',
     recordingOffKey: 'recording.off',
     recordingOnKey: 'recording.on',
     recordingPendingKey: 'recording.pending',
     recordingTitle: 'dialog.recording',
-    recordingUnavailable: 'recording.unavailable'
+    recordingUnavailable: 'recording.unavailable',
+    recordingUnavailableTitle: 'recording.unavailableTitle'
 };
 
 /**
@@ -62,13 +64,15 @@ export const RECORDING_TRANSLATION_KEYS = {
 export const STREAMING_TRANSLATION_KEYS = {
     failedToStartKey: 'liveStreaming.failedToStart',
     recordingBusy: 'liveStreaming.busy',
+    recordingBusyTitle: 'liveStreaming.busyTitle',
     recordingButtonTooltip: 'liveStreaming.buttonTooltip',
     recordingErrorKey: 'liveStreaming.error',
     recordingOffKey: 'liveStreaming.off',
     recordingOnKey: 'liveStreaming.on',
     recordingPendingKey: 'liveStreaming.pending',
     recordingTitle: 'dialog.liveStreaming',
-    recordingUnavailable: 'liveStreaming.unavailable'
+    recordingUnavailable: 'liveStreaming.unavailable',
+    recordingUnavailableTitle: 'liveStreaming.unavailableTitle'
 };
 
 /**
@@ -298,7 +302,12 @@ const Recording = {
         if (config.iAmRecorder) {
             VideoLayout.enableDeviceAvailabilityIcons(
                 APP.conference.getMyUserId(), false);
-            VideoLayout.setLocalVideoVisible(false);
+
+            // in case of iAmSipGateway keep local video visible
+            if (!config.iAmSipGateway) {
+                VideoLayout.setLocalVideoVisible(false);
+            }
+
             APP.store.dispatch(setToolboxEnabled(false));
             APP.store.dispatch(setNotificationsEnabled(false));
             APP.UI.messageHandler.enablePopups(false);
@@ -513,25 +522,17 @@ const Recording = {
             break;
         }
         case JitsiRecordingStatus.BUSY: {
-            dialog = APP.UI.messageHandler.openMessageDialog(
-                this.recordingTitle,
-                this.recordingBusy,
-                null,
-                () => {
-                    dialog = null;
-                }
-            );
+            APP.UI.messageHandler.showWarning({
+                descriptionKey: this.recordingBusy,
+                titleKey: this.recordingBusyTitle
+            });
             break;
         }
         default: {
-            dialog = APP.UI.messageHandler.openMessageDialog(
-                this.recordingTitle,
-                this.recordingUnavailable,
-                null,
-                () => {
-                    dialog = null;
-                }
-            );
+            APP.UI.messageHandler.showError({
+                descriptionKey: this.recordingUnavailable,
+                titleKey: this.recordingUnavailableTitle
+            });
         }
         }
     },

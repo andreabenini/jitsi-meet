@@ -1,10 +1,12 @@
 /* global __DEV__ */
 
 import PropTypes from 'prop-types';
+import React from 'react';
 import { Linking } from 'react-native';
 
 import '../../analytics';
 import '../../authentication';
+import { AspectRatioDetector } from '../../base/aspect-ratio';
 import { Platform } from '../../base/react';
 import '../../mobile/audio-mode';
 import '../../mobile/background';
@@ -84,6 +86,20 @@ export class App extends AbstractApp {
         Linking.removeEventListener('url', this._onLinkingURL);
 
         super.componentWillUnmount();
+    }
+
+    /**
+     * Injects {@link AspectRatioDetector} in order to detect the aspect ratio
+     * of this {@code App}'s user interface and afford {@link AspectRatioAware}.
+     *
+     * @override
+     */
+    _createElement(component, props) {
+        return (
+            <AspectRatioDetector>
+                { super._createElement(component, props) }
+            </AspectRatioDetector>
+        );
     }
 
     /**

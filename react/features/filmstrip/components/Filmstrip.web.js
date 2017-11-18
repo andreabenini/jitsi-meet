@@ -17,7 +17,7 @@ import { shouldRemoteVideosBeVisible } from '../functions';
  *
  * @extends Component
  */
-class Filmstrip extends Component {
+class Filmstrip extends Component<*> {
     _isHovered: boolean;
 
     _notifyOfHoveredStateUpdate: Function;
@@ -32,6 +32,12 @@ class Filmstrip extends Component {
      * @static
      */
     static propTypes = {
+        /**
+         * Whether invite button rendering should be skipped,
+         * by default it is. false
+         */
+        _hideInviteButton: PropTypes.bool,
+
         /**
          * Whether or not remote videos are currently being hovered over.
          */
@@ -110,7 +116,10 @@ class Filmstrip extends Component {
                         id = 'filmstripLocalVideo'
                         onMouseOut = { this._onMouseOut }
                         onMouseOver = { this._onMouseOver }>
-                        { this.props.filmstripOnly ? null : <InviteButton /> }
+                        { this.props.filmstripOnly
+                            || this.props._hideInviteButton
+                            ? null : <InviteButton /> }
+                        <div id = 'filmstripLocalVideoThumbnail' />
                     </div>
                     <div
                         className = 'filmstrip__videos'
@@ -184,12 +193,14 @@ class Filmstrip extends Component {
  * @private
  * @returns {{
  *     _hovered: boolean,
+ *     _hideInviteButton: boolean,
  *     _remoteVideosVisible: boolean
  * }}
  */
 function _mapStateToProps(state) {
     return {
         _hovered: state['features/filmstrip'].hovered,
+        _hideInviteButton: state['features/base/config'].iAmRecorder,
         _remoteVideosVisible: shouldRemoteVideosBeVisible(state)
     };
 }

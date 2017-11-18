@@ -111,14 +111,10 @@ export default class SharedVideoManager {
                 },
                 () => {}); // eslint-disable-line no-empty-function
         } else {
-            dialog = APP.UI.messageHandler.openMessageDialog(
-                'dialog.shareVideoTitle',
-                'dialog.alreadySharedVideoMsg',
-                null,
-                () => {
-                    dialog = null;
-                }
-            );
+            APP.UI.messageHandler.showWarning({
+                descriptionKey: 'dialog.alreadySharedVideoMsg',
+                titleKey: 'dialog.alreadySharedVideoTitle'
+            });
             sendAnalyticsEvent('sharedvideo.alreadyshared');
         }
     }
@@ -274,7 +270,7 @@ export default class SharedVideoManager {
             const thumb = new SharedVideoThumb(
                 self.url, SHARED_VIDEO_CONTAINER_TYPE, VideoLayout);
 
-            thumb.setDisplayName(player.getVideoData().title);
+            thumb.setDisplayName('YouTube');
             VideoLayout.addRemoteVideoContainer(self.url, thumb);
 
             const iframe = player.getIframe();
@@ -297,7 +293,7 @@ export default class SharedVideoManager {
             APP.store.dispatch(participantJoined({
                 id: self.url,
                 isBot: true,
-                name: player.getVideoData().title
+                name: 'YouTube'
             }));
 
             VideoLayout.handleVideoThumbClicked(self.url);

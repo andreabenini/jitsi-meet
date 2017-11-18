@@ -4,6 +4,10 @@ import { View } from 'react-native';
 import { connect } from 'react-redux';
 
 import { sendAnalyticsEvent } from '../../analytics';
+import {
+    isNarrowAspectRatio,
+    makeAspectRatioAware
+} from '../../base/aspect-ratio';
 import { toggleAudioOnly } from '../../base/conference';
 import {
     MEDIA_TYPE,
@@ -21,6 +25,8 @@ import {
     abstractMapDispatchToProps,
     abstractMapStateToProps
 } from '../functions';
+
+import AudioRouteButton from './AudioRouteButton';
 import styles from './styles';
 import ToolbarButton from './ToolbarButton';
 
@@ -119,16 +125,16 @@ class Toolbox extends Component {
      * @returns {ReactElement}
      */
     render() {
+        const toolboxStyle
+            = isNarrowAspectRatio(this)
+                ? styles.toolboxNarrow
+                : styles.toolboxWide;
+
         return (
             <Container
-                style = { styles.toolbarContainer }
-                visible = { this.props._visible }>
-                {
-                    this._renderPrimaryToolbar()
-                }
-                {
-                    this._renderSecondaryToolbar()
-                }
+                style = { toolboxStyle }
+                visible = { this.props._visible } >
+                { this._renderToolbars() }
             </Container>
         );
     }
@@ -228,7 +234,9 @@ class Toolbox extends Component {
         /* eslint-disable react/jsx-handler-names */
 
         return (
-            <View style = { styles.primaryToolbar }>
+            <View
+                key = 'primaryToolbar'
+                style = { styles.primaryToolbar }>
                 <ToolbarButton
                     iconName = { audioButtonStyles.iconName }
                     iconStyle = { audioButtonStyles.iconStyle }
@@ -271,7 +279,17 @@ class Toolbox extends Component {
         /* eslint-disable react/jsx-curly-spacing,react/jsx-handler-names */
 
         return (
-            <View style = { styles.secondaryToolbar }>
+            <View
+                key = 'secondaryToolbar'
+                style = { styles.secondaryToolbar }>
+                {
+                    AudioRouteButton
+                        && <AudioRouteButton
+                            iconName = { 'volume' }
+                            iconStyle = { iconStyle }
+                            style = { style }
+                            underlayColor = { underlayColor } />
+                }
                 <ToolbarButton
                     disabled = { audioOnly || videoMuted }
                     iconName = 'switch-camera'
@@ -280,17 +298,17 @@ class Toolbox extends Component {
                     style = { style }
                     underlayColor = { underlayColor } />
                 <ToolbarButton
+                    iconName = { audioOnly ? 'visibility-off' : 'visibility' }
+                    iconStyle = { iconStyle }
+                    onClick = { this.props._onToggleAudioOnly }
+                    style = { style }
+                    underlayColor = { underlayColor } />
+                <ToolbarButton
                     iconName = {
                         this.props._locked ? 'security-locked' : 'security'
                     }
                     iconStyle = { iconStyle }
                     onClick = { this.props._onRoomLock }
-                    style = { style }
-                    underlayColor = { underlayColor } />
-                <ToolbarButton
-                    iconName = { audioOnly ? 'visibility-off' : 'visibility' }
-                    iconStyle = { iconStyle }
-                    onClick = { this.props._onToggleAudioOnly }
                     style = { style }
                     underlayColor = { underlayColor } />
                 {
@@ -306,6 +324,19 @@ class Toolbox extends Component {
         );
 
         /* eslint-enable react/jsx-curly-spacing,react/jsx-handler-names */
+    }
+
+    /**
+     * Renders the primary and the secondary toolbars.
+     *
+     * @private
+     * @returns {[ReactElement, ReactElement]}
+     */
+    _renderToolbars() {
+        return [
+            this._renderSecondaryToolbar(),
+            this._renderPrimaryToolbar()
+        ];
     }
 }
 
@@ -420,4 +451,5 @@ function _mapStateToProps(state) {
     };
 }
 
-export default connect(_mapStateToProps, _mapDispatchToProps)(Toolbox);
+export default connect(_mapStateToProps, _mapDispatchToProps)(
+    makeAspectRatioAware(Toolbox));

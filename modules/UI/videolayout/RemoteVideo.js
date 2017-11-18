@@ -41,7 +41,6 @@ function RemoteVideo(user, VideoLayout, emitter) {
     this.videoSpanId = `participant_${this.id}`;
     SmallVideo.call(this, VideoLayout);
     this._audioStreamElement = null;
-    this.hasRemoteVideoMenu = false;
     this._supportsRemoteControl = false;
     this.statsPopoverLocation = interfaceConfig.VERTICAL_FILMSTRIP
         ? 'left bottom' : 'top center';
@@ -81,6 +80,8 @@ function RemoteVideo(user, VideoLayout, emitter) {
         = this._requestRemoteControlPermissions.bind(this);
     this._setAudioVolume = this._setAudioVolume.bind(this);
     this._stopRemoteControl = this._stopRemoteControl.bind(this);
+
+    this.container.onclick = this._onContainerClick.bind(this);
 }
 
 RemoteVideo.prototype = Object.create(SmallVideo.prototype);
@@ -298,9 +299,11 @@ RemoteVideo.prototype._setAudioVolume = function(newVal) {
  *
  * @param isMuted the new muted state to update to
  */
-RemoteVideo.prototype.updateRemoteVideoMenu = function(
-        isMuted = this.isAudioMuted) {
-    this.isAudioMuted = isMuted;
+RemoteVideo.prototype.updateRemoteVideoMenu = function(isMuted) {
+
+    if (typeof isMuted !== 'undefined') {
+        this.isAudioMuted = isMuted;
+    }
 
     this._generatePopupContent();
 };
@@ -343,8 +346,6 @@ RemoteVideo.prototype.addRemoteVideoMenu = function() {
     }
 
     this._generatePopupContent();
-
-    this.hasRemoteVideoMenu = true;
 };
 
 /**
@@ -540,40 +541,6 @@ RemoteVideo.prototype.addRemoteStreamElement = function(stream) {
         this.setVideoType(stream.videoType);
     }
 
-    // Add click handler.
-    const onClickHandler = event => {
-        const $source = $(event.target || event.srcElement);
-        const { classList } = event.target;
-
-        const clickedOnPopover
-            = $source.parents('.connection-info').length > 0;
-        const clickedOnPopoverTrigger
-            = $source.parents('.popover-trigger').length > 0
-                || classList.contains('popover-trigger');
-        const clickedOnRemoteMenu
-            = $source.parents('.remotevideomenu').length > 0;
-
-        const ignoreClick = clickedOnPopoverTrigger
-            || clickedOnPopover
-            || clickedOnRemoteMenu;
-
-        if (!ignoreClick) {
-            this.VideoLayout.handleVideoThumbClicked(this.id);
-        }
-
-        // On IE we need to populate this handler on video <object>
-        // and it does not give event instance as an argument,
-        // so we check here for methods.
-        if (event.stopPropagation && event.preventDefault && !ignoreClick) {
-            event.stopPropagation();
-            event.preventDefault();
-        }
-
-        return false;
-    };
-
-    this.container.onclick = onClickHandler;
-
     if (!stream.getOriginalStream()) {
         return;
     }
@@ -596,8 +563,6 @@ RemoteVideo.prototype.addRemoteStreamElement = function(stream) {
 
         streamElement = stream.attach(streamElement);
     }
-
-    $(streamElement).click(onClickHandler);
 
     if (!isVideo) {
         this._audioStreamElement = streamElement;
@@ -641,7 +606,6 @@ RemoteVideo.prototype.removeRemoteVideoMenu = function() {
     if (menuSpan.length) {
         ReactDOM.unmountComponentAtNode(menuSpan.get(0));
         menuSpan.remove();
-        this.hasRemoteVideoMenu = false;
     }
 };
 
@@ -676,6 +640,36 @@ RemoteVideo.prototype.removePresenceLabel = function() {
     if (presenceLabelContainer) {
         ReactDOM.unmountComponentAtNode(presenceLabelContainer);
     }
+};
+
+/**
+ * Callback invoked when the thumbnail is clicked. Will directly call
+ * VideoLayout to handle thumbnail click if certain elements have not been
+ * clicked.
+ *
+ * @param {MouseEvent} event - The click event to intercept.
+ * @private
+ * @returns {void}
+ */
+RemoteVideo.prototype._onContainerClick = function(event) {
+    const $source = $(event.target || event.srcElement);
+    const { classList } = event.target;
+
+    const ignoreClick = $source.parents('.popover').length > 0
+            || classList.contains('popover');
+
+    if (!ignoreClick) {
+        this.VideoLayout.handleVideoThumbClicked(this.id);
+    }
+
+    // On IE we need to populate this handler on video <object> and it does not
+    // give event instance as an argument, so we check here for methods.
+    if (event.stopPropagation && event.preventDefault && !ignoreClick) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    return false;
 };
 
 RemoteVideo.createContainer = function(spanId) {
