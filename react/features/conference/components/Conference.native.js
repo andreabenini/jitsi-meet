@@ -1,4 +1,5 @@
-import PropTypes from 'prop-types';
+// @flow
+
 import React, { Component } from 'react';
 
 // eslint-disable-next-line react-native/split-platform-components
@@ -26,65 +27,68 @@ import styles from './styles';
 const _TOOLBOX_TIMEOUT_MS = 5000;
 
 /**
+ * The type of the React {@code Component} props of {@link Conference}.
+ */
+type Props = {
+
+    /**
+     * The indicator which determines that we are still connecting to the
+     * conference which includes establishing the XMPP connection and then
+     * joining the room. If truthy, then an activity/loading indicator will
+     * be rendered.
+     *
+     * @private
+     */
+    _connecting: boolean,
+
+    /**
+     * The handler which dispatches the (redux) action connect.
+     *
+     * @private
+     */
+    _onConnect: Function,
+
+    /**
+     * The handler which dispatches the (redux) action disconnect.
+     *
+     * @private
+     */
+    _onDisconnect: Function,
+
+    /**
+     * Handles a hardware button press for back navigation. Leaves the
+     * associated {@code Conference}.
+     *
+     * @private
+     * @returns {boolean} As the associated conference is unconditionally
+     * left and exiting the app while it renders a {@code Conference} is
+     * undesired, {@code true} is always returned.
+     */
+    _onHardwareBackPress: Function,
+
+    /**
+     * The handler which dispatches the (redux) action setToolboxVisible to
+     * show/hide the Toolbox.
+     *
+     * @private
+     */
+    _setToolboxVisible: Function,
+
+    /**
+     * The indicator which determines whether the Toolbox is visible.
+     *
+     * @private
+     */
+    _toolboxVisible: boolean
+};
+
+/**
  * The conference page of the mobile (i.e. React Native) application.
  */
-class Conference extends Component {
-    /**
-     * Conference component's property types.
-     *
-     * @static
-     */
-    static propTypes = {
-        /**
-         * The indicator which determines that we are still connecting to the
-         * conference which includes establishing the XMPP connection and then
-         * joining the room. If truthy, then an activity/loading indicator will
-         * be rendered.
-         *
-         * @private
-         */
-        _connecting: PropTypes.bool,
+class Conference extends Component<Props> {
+    _backHandler: ?BackHandler;
 
-        /**
-         * The handler which dispatches the (redux) action connect.
-         *
-         * @private
-         */
-        _onConnect: PropTypes.func,
-
-        /**
-         * The handler which dispatches the (redux) action disconnect.
-         *
-         * @private
-         */
-        _onDisconnect: PropTypes.func,
-
-        /**
-         * Handles a hardware button press for back navigation. Leaves the
-         * associated {@code Conference}.
-         *
-         * @private
-         * @returns {boolean} As the associated conference is unconditionally
-         * left and exiting the app while it renders a {@code Conference} is
-         * undesired, {@code true} is always returned.
-         */
-        _onHardwareBackPress: PropTypes.func,
-
-        /**
-         * The handler which dispatches the (redux) action setToolboxVisible to
-         * show/hide the Toolbox.
-         *
-         * @private
-         */
-        _setToolboxVisible: PropTypes.func,
-
-        /**
-         * The indicator which determines whether the Toolbox is visible.
-         *
-         * @private
-         */
-        _toolboxVisible: PropTypes.bool
-    };
+    _toolboxTimeout: ?number;
 
     /**
      * Initializes a new Conference instance.
@@ -175,6 +179,8 @@ class Conference extends Component {
     render() {
         return (
             <Container
+                accessibilityLabel = 'Conference'
+                accessible = { false }
                 onClick = { this._onClick }
                 style = { styles.conference }
                 touchFeedback = { false }>
@@ -237,6 +243,8 @@ class Conference extends Component {
         }
     }
 
+    _onClick: () => void;
+
     /**
      * Changes the value of the toolboxVisible state, thus allowing us to switch
      * between Toolbox and Filmstrip and change their visibility.
@@ -253,6 +261,8 @@ class Conference extends Component {
         // automatic toggling of the visibility should happen.
         this._clearToolboxTimeout();
     }
+
+    _onHardwareBackPress: () => boolean;
 
     /**
      * Handles a hardware button press for back navigation.
@@ -393,5 +403,6 @@ function _mapStateToProps(state) {
     };
 }
 
+// $FlowFixMe
 export default reactReduxConnect(_mapStateToProps, _mapDispatchToProps)(
     Conference);

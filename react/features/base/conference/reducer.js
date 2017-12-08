@@ -14,10 +14,12 @@ import {
     LOCK_STATE_CHANGED,
     P2P_STATUS_CHANGED,
     SET_AUDIO_ONLY,
+    SET_FOLLOW_ME,
     SET_PASSWORD,
     SET_RECEIVE_VIDEO_QUALITY,
     SET_ROOM,
-    SET_SIP_GATEWAY_ENABLED
+    SET_SIP_GATEWAY_ENABLED,
+    SET_START_MUTED_POLICY
 } from './actionTypes';
 import { VIDEO_QUALITY_LEVELS } from './constants';
 import { isRoomValid } from './functions';
@@ -55,6 +57,12 @@ ReducerRegistry.register('features/base/conference', (state = {}, action) => {
     case SET_AUDIO_ONLY:
         return _setAudioOnly(state, action);
 
+    case SET_FOLLOW_ME:
+        return {
+            ...state,
+            followMeEnabled: action.enabled
+        };
+
     case SET_PASSWORD:
         return _setPassword(state, action);
 
@@ -66,6 +74,13 @@ ReducerRegistry.register('features/base/conference', (state = {}, action) => {
 
     case SET_SIP_GATEWAY_ENABLED:
         return _setSIPGatewayEnabled(state, action);
+
+    case SET_START_MUTED_POLICY:
+        return {
+            ...state,
+            startAudioMutedPolicy: action.startAudioMutedPolicy,
+            startVideoMutedPolicy: action.startVideoMutedPolicy
+        };
     }
 
     return state;
@@ -82,7 +97,11 @@ ReducerRegistry.register('features/base/conference', (state = {}, action) => {
  * reduction of the specified action.
  */
 function _conferenceFailed(state, { conference, error }) {
-    if (state.conference && state.conference !== conference) {
+    // The current (similar to getCurrentConference in
+    // base/conference/functions.js) conference which is joining or joined:
+    const conference_ = state.conference || state.joining;
+
+    if (conference_ && conference_ !== conference) {
         return state;
     }
 
@@ -102,6 +121,7 @@ function _conferenceFailed(state, { conference, error }) {
     return assign(state, {
         authRequired,
         conference: undefined,
+        error,
         joining: undefined,
         leaving: undefined,
 
@@ -224,7 +244,10 @@ function _conferenceLeft(state, { conference }) {
  * reduction of the specified action.
  */
 function _conferenceWillJoin(state, { conference }) {
-    return set(state, 'joining', conference);
+    return assign(state, {
+        error: undefined,
+        joining: conference
+    });
 }
 
 /**

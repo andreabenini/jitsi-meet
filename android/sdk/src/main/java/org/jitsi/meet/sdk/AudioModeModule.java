@@ -37,7 +37,6 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -181,7 +180,7 @@ class AudioModeModule extends ReactContextBaseJavaModule {
     /**
      * List of currently available audio devices.
      */
-    private Set<String> availableDevices = Collections.emptySet();
+    private Set<String> availableDevices = new HashSet<>();
 
     /**
      * Currently selected device.
@@ -300,7 +299,7 @@ class AudioModeModule extends ReactContextBaseJavaModule {
      * Only used on Android < M. Runs on the main thread.
      */
     void onBluetoothDeviceChange() {
-        if (bluetoothHeadsetMonitor.isHeadsetAvailable()) {
+        if (bluetoothHeadsetMonitor != null && bluetoothHeadsetMonitor.isHeadsetAvailable()) {
             availableDevices.add(DEVICE_BLUETOOTH);
         } else {
             availableDevices.remove(DEVICE_BLUETOOTH);

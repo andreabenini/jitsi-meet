@@ -11,11 +11,6 @@ import 'jquery-contextmenu';
 import 'jQuery-Impromptu';
 import 'autosize';
 
-import 'aui';
-import 'aui-experimental';
-import 'aui-css';
-import 'aui-experimental-css';
-
 import conference from './conference';
 import API from './modules/API';
 import keyboardshortcut from './modules/keyboardshortcut/keyboardshortcut';

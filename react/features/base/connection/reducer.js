@@ -96,7 +96,13 @@ function _connectionFailed(
             connection: Object,
             error: Object | string
         }) {
-    if (state.connection && state.connection !== connection) {
+
+    // The current (similar to getCurrentConference in
+    // base/conference/functions.js) connection which is connecting or
+    // connected:
+    const connection_ = state.connection || state.connecting;
+
+    if (connection_ && connection_ !== connection) {
         return state;
     }
 

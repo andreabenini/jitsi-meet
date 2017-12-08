@@ -200,7 +200,18 @@ const Filmstrip = {
         }
 
         return 0;
+    },
 
+    /**
+     * Returns the width of filmstip
+     * @returns {number} width
+     */
+    getFilmstripWidth() {
+        return this.isFilmstripVisible()
+            ? this.filmstrip.outerWidth()
+                - parseInt(this.filmstrip.css('paddingLeft'), 10)
+                - parseInt(this.filmstrip.css('paddingRight'), 10)
+            : 0;
     },
 
     /**
@@ -428,6 +439,8 @@ const Filmstrip = {
                 promises.push(new Promise(resolve => {
                     thumbs.localThumb.animate({
                         height: local.thumbHeight,
+                        'min-height': local.thumbHeight,
+                        'min-width': local.thumbWidth,
                         width: local.thumbWidth
                     }, this._getAnimateOptions(animate, resolve));
                 }));
@@ -437,6 +450,8 @@ const Filmstrip = {
                 promises.push(new Promise(resolve => {
                     thumbs.remoteThumbs.animate({
                         height: remote.thumbHeight,
+                        'min-height': remote.thumbHeight,
+                        'min-width': remote.thumbWidth,
                         width: remote.thumbWidth
                     }, this._getAnimateOptions(animate, resolve));
                 }));

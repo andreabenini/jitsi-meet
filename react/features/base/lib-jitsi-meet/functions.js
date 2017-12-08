@@ -1,13 +1,14 @@
-/* @flow */
+// @flow
 
-import { setConfigFromURLParams } from '../../base/config';
-import { toState } from '../../base/redux';
-import { loadScript } from '../../base/util';
+import { setConfigFromURLParams } from '../config';
+import { toState } from '../redux';
+import { loadScript } from '../util';
 
 import JitsiMeetJS from './_';
 
 declare var APP: Object;
 
+const JitsiConferenceErrors = JitsiMeetJS.errors.conference;
 const JitsiConnectionErrors = JitsiMeetJS.errors.connection;
 
 /**
@@ -53,17 +54,43 @@ export function isAnalyticsEnabled(stateful: Function | Object) {
 }
 
 /**
- * Determines whether a specific JitsiConnectionErrors instance indicates a
- * fatal JitsiConnection error.
+ * Determines whether a specific {@link JitsiConferenceErrors} instance
+ * indicates a fatal {@link JitsiConference} error.
  *
- * FIXME Figure out the category of errors defined by the fucntion and describe
+ * FIXME Figure out the category of errors defined by the function and describe
  * that category. I've currently named the category fatal because it appears to
  * be used in the cases of unrecoverable errors that necessitate a reload.
  *
- * @param {Object|string} error - The JitsiConnectionErrors instance to
- * categorize/classify or an Error-like object.
- * @returns {boolean} True if the specified JitsiConnectionErrors instance
- * indicates a fatal JitsiConnection error; otherwise, false.
+ * @param {Object|string} error - The {@code JitsiConferenceErrors} instance to
+ * categorize/classify or an {@link Error}-like object.
+ * @returns {boolean} If the specified {@code JitsiConferenceErrors} instance
+ * indicates a fatal {@code JitsiConference} error, {@code true}; otherwise,
+ * {@code false}.
+ */
+export function isFatalJitsiConferenceError(error: Object | string) {
+    if (typeof error !== 'string') {
+        error = error.name; // eslint-disable-line no-param-reassign
+    }
+
+    return (
+        error === JitsiConferenceErrors.FOCUS_DISCONNECTED
+            || error === JitsiConferenceErrors.FOCUS_LEFT
+            || error === JitsiConferenceErrors.VIDEOBRIDGE_NOT_AVAILABLE);
+}
+
+/**
+ * Determines whether a specific {@link JitsiConnectionErrors} instance
+ * indicates a fatal {@link JitsiConnection} error.
+ *
+ * FIXME Figure out the category of errors defined by the function and describe
+ * that category. I've currently named the category fatal because it appears to
+ * be used in the cases of unrecoverable errors that necessitate a reload.
+ *
+ * @param {Object|string} error - The {@code JitsiConnectionErrors} instance to
+ * categorize/classify or an {@link Error}-like object.
+ * @returns {boolean} If the specified {@code JitsiConnectionErrors} instance
+ * indicates a fatal {@code JitsiConnection} error, {@code true}; otherwise,
+ * {@code false}.
  */
 export function isFatalJitsiConnectionError(error: Object | string) {
     if (typeof error !== 'string') {
@@ -80,14 +107,20 @@ export function isFatalJitsiConnectionError(error: Object | string) {
  * Loads config.js from a specific remote server.
  *
  * @param {string} url - The URL to load.
+ * @param {number} [timeout] - The timeout for the configuration to be loaded,
+ * in milliseconds. If not specified, a default value deamed appropriate for the
+ * purpsoe is used.
  * @returns {Promise<Object>}
  */
-export function loadConfig(url: string) {
+export function loadConfig(
+        url: string,
+        timeout: ?number = 10 /* seconds */ * 1000 /* in milliseconds */
+): Promise<Object> {
     let promise;
 
     if (typeof APP === 'undefined') {
         promise
-            = loadScript(url)
+            = loadScript(url, timeout)
                 .then(() => {
                     const { config } = window;
 

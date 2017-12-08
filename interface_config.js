@@ -136,12 +136,35 @@ var interfaceConfig = {
      *
      * @type {number}
      */
-    CONNECTION_INDICATOR_AUTO_HIDE_TIMEOUT: 5000
+    CONNECTION_INDICATOR_AUTO_HIDE_TIMEOUT: 5000,
 
     /**
      * The name of the application connected to the "Add people" search service.
      */
-    // ADD_PEOPLE_APP_NAME: ""
+    // ADD_PEOPLE_APP_NAME: "",
+
+    /**
+     * If true, hides the video quality label indicating the resolution status
+     * of the current large video.
+     *
+     * @type {boolean}
+     */
+    VIDEO_QUALITY_LABEL_DISABLED: false
+
+    /**
+     * Specify custom URL for downloading android mobile app.
+     */
+    // MOBILE_DOWNLOAD_LINK_ANDROID: 'https://play.google.com/store/apps/details?id=org.jitsi.meet',
+
+    /**
+     * Specify URL for downloading ios mobile app.
+     */
+    // MOBILE_DOWNLOAD_LINK_IOS: 'https://itunes.apple.com/us/app/jitsi-meet/id1165103905',
+
+    /**
+     * Specify mobile app scheme for opening the app from the mobile browser.
+     */
+    // MOBILE_APP_SCHEME: 'org.jitsi.meet'
 };
 
 /* eslint-enable no-unused-vars, no-var, max-len */

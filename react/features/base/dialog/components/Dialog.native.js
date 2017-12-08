@@ -1,6 +1,6 @@
 // @flow
 
-import PropTypes from 'prop-types';
+import _ from 'lodash';
 import React from 'react';
 import { Modal, StyleSheet, TextInput } from 'react-native';
 import Prompt from 'react-native-prompt';
@@ -11,6 +11,10 @@ import { LoadingIndicator } from '../../react';
 import { set } from '../../redux';
 
 import AbstractDialog from './AbstractDialog';
+import type {
+    Props as AbstractDialogProps,
+    State as AbstractDialogState
+} from './AbstractDialog';
 import { dialog as styles } from './styles';
 
 /**
@@ -30,33 +34,40 @@ const _SUBMIT_TEXT_TAG_VALUE = '_SUBMIT_TEXT_TAG_VALUE';
 const _TAG_KEY = '_TAG_KEY';
 
 /**
+ * The type of the React {@code Component} props of {@link Dialog}.
+ */
+type Props = {
+    ...AbstractDialogProps,
+
+    /**
+     * I18n key to put as body title.
+     */
+    bodyKey: String,
+
+    textInputProps: Object
+};
+
+/**
+ * The type of the React {@code Component} state of {@link Dialog}.
+ */
+type State = {
+    ...AbstractDialogState,
+
+    /**
+     * The text of the {@link TextInput} rendered by {@link Prompt} in
+     * general and by this {@code Dialog} in particular if no
+     * {@code children} are specified to it. It mimics/reimplements the
+     * functionality of {@code Prompt} because this {@code Dialog} does not
+     * really render the (whole) {@code Prompt}.
+     */
+    text: string
+};
+
+/**
  * Implements {@code AbstractDialog} on react-native using {@code Prompt}.
  */
-class Dialog extends AbstractDialog {
-    /**
-     * {@code AbstractDialog}'s React {@code Component} prop types.
-     *
-     * @static
-     */
-    static propTypes = {
-        ...AbstractDialog.propTypes,
-
-        /**
-         * I18n key to put as body title.
-         */
-        bodyKey: PropTypes.string
-    };
-
+class Dialog extends AbstractDialog<Props, State> {
     state = {
-        /**
-         * The text of the {@link TextInput} rendered by {@link Prompt} in
-         * general and by this {@code Dialog} in particular if no
-         * {@code children} are specified to it. It mimics/reimplements the
-         * functionality of {@code Prompt} because this {@code Dialog} does not
-         * really render the (whole) {@code Prompt}.
-         *
-         * @type {string}
-         */
         text: ''
     };
 
@@ -87,7 +98,7 @@ class Dialog extends AbstractDialog {
             cancelTitleKey = 'dialog.Cancel',
             okDisabled,
             okTitleKey = 'dialog.Ok',
-            t,
+            t /* XXX The following silences flow errors: */ = _.identity,
             titleKey,
             titleString
         } = this.props;
@@ -102,13 +113,10 @@ class Dialog extends AbstractDialog {
             [_TAG_KEY]: _SUBMIT_TEXT_TAG_VALUE
         };
 
-        // eslint-disable-next-line no-extra-parens
-        let element = (
+        let el: ?React$Element<*> = ( // eslint-disable-line no-extra-parens
             <Prompt
                 cancelButtonTextStyle = { cancelButtonTextStyle }
                 cancelText = { t(cancelTitleKey) }
-
-                // $FlowFixMeState
                 defaultValue = { this.state.text }
                 onCancel = { this._onCancel }
                 onChangeText = { this._onChangeText }
@@ -124,16 +132,18 @@ class Dialog extends AbstractDialog {
         // XXX The following implements workarounds with knowledge of
         // react-native-prompt/Prompt's implementation.
 
-        // eslint-disable-next-line no-extra-parens, new-cap
-        element = (new (element.type)(element.props)).render();
+        if (el) {
+            // eslint-disable-next-line new-cap, no-extra-parens
+            el = (new (el.type)(el.props)).render();
+        }
 
         let { children } = this.props;
 
         children = React.Children.count(children) ? children : undefined;
 
         // eslint-disable-next-line no-shadow
-        element = this._mapReactElement(element, element => {
-            const { type } = element;
+        el = this._mapReactElement(el, (el: React$Element<*>) => {
+            const { type } = el;
 
             if (type === Modal) {
                 // * Modal handles hardware button presses for back navigation.
@@ -142,7 +152,7 @@ class Dialog extends AbstractDialog {
                 //   Secondly, we cannot get Prompt's default behavior anyway
                 //   because we've removed Prompt and we're preserving whatever
                 //   it's rendered only.
-                return this._cloneElement(element, /* props */ {
+                return this._cloneElement(el, /* props */ {
                     onRequestClose: this._onCancel
                 });
             }
@@ -151,12 +161,13 @@ class Dialog extends AbstractDialog {
                 // * If this Dialog has children, they are to be rendered
                 //   instead of Prompt's TextInput.
                 if (children) {
-                    element = children; // eslint-disable-line no-param-reassign
+                    // $FlowFixMe
+                    el = children; // eslint-disable-line no-param-reassign
                     children = undefined;
                 }
 
             } else {
-                let { style } = element.props;
+                let { style } = el.props;
 
                 if (style
                         && (style = StyleSheet.flatten(style))
@@ -175,33 +186,33 @@ class Dialog extends AbstractDialog {
                         break;
                     }
 
-                    return this._cloneElement(element, /* props */ {
+                    return this._cloneElement(el, /* props */ {
                         style: set(style, _TAG_KEY, undefined)
                     });
                 }
             }
 
-            return element;
+            return el;
         });
 
-        return element;
+        return el;
     }
 
     /**
      * Clones a specific {@code ReactElement} and adds/merges specific props
      * into the clone.
      *
-     * @param {ReactElement} element - The {@code ReactElement} to clone.
+     * @param {ReactElement} el - The {@code ReactElement} to clone.
      * @param {Object} props - The props to add/merge into the clone.
-     * @returns {ReactElement} The close of the specified {@code element} with
+     * @returns {ReactElement} The close of the specified {@code el} with
      * the specified {@code props} added/merged.
      */
-    _cloneElement(element, props) {
+    _cloneElement(el: React$Element<*>, props) {
         return (
             React.cloneElement(
-                element,
+                el,
                 props,
-                ...React.Children.toArray(element.props.children)));
+                ...React.Children.toArray(el.props.children)));
     }
 
     /**
@@ -209,33 +220,35 @@ class Dialog extends AbstractDialog {
      * of calling a specific function on every node of a specific
      * {@code ReactElement} tree.
      *
-     * @param {ReactElement} element - The {@code ReactElement} to clone and
+     * @param {ReactElement} el - The {@code ReactElement} to clone and
      * call the specified {@code f} on.
      * @param {Function} f - The function to call on every node of the
-     * {@code ReactElement} tree represented by the specified {@code element}.
+     * {@code ReactElement} tree represented by the specified {@code el}.
      * @private
      * @returns {ReactElement}
      */
-    _mapReactElement(element, f) {
-        if (!element || !element.props || !element.type) {
-            return element;
+    _mapReactElement(
+            el: ?React$Element<*>,
+            f: (React$Element<*>) => ?React$Element<*>): ?React$Element<*> {
+        if (!el || !el.props || !el.type) {
+            return el;
         }
 
-        let mapped = f(element);
+        let mapped = f(el);
 
         if (mapped) {
             const { children } = mapped.props;
 
-            if (mapped === element || React.Children.count(children)) {
+            if (mapped === el || React.Children.count(children)) {
                 mapped
                     = React.cloneElement(
                         mapped,
                         /* props */ {},
                         ...React.Children.toArray(React.Children.map(
                             children,
-                            function(element) { // eslint-disable-line no-shadow
+                            function(el) { // eslint-disable-line no-shadow
                                 // eslint-disable-next-line no-invalid-this
-                                return this._mapReactElement(element, f);
+                                return this._mapReactElement(el, f);
                             },
                             this)));
             }

@@ -25,9 +25,11 @@ import {
     conferenceFailed,
     conferenceJoined,
     conferenceLeft,
+    conferenceWillJoin,
     dataChannelOpened,
     EMAIL_COMMAND,
     lockStateChanged,
+    onStartMutedPolicyChanged,
     p2pStatusChanged,
     sendLocalParticipant
 } from './react/features/base/conference';
@@ -76,6 +78,7 @@ import {
 import { getLocationContextRoot } from './react/features/base/util';
 import { statsEmitter } from './react/features/connection-indicator';
 import { showDesktopPicker } from './react/features/desktop-picker';
+import { appendSuffix } from './react/features/display-name';
 import { maybeOpenFeedbackDialog } from './react/features/feedback';
 import {
     mediaPermissionPromptVisibilityChanged,
@@ -631,11 +634,16 @@ export default {
                 });
         }
 
+        // Hide the permissions prompt/overlay as soon as the tracks are
+        // created. Don't wait for the connection to be made, since in some
+        // cases, when auth is rquired, for instance, that won't happen until
+        // the user inputs their credentials, but the dialog would be
+        // overshadowed by the overlay.
+        tryCreateLocalTracks.then(() =>
+            APP.store.dispatch(mediaPermissionPromptVisibilityChanged(false)));
+
         return Promise.all([ tryCreateLocalTracks, connect(roomName) ])
             .then(([ tracks, con ]) => {
-                APP.store.dispatch(
-                    mediaPermissionPromptVisibilityChanged(false));
-
                 // FIXME If there will be microphone error it will cover any
                 // screensharing dialog, but it's still better than in
                 // the reverse order where the screensharing dialog will
@@ -1249,6 +1257,7 @@ export default {
             = connection.initJitsiConference(
                 APP.conference.roomName,
                 this._getConferenceOptions());
+        APP.store.dispatch(conferenceWillJoin(room));
         this._setLocalAudioVideoStreams(localTracks);
         this._room = room; // FIXME do not use this
 
@@ -1700,11 +1709,7 @@ export default {
     _setupListeners() {
         // add local streams when joined to the conference
         room.on(JitsiConferenceEvents.CONFERENCE_JOINED, () => {
-            APP.store.dispatch(conferenceJoined(room));
-
-            APP.UI.mucJoined();
-            APP.API.notifyConferenceJoined(APP.conference.roomName);
-            APP.UI.markVideoInterrupted(false);
+            this._onConferenceJoined();
         });
 
         room.on(
@@ -1722,15 +1727,20 @@ export default {
             if (user.isHidden()) {
                 return;
             }
+            const displayName = user.getDisplayName();
 
             APP.store.dispatch(participantJoined({
                 id,
-                name: user.getDisplayName(),
+                name: displayName,
                 role: user.getRole()
             }));
 
             logger.log('USER %s connnected', id, user);
-            APP.API.notifyUserJoined(id);
+            APP.API.notifyUserJoined(id, {
+                displayName,
+                formattedDisplayName: appendSuffix(
+                    displayName || interfaceConfig.DEFAULT_REMOTE_DISPLAY_NAME)
+            });
             APP.UI.addUser(user);
 
             // check the roles for the new user and reflect them
@@ -1888,6 +1898,7 @@ export default {
             }
 
             APP.UI.addListener(UIEvents.SELECTED_ENDPOINT, id => {
+                APP.API.notifyOnStageParticipantChanged(id);
                 try {
                     // do not try to select participant if there is none (we
                     // are alone in the room), otherwise an error will be
@@ -1934,7 +1945,13 @@ export default {
                     id,
                     name: formattedDisplayName
                 }));
-                APP.API.notifyDisplayNameChanged(id, formattedDisplayName);
+                APP.API.notifyDisplayNameChanged(id, {
+                    displayName: formattedDisplayName,
+                    formattedDisplayName:
+                        appendSuffix(
+                            formattedDisplayName
+                                || interfaceConfig.DEFAULT_REMOTE_DISPLAY_NAME)
+                });
                 APP.UI.changeDisplayName(id, formattedDisplayName);
             }
         );
@@ -2075,18 +2092,11 @@ export default {
         APP.UI.addListener(UIEvents.NICKNAME_CHANGED,
             this.changeLocalDisplayName.bind(this));
 
-        APP.UI.addListener(UIEvents.START_MUTED_CHANGED,
-            (startAudioMuted, startVideoMuted) => {
-                room.setStartMutedPolicy({
-                    audio: startAudioMuted,
-                    video: startVideoMuted
-                });
-            }
-        );
         room.on(
             JitsiConferenceEvents.START_MUTED_POLICY_CHANGED,
             ({ audio, video }) => {
-                APP.UI.onStartMutedChanged(audio, video);
+                APP.store.dispatch(
+                    onStartMutedPolicyChanged(audio, video));
             }
         );
         room.on(JitsiConferenceEvents.STARTED_MUTED, () => {
@@ -2330,6 +2340,70 @@ export default {
                     APP.UI.onSharedVideoUpdate(id, value, attributes);
                 }
             });
+    },
+
+    /**
+     * Callback invoked when the conference has been successfully joined.
+     * Initializes the UI and various other features.
+     *
+     * @private
+     * @returns {void}
+     */
+    _onConferenceJoined() {
+        if (APP.logCollector) {
+            // Start the LogCollector's periodic "store logs" task
+            APP.logCollector.start();
+            APP.logCollectorStarted = true;
+
+            // Make an attempt to flush in case a lot of logs have been
+            // cached, before the collector was started.
+            APP.logCollector.flush();
+
+            // This event listener will flush the logs, before
+            // the statistics module (CallStats) is stopped.
+            //
+            // NOTE The LogCollector is not stopped, because this event can
+            // be triggered multiple times during single conference
+            // (whenever statistics module is stopped). That includes
+            // the case when Jicofo terminates the single person left in the
+            // room. It will then restart the media session when someone
+            // eventually join the room which will start the stats again.
+            APP.conference.addConferenceListener(
+                JitsiConferenceEvents.BEFORE_STATISTICS_DISPOSED,
+                () => {
+                    if (APP.logCollector) {
+                        APP.logCollector.flush();
+                    }
+                }
+            );
+        }
+
+        APP.UI.initConference();
+
+        APP.keyboardshortcut.init();
+
+        if (config.requireDisplayName
+                && !APP.conference.getLocalDisplayName()) {
+            APP.UI.promptDisplayName();
+        }
+
+        APP.store.dispatch(conferenceJoined(room));
+
+        APP.UI.mucJoined();
+        const displayName = APP.settings.getDisplayName();
+
+        APP.API.notifyConferenceJoined(
+            this.roomName,
+            this._room.myUserId(),
+            {
+                displayName,
+                formattedDisplayName: appendSuffix(
+                    displayName,
+                    interfaceConfig.DEFAULT_LOCAL_DISPLAY_NAME),
+                avatarURL: APP.UI.getAvatarUrl()
+            }
+        );
+        APP.UI.markVideoInterrupted(false);
     },
 
     /**
@@ -2699,6 +2773,14 @@ export default {
         }));
 
         APP.settings.setDisplayName(formattedNickname);
+        APP.API.notifyDisplayNameChanged(id, {
+            displayName: formattedNickname,
+            formattedDisplayName:
+                appendSuffix(
+                    formattedNickname,
+                    interfaceConfig.DEFAULT_LOCAL_DISPLAY_NAME)
+        });
+
         if (room) {
             room.setDisplayName(formattedNickname);
             APP.UI.changeDisplayName(id, formattedNickname);

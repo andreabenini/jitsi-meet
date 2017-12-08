@@ -1,24 +1,27 @@
-/* @flow */
+// @flow
 
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
+import {
+    isFatalJitsiConferenceError,
+    isFatalJitsiConnectionError
+} from '../../base/lib-jitsi-meet';
 import { randomInt } from '../../base/util';
 
 import { _reloadNow } from '../actions';
 import ReloadButton from './ReloadButton';
 
-declare var AJS: Object;
 declare var APP: Object;
 
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 /**
- * Implements abstract React Component for the page reload overlays.
+ * Implements an abstract React {@link Component} for the page reload overlays.
  */
 export default class AbstractPageReloadOverlay extends Component<*, *> {
     /**
-     * AbstractPageReloadOverlay component's property types.
+     * {@code AbstractPageReloadOverlay} component's property types.
      *
      * @static
      */
@@ -51,6 +54,25 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
          */
         t: PropTypes.func
     };
+
+    /**
+     * Determines whether this overlay needs to be rendered (according to a
+     * specific redux state). Called by {@link OverlayContainer}.
+     *
+     * @param {Object} state - The redux state.
+     * @returns {boolean} - If this overlay needs to be rendered, {@code true};
+     * {@code false}, otherwise.
+     */
+    static needsRender(state) {
+        const conferenceError = state['features/base/conference'].error;
+        const connectionError = state['features/base/connection'].error;
+
+        return (
+            (connectionError && isFatalJitsiConnectionError(connectionError))
+                || (conferenceError
+                    && isFatalJitsiConferenceError(conferenceError))
+        );
+    }
 
     _interval: ?number
 
@@ -141,8 +163,6 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
             `The conference will be reloaded after ${
                 this.state.timeoutSeconds} seconds.`);
 
-        AJS.progressBars.update('#reloadProgressBar', 0);
-
         this._interval
             = setInterval(
                 () => {
@@ -162,20 +182,6 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
                     }
                 },
                 1000);
-    }
-
-    /**
-     * React Component method that executes once component is updated.
-     *
-     * @inheritdoc
-     * @returns {void}
-     */
-    componentDidUpdate() {
-        const { timeLeft, timeoutSeconds } = this.state;
-
-        AJS.progressBars.update(
-            '#reloadProgressBar',
-            (timeoutSeconds - timeLeft) / timeoutSeconds);
     }
 
     /**
@@ -214,12 +220,39 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
      * @returns {ReactElement}
      */
     _renderProgressBar() {
+        const { timeLeft, timeoutSeconds } = this.state;
+        const timeRemaining = timeoutSeconds - timeLeft;
+        const percentageComplete
+            = Math.floor((timeRemaining / timeoutSeconds) * 100);
+
         return (
             <div
-                className = 'aui-progress-indicator'
+                className = 'progress-indicator'
                 id = 'reloadProgressBar'>
-                <span className = 'aui-progress-indicator-value' />
+                <div
+                    className = 'progress-indicator-fill'
+                    style = {{ width: `${percentageComplete}%` }} />
             </div>
         );
     }
+}
+
+/**
+ * Maps (parts of) the redux state to the associated component's props.
+ *
+ * @param {Object} state - The redux state.
+ * @protected
+ * @returns {{
+ *     isNetworkFailure: boolean,
+ *     reason: string
+ * }}
+ */
+export function abstractMapStateToProps(state: Object) {
+    const conferenceError = state['features/base/conference'].error;
+    const connectionError = state['features/base/connection'].error;
+
+    return {
+        isNetworkFailure: Boolean(connectionError),
+        reason: (connectionError || conferenceError).message
+    };
 }

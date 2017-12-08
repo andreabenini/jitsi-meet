@@ -12,7 +12,8 @@ import { Dialog, hideDialog } from '../../base/dialog';
 import { translate } from '../../base/i18n';
 import { MultiSelectAutocomplete } from '../../base/react';
 
-import { invitePeople, inviteRooms, searchPeople } from '../functions';
+import { invitePeopleAndChatRooms, searchDirectory } from '../functions';
+import { inviteVideoRooms } from '../../videosipgw';
 
 declare var interfaceConfig: Object;
 
@@ -63,6 +64,11 @@ class AddPeopleDialog extends Component<*, *> {
         hideDialog: PropTypes.func,
 
         /**
+         * Used to invite video rooms.
+         */
+        inviteVideoRooms: PropTypes.func,
+
+        /**
          * Invoked to obtain translated strings.
          */
         t: PropTypes.func
@@ -79,7 +85,7 @@ class AddPeopleDialog extends Component<*, *> {
             } = this.props; // eslint-disable-line no-invalid-this
 
             return (
-                searchPeople(
+                searchDirectory(
                     _peopleSearchUrl,
                     _jwt,
                     text,
@@ -214,17 +220,19 @@ class AddPeopleDialog extends Component<*, *> {
                 addToCallInProgress: true
             });
 
-            this.props._conference
-                && inviteRooms(
-                    this.props._conference,
-                    this.state.inviteItems.filter(
-                        i => i.type === 'videosipgw'));
+            const vrooms = this.state.inviteItems.filter(
+                i => i.type === 'videosipgw');
 
-            invitePeople(
+            this.props._conference
+                && vrooms.length > 0
+                && this.props.inviteVideoRooms(this.props._conference, vrooms);
+
+            invitePeopleAndChatRooms(
                 this.props._inviteServiceUrl,
                 this.props._inviteUrl,
                 this.props._jwt,
-                this.state.inviteItems.filter(i => i.type === 'user'))
+                this.state.inviteItems.filter(
+                    i => i.type === 'user' || i.type === 'room'))
             .then(
                 /* onFulfilled */ () => {
                     this.setState({
@@ -355,5 +363,7 @@ function _mapStateToProps(state) {
     };
 }
 
-export default translate(connect(_mapStateToProps, { hideDialog })(
+export default translate(connect(_mapStateToProps, {
+    hideDialog,
+    inviteVideoRooms })(
     AddPeopleDialog));

@@ -17,7 +17,6 @@ import Recording from './recording/Recording';
 
 import VideoLayout from './videolayout/VideoLayout';
 import Filmstrip from './videolayout/Filmstrip';
-import SettingsMenu from './side_pannels/settings/SettingsMenu';
 import Profile from './side_pannels/profile/Profile';
 
 import {
@@ -25,11 +24,15 @@ import {
 } from '../../react/features/device-selection';
 import { updateDeviceList } from '../../react/features/base/devices';
 import { JitsiTrackErrors } from '../../react/features/base/lib-jitsi-meet';
-import { getLocalParticipant } from '../../react/features/base/participants';
+import {
+    getLocalParticipant,
+    participantPresenceChanged,
+    showParticipantJoinedNotification
+} from '../../react/features/base/participants';
 import { openDisplayNamePrompt } from '../../react/features/display-name';
 import {
-    maybeShowNotificationWithDoNotDisplay,
-    setNotificationsEnabled
+    setNotificationsEnabled,
+    showWarningNotification
 } from '../../react/features/notifications';
 import {
     checkAutoEnableDesktopSharing,
@@ -472,9 +475,18 @@ UI.getSharedDocumentManager = () => etherpadManager;
 UI.addUser = function(user) {
     const id = user.getId();
     const displayName = user.getDisplayName();
+    const status = user.getStatus();
 
-    messageHandler.participantNotification(
-        displayName, 'notify.somebody', 'connected', 'notify.connected');
+    if (status) {
+        // if user has initial status dispatch it
+        // and skip 'connected' notifications
+        APP.store.dispatch(participantPresenceChanged(id, status));
+
+        // FIXME: move updateUserStatus in participantPresenceChanged action
+        UI.updateUserStatus(user, status);
+    } else {
+        APP.store.dispatch(showParticipantJoinedNotification(displayName));
+    }
 
     if (!config.startAudioMuted
         || config.startAudioMuted > APP.conference.membersCount) {
@@ -528,8 +540,6 @@ UI.updateLocalRole = isModerator => {
     APP.store.dispatch(showSharedVideoButton());
 
     Recording.showRecordingButton(isModerator);
-    SettingsMenu.showStartMutedOptions(isModerator);
-    SettingsMenu.showFollowMeOptions(isModerator);
 
     if (isModerator) {
         if (!interfaceConfig.DISABLE_FOCUS_INDICATOR) {
@@ -792,6 +802,16 @@ function changeAvatar(id, avatarUrl) {
 }
 
 /**
+ * Returns the avatar URL for a given user.
+ *
+ * @param {string} id - The id of the user.
+ * @returns {string} The avatar URL.
+ */
+UI.getAvatarUrl = function(id) {
+    return Avatar.getAvatarUrl(id);
+};
+
+/**
  * Update user email.
  * @param {string} id user id
  * @param {string} email user email
@@ -1004,10 +1024,6 @@ UI.updateAuthInfo = function(isAuthEnabled, login) {
     }
 };
 
-UI.onStartMutedChanged = function(startAudioMuted, startVideoMuted) {
-    SettingsMenu.updateStartMutedBox(startAudioMuted, startVideoMuted);
-};
-
 /**
  * Notifies interested listeners that the raise hand property has changed.
  *
@@ -1153,8 +1169,6 @@ UI.showMicErrorNotification = function(micError) {
 
     const { message, name } = micError;
 
-    const persistenceKey = `doNotShowErrorAgain-mic-${name}`;
-
     const micJitsiTrackErrorMsg
         = JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.microphone[name];
     const micErrorMsg = micJitsiTrackErrorMsg
@@ -1162,18 +1176,13 @@ UI.showMicErrorNotification = function(micError) {
             .microphone[JitsiTrackErrors.GENERAL];
     const additionalMicErrorMsg = micJitsiTrackErrorMsg ? null : message;
 
-    APP.store.dispatch(maybeShowNotificationWithDoNotDisplay(
-        persistenceKey,
-        {
-            additionalMessage: additionalMicErrorMsg,
-            messageKey: micErrorMsg,
-            showToggle: Boolean(micJitsiTrackErrorMsg),
-            subtitleKey: 'dialog.micErrorPresent',
-            titleKey: name === JitsiTrackErrors.PERMISSION_DENIED
-                ? 'deviceError.microphonePermission'
-                : 'deviceError.microphoneError',
-            toggleLabelKey: 'dialog.doNotShowWarningAgain'
-        }));
+    APP.store.dispatch(showWarningNotification({
+        description: additionalMicErrorMsg,
+        descriptionKey: micErrorMsg,
+        titleKey: name === JitsiTrackErrors.PERMISSION_DENIED
+            ? 'deviceError.microphonePermission'
+            : 'deviceError.microphoneError'
+    }));
 };
 
 /**
@@ -1190,8 +1199,6 @@ UI.showCameraErrorNotification = function(cameraError) {
 
     const { message, name } = cameraError;
 
-    const persistenceKey = `doNotShowErrorAgain-camera-${name}`;
-
     const cameraJitsiTrackErrorMsg
         = JITSI_TRACK_ERROR_TO_MESSAGE_KEY_MAP.camera[name];
     const cameraErrorMsg = cameraJitsiTrackErrorMsg
@@ -1199,17 +1206,12 @@ UI.showCameraErrorNotification = function(cameraError) {
             .camera[JitsiTrackErrors.GENERAL];
     const additionalCameraErrorMsg = cameraJitsiTrackErrorMsg ? null : message;
 
-    APP.store.dispatch(maybeShowNotificationWithDoNotDisplay(
-        persistenceKey,
-        {
-            additionalMessage: additionalCameraErrorMsg,
-            messageKey: cameraErrorMsg,
-            showToggle: Boolean(cameraJitsiTrackErrorMsg),
-            subtitleKey: 'dialog.cameraErrorPresent',
-            titleKey: name === JitsiTrackErrors.PERMISSION_DENIED
-                ? 'deviceError.cameraPermission' : 'deviceError.cameraError',
-            toggleLabelKey: 'dialog.doNotShowWarningAgain'
-        }));
+    APP.store.dispatch(showWarningNotification({
+        description: additionalCameraErrorMsg,
+        descriptionKey: cameraErrorMsg,
+        titleKey: name === JitsiTrackErrors.PERMISSION_DENIED
+            ? 'deviceError.cameraPermission' : 'deviceError.cameraError'
+    }));
 };
 
 /**
