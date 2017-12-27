@@ -9,11 +9,11 @@ import { connect as reactReduxConnect } from 'react-redux';
 import { appNavigate } from '../../app';
 import { connect, disconnect } from '../../base/connection';
 import { DialogContainer } from '../../base/dialog';
-import { Container, LoadingIndicator } from '../../base/react';
+import { CalleeInfoContainer } from '../../base/jwt';
+import { Container, LoadingIndicator, TintedView } from '../../base/react';
 import { createDesiredLocalTracks } from '../../base/tracks';
 import { Filmstrip } from '../../filmstrip';
 import { LargeVideo } from '../../large-video';
-import { OverlayContainer } from '../../overlay';
 import { setToolboxVisible, Toolbox } from '../../toolbox';
 
 import styles from './styles';
@@ -191,19 +191,18 @@ class Conference extends Component<Props> {
                 <LargeVideo />
 
                 {/*
-                  * The overlays need to be bellow the Toolbox so that the user
-                  * may tap the ToolbarButtons.
+                  * If there is a ringing call, show the callee's info.
                   */}
-                <OverlayContainer />
+                <CalleeInfoContainer />
 
                 {/*
                   * The activity/loading indicator goes above everything, except
                   * the toolbox/toolbars and the dialogs.
                   */
                     this.props._connecting
-                        && <View style = { styles.connectingIndicator }>
+                        && <TintedView>
                             <LoadingIndicator />
-                        </View>
+                        </TintedView>
                 }
 
                 <View style = { styles.toolboxAndFilmstripContainer } >

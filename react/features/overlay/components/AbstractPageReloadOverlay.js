@@ -3,6 +3,7 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
+import { PAGE_RELOAD } from '../../analytics';
 import {
     isFatalJitsiConferenceError,
     isFatalJitsiConnectionError
@@ -65,12 +66,14 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
      */
     static needsRender(state) {
         const conferenceError = state['features/base/conference'].error;
+        const configError = state['features/base/config'].error;
         const connectionError = state['features/base/connection'].error;
 
         return (
             (connectionError && isFatalJitsiConnectionError(connectionError))
                 || (conferenceError
                     && isFatalJitsiConferenceError(conferenceError))
+                || configError
         );
     }
 
@@ -155,10 +158,13 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
         // because the log queue is not flushed before "fabric terminated" is
         // sent to the backed.
         // FIXME: We should dispatch action for this.
-        APP.conference.logEvent(
-            'page.reload',
-            /* value */ undefined,
-            /* label */ this.props.reason);
+        if (typeof APP !== 'undefined') {
+            APP.conference.logEvent(
+                PAGE_RELOAD,
+                /* value */ undefined,
+                /* label */ this.props.reason);
+        }
+
         logger.info(
             `The conference will be reloaded after ${
                 this.state.timeoutSeconds} seconds.`);
@@ -249,10 +255,11 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
  */
 export function abstractMapStateToProps(state: Object) {
     const conferenceError = state['features/base/conference'].error;
+    const configError = state['features/base/config'].error;
     const connectionError = state['features/base/connection'].error;
 
     return {
-        isNetworkFailure: Boolean(connectionError),
-        reason: (connectionError || conferenceError).message
+        isNetworkFailure: Boolean(configError || connectionError),
+        reason: (configError || connectionError || conferenceError).message
     };
 }

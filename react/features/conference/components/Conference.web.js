@@ -1,44 +1,40 @@
-/* @flow */
+// @flow
 
 import _ from 'lodash';
-import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect as reactReduxConnect } from 'react-redux';
 
 import { connect, disconnect } from '../../base/connection';
 import { DialogContainer } from '../../base/dialog';
+import { CalleeInfoContainer } from '../../base/jwt';
 import { Filmstrip } from '../../filmstrip';
 import { LargeVideo } from '../../large-video';
 import { NotificationsContainer } from '../../notifications';
-import { OverlayContainer } from '../../overlay';
 import { showToolbox, Toolbox } from '../../toolbox';
 import { HideNotificationBarStyle } from '../../unsupported-browser';
 
-declare var $: Function;
 declare var APP: Object;
 declare var interfaceConfig: Object;
 
 /**
- * The conference page of the Web application.
+ * The type of the React {@code Component} props of {@link Conference}.
  */
-class Conference extends Component<*> {
-    _onShowToolbar: Function;
-    _originalOnShowToolbar: Function;
+type Props = {
 
     /**
-     * Conference component's property types.
-     *
-     * @static
+     * Whether or not the current local user is recording the conference.
      */
-    static propTypes = {
-        /**
-         * Whether or not the current local user is recording the conference.
-         *
-         */
-        _isRecording: PropTypes.bool,
+    _isRecording: boolean,
 
-        dispatch: PropTypes.func
-    };
+    dispatch: Function
+}
+
+/**
+ * The conference page of the Web application.
+ */
+class Conference extends Component<Props> {
+    _onShowToolbar: Function;
+    _originalOnShowToolbar: Function;
 
     /**
      * Initializes a new Conference instance.
@@ -117,7 +113,8 @@ class Conference extends Component<*> {
 
                 <DialogContainer />
                 <NotificationsContainer />
-                <OverlayContainer />
+
+                <CalleeInfoContainer />
 
                 {/*
                   * Temasys automatically injects a notification bar, if
@@ -154,6 +151,12 @@ class Conference extends Component<*> {
  */
 function _mapStateToProps(state) {
     return {
+        /**
+         * Indicates if the current user is recording the conference, ie, they
+         * are a recorder.
+         *
+         * @private
+         */
         _isRecording: state['features/base/config'].iAmRecorder
     };
 }

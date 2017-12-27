@@ -7,10 +7,11 @@ import { MEDIA_TYPE } from '../../base/media';
 import { Link, LoadingIndicator, Text } from '../../base/react';
 import { ColorPalette } from '../../base/styles';
 import { createDesiredLocalTracks } from '../../base/tracks';
+import { RecentList } from '../../recent-list';
 
 import { AbstractWelcomePage, _mapStateToProps } from './AbstractWelcomePage';
 import LocalVideoTrackUnderlay from './LocalVideoTrackUnderlay';
-import styles from './styles';
+import styles, { PLACEHOLDER_TEXT_COLOR } from './styles';
 
 /**
  * The URL at which the privacy policy is available to the user.
@@ -67,9 +68,6 @@ class WelcomePage extends AbstractWelcomePage {
         return (
             <LocalVideoTrackUnderlay style = { styles.welcomePage }>
                 <View style = { styles.roomContainer }>
-                    <Text style = { styles.title }>
-                        { t('welcomepage.roomname') }
-                    </Text>
                     <TextInput
                         accessibilityLabel = { 'Input room name.' }
                         autoCapitalize = 'none'
@@ -77,13 +75,15 @@ class WelcomePage extends AbstractWelcomePage {
                         autoCorrect = { false }
                         autoFocus = { false }
                         onChangeText = { this._onRoomChange }
-                        placeholder = { t('welcomepage.roomnamePlaceHolder') }
+                        placeholder = { t('welcomepage.roomname') }
+                        placeholderTextColor = { PLACEHOLDER_TEXT_COLOR }
                         style = { styles.textInput }
                         underlineColorAndroid = 'transparent'
                         value = { this.state.room } />
                     {
                         this._renderJoinButton()
                     }
+                    <RecentList />
                 </View>
                 {
                     this._renderLegalese()

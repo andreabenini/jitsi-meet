@@ -15,7 +15,21 @@ import UIEvents from './service/UI/UIEvents';
 import UIUtil from './modules/UI/util/UIUtil';
 import * as JitsiMeetConferenceEvents from './ConferenceEvents';
 
-import { initAnalytics, sendAnalyticsEvent } from './react/features/analytics';
+import {
+    CONFERENCE_AUDIO_INITIALLY_MUTED,
+    CONFERENCE_SHARING_DESKTOP_START,
+    CONFERENCE_SHARING_DESKTOP_STOP,
+    CONFERENCE_VIDEO_INITIALLY_MUTED,
+    DEVICE_LIST_CHANGED_AUDIO_MUTED,
+    DEVICE_LIST_CHANGED_VIDEO_MUTED,
+    SELECT_PARTICIPANT_FAILED,
+    SETTINGS_CHANGE_DEVICE_AUDIO_OUT,
+    SETTINGS_CHANGE_DEVICE_AUDIO_IN,
+    SETTINGS_CHANGE_DEVICE_VIDEO,
+    STREAM_SWITCH_DELAY,
+    initAnalytics,
+    sendAnalyticsEvent
+} from './react/features/analytics';
 
 import EventEmitter from 'events';
 
@@ -56,6 +70,7 @@ import {
 } from './react/features/base/media';
 import {
     dominantSpeakerChanged,
+    getAvatarURLByParticipantId,
     getLocalParticipant,
     getParticipantById,
     localParticipantConnectionStatusChanged,
@@ -75,7 +90,10 @@ import {
     trackAdded,
     trackRemoved
 } from './react/features/base/tracks';
-import { getLocationContextRoot } from './react/features/base/util';
+import {
+    getLocationContextRoot,
+    getJitsiMeetGlobalNS
+} from './react/features/base/util';
 import { statsEmitter } from './react/features/connection-indicator';
 import { showDesktopPicker } from './react/features/desktop-picker';
 import { appendSuffix } from './react/features/display-name';
@@ -724,12 +742,12 @@ export default {
             .then(([ tracks, con ]) => {
                 tracks.forEach(track => {
                     if (track.isAudioTrack() && this.isLocalAudioMuted()) {
-                        sendAnalyticsEvent('conference.audio.initiallyMuted');
+                        sendAnalyticsEvent(CONFERENCE_AUDIO_INITIALLY_MUTED);
                         logger.log('Audio mute: initially muted');
                         track.mute();
                     } else if (track.isVideoTrack()
                                     && this.isLocalVideoMuted()) {
-                        sendAnalyticsEvent('conference.video.initiallyMuted');
+                        sendAnalyticsEvent(CONFERENCE_VIDEO_INITIALLY_MUTED);
                         logger.log('Video mute: initially muted');
                         track.mute();
                     }
@@ -1304,6 +1322,7 @@ export default {
         }
 
         options.applicationName = interfaceConfig.APP_NAME;
+        options.getWiFiStatsMethod = getJitsiMeetGlobalNS().getWiFiStats;
 
         return options;
     },
@@ -1434,8 +1453,7 @@ export default {
             promise = createLocalTracksF({ devices: [ 'video' ] })
                 .then(([ stream ]) => this.useVideoStream(stream))
                 .then(() => {
-                    sendAnalyticsEvent(
-                        'conference.sharingDesktop.stop');
+                    sendAnalyticsEvent(CONFERENCE_SHARING_DESKTOP_STOP);
                     logger.log('switched back to local video');
                     if (!this.localVideo && wasVideoMuted) {
                         return Promise.reject('No local video to be muted!');
@@ -1614,7 +1632,7 @@ export default {
             .then(stream => this.useVideoStream(stream))
             .then(() => {
                 this.videoSwitchInProgress = false;
-                sendAnalyticsEvent('conference.sharingDesktop.start');
+                sendAnalyticsEvent(CONFERENCE_SHARING_DESKTOP_START);
                 logger.log('sharing local desktop');
             })
             .catch(error => {
@@ -1910,8 +1928,7 @@ export default {
 
                     room.selectParticipant(id);
                 } catch (e) {
-                    sendAnalyticsEvent(
-                        'selectParticipant.failed');
+                    sendAnalyticsEvent(SELECT_PARTICIPANT_FAILED);
                     reportError(e);
                 }
             });
@@ -2076,7 +2093,6 @@ export default {
                         id: from,
                         avatarURL: data.value
                     }));
-                APP.UI.setUserAvatarUrl(from, data.value);
             });
 
         room.addCommandListener(this.commands.defaults.AVATAR_ID,
@@ -2086,7 +2102,6 @@ export default {
                         id: from,
                         avatarID: data.value
                     }));
-                APP.UI.setUserAvatarID(from, data.value);
             });
 
         APP.UI.addListener(UIEvents.NICKNAME_CHANGED,
@@ -2151,7 +2166,7 @@ export default {
                 // Longer delays will be caused by something else and will just
                 // poison the data.
                 if (delay < 2000) {
-                    sendAnalyticsEvent('stream.switch.delay', { value: delay });
+                    sendAnalyticsEvent(STREAM_SWITCH_DELAY, { value: delay });
                 }
             });
 
@@ -2178,7 +2193,7 @@ export default {
             cameraDeviceId => {
                 const videoWasMuted = this.isLocalVideoMuted();
 
-                sendAnalyticsEvent('settings.changeDevice.video');
+                sendAnalyticsEvent(SETTINGS_CHANGE_DEVICE_VIDEO);
                 createLocalTracksF({
                     devices: [ 'video' ],
                     cameraDeviceId,
@@ -2217,8 +2232,7 @@ export default {
             micDeviceId => {
                 const audioWasMuted = this.isLocalAudioMuted();
 
-                sendAnalyticsEvent(
-                    'settings.changeDevice.audioIn');
+                sendAnalyticsEvent(SETTINGS_CHANGE_DEVICE_AUDIO_IN);
                 createLocalTracksF({
                     devices: [ 'audio' ],
                     cameraDeviceId: null,
@@ -2248,8 +2262,7 @@ export default {
         APP.UI.addListener(
             UIEvents.AUDIO_OUTPUT_DEVICE_CHANGED,
             audioOutputDeviceId => {
-                sendAnalyticsEvent(
-                    'settings.changeDevice.audioOut');
+                sendAnalyticsEvent(SETTINGS_CHANGE_DEVICE_AUDIO_OUT);
                 APP.settings.setAudioOutputDeviceId(audioOutputDeviceId)
                     .then(() => logger.log('changed audio output device'))
                     .catch(err => {
@@ -2400,7 +2413,8 @@ export default {
                 formattedDisplayName: appendSuffix(
                     displayName,
                     interfaceConfig.DEFAULT_LOCAL_DISPLAY_NAME),
-                avatarURL: APP.UI.getAvatarUrl()
+                avatarURL: getAvatarURLByParticipantId(
+                    APP.store.getState(), this._room.myUserId())
             }
         );
         APP.UI.markVideoInterrupted(false);
@@ -2514,7 +2528,7 @@ export default {
                     // If audio was muted before, or we unplugged current device
                     // and selected new one, then mute new audio track.
                     if (audioWasMuted) {
-                        sendAnalyticsEvent('deviceListChanged.audio.muted');
+                        sendAnalyticsEvent(DEVICE_LIST_CHANGED_AUDIO_MUTED);
                         logger.log('Audio mute: device list changed');
                         muteLocalAudio(true);
                     }
@@ -2522,7 +2536,7 @@ export default {
                     // If video was muted before, or we unplugged current device
                     // and selected new one, then mute new video track.
                     if (!this.isSharingScreen && videoWasMuted) {
-                        sendAnalyticsEvent('deviceListChanged.video.muted');
+                        sendAnalyticsEvent(DEVICE_LIST_CHANGED_VIDEO_MUTED);
                         logger.log('Video mute: device list changed');
                         muteLocalVideo(true);
                     }
@@ -2690,7 +2704,7 @@ export default {
         APP.store.dispatch(participantUpdated({
             id: localId,
             local: true,
-            formattedEmail
+            email: formattedEmail
         }));
 
         APP.settings.setEmail(formattedEmail);
@@ -2718,7 +2732,6 @@ export default {
         }));
 
         APP.settings.setAvatarUrl(url);
-        APP.UI.setUserAvatarUrl(id, url);
         sendData(commands.AVATAR_URL, url);
     },
 

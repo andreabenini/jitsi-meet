@@ -12,9 +12,10 @@ import {
     localParticipantJoined,
     localParticipantLeft
 } from '../../base/participants';
-import { RouteRegistry } from '../../base/react';
+import { Fragment, RouteRegistry } from '../../base/react';
 import { MiddlewareRegistry, ReducerRegistry } from '../../base/redux';
 import { toURLString } from '../../base/util';
+import { OverlayContainer } from '../../overlay';
 import { BlankPage } from '../../welcome';
 
 import { appNavigate, appWillMount, appWillUnmount } from '../actions';
@@ -201,7 +202,10 @@ export class AbstractApp extends Component {
             return (
                 <I18nextProvider i18n = { i18next }>
                     <Provider store = { this._getStore() }>
-                        { this._createElement(component) }
+                        <Fragment>
+                            { this._createElement(component) }
+                            <OverlayContainer />
+                        </Fragment>
                     </Provider>
                 </I18nextProvider>
             );
