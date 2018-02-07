@@ -30,38 +30,19 @@ export default class Storage {
          */
         this._keyPrefix = keyPrefix;
 
-        if (typeof this._keyPrefix !== 'undefined') {
-            // Load all previously persisted data items from React Native's
-            // AsyncStorage.
-            AsyncStorage.getAllKeys().then((...getAllKeysCallbackArgs) => {
-                // XXX The keys argument of getAllKeys' callback may or may not
-                // be preceded by an error argument.
-                const keys
-                    = getAllKeysCallbackArgs[getAllKeysCallbackArgs.length - 1]
-                        .filter(key => key.startsWith(this._keyPrefix));
+        // Perform optional asynchronous initialization.
+        const initializing = this._initializeAsync();
 
-                AsyncStorage.multiGet(keys).then((...multiGetCallbackArgs) => {
-                    // XXX The result argument of multiGet may or may not be
-                    // preceded by an errors argument.
-                    const result
-                        = multiGetCallbackArgs[multiGetCallbackArgs.length - 1];
-                    const keyPrefixLength
-                        = this._keyPrefix && this._keyPrefix.length;
+        if (initializing) {
+            // Indicate that asynchronous initialization is under way.
+            this._initializing = initializing;
 
-                    // eslint-disable-next-line prefer-const
-                    for (let [ key, value ] of result) {
-                        key = key.substring(keyPrefixLength);
-
-                        // XXX The loading of the previously persisted data
-                        // items from AsyncStorage is asynchronous which means
-                        // that it is technically possible to invoke setItem
-                        // with a key before the key is loaded from
-                        // AsyncStorage.
-                        if (!this.hasOwnProperty(key)) {
-                            this[key] = value;
-                        }
-                    }
-                });
+            // When the asynchronous initialization completes, indicate its
+            // completion.
+            initializing.finally(() => {
+                if (this._initializing === initializing) {
+                    this._initializing = undefined;
+                }
             });
         }
     }
@@ -89,21 +70,74 @@ export default class Storage {
     }
 
     /**
-     * Returns the value associated with a specific key in this storage in an
-     * async manner. This method is required for those cases where we need the
-     * stored data but we're not sure yet whether the {@code Storage} is already
-     * initialised or not - e.g. on app start.
+     * Returns the value associated with a specific key in this {@code Storage}
+     * in an async manner. The method is required for the cases where we need
+     * the stored data but we're not sure yet whether this {@code Storage} is
+     * already initialized (e.g. on app start).
      *
      * @param {string} key - The name of the key to retrieve the value of.
-     * @private
      * @returns {Promise}
      */
     _getItemAsync(key) {
-        return new Promise(
-            resolve =>
-                AsyncStorage.getItem(
-                    `${String(this._keyPrefix)}${key}`,
-                    (error, result) => resolve(result ? result : null)));
+        return (
+            (this._initializing || Promise.resolve())
+                .catch(() => { /* _getItemAsync should always resolve! */ })
+                .then(() => this.getItem(key)));
+    }
+
+    /**
+     * Performs asynchronous initialization of this {@code Storage} instance
+     * such as loading all keys from {@link AsyncStorage}.
+     *
+     * @private
+     * @returns {Promise}
+     */
+    _initializeAsync() {
+        if (typeof this._keyPrefix !== 'undefined') {
+            // Load all previously persisted data items from React Native's
+            // AsyncStorage.
+
+            return new Promise(resolve => {
+                AsyncStorage.getAllKeys().then((...getAllKeysCallbackArgs) => {
+                    // XXX The keys argument of getAllKeys' callback may or may
+                    // not be preceded by an error argument.
+                    const keys
+                        = getAllKeysCallbackArgs[
+                            getAllKeysCallbackArgs.length - 1
+                        ].filter(key => key.startsWith(this._keyPrefix));
+
+                    AsyncStorage.multiGet(keys)
+                    .then((...multiGetCallbackArgs) => {
+                        // XXX The result argument of multiGet may or may not be
+                        // preceded by an errors argument.
+                        const result
+                            = multiGetCallbackArgs[
+                                multiGetCallbackArgs.length - 1
+                            ];
+                        const keyPrefixLength
+                            = this._keyPrefix && this._keyPrefix.length;
+
+                        // eslint-disable-next-line prefer-const
+                        for (let [ key, value ] of result) {
+                            key = key.substring(keyPrefixLength);
+
+                            // XXX The loading of the previously persisted data
+                            // items from AsyncStorage is asynchronous which
+                            // means that it is technically possible to invoke
+                            // setItem with a key before the key is loaded from
+                            // AsyncStorage.
+                            if (!this.hasOwnProperty(key)) {
+                                this[key] = value;
+                            }
+                        }
+
+                        resolve();
+                    });
+                });
+            });
+        }
+
+        return undefined;
     }
 
     /**

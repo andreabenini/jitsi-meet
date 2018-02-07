@@ -3,9 +3,8 @@
 import * as JitsiMeetConferenceEvents from '../../ConferenceEvents';
 import { parseJWTFromURLParams } from '../../react/features/base/jwt';
 import {
-    API_TOGGLE_AUDIO,
-    API_TOGGLE_VIDEO,
-    sendAnalyticsEvent
+    createApiEvent,
+    sendAnalytics
 } from '../../react/features/analytics';
 import { getJitsiMeetTransport } from '../transport';
 
@@ -56,25 +55,52 @@ let videoAvailable = true;
  */
 function initCommands() {
     commands = {
-        'display-name':
-            APP.conference.changeLocalDisplayName.bind(APP.conference),
+        'display-name': displayName => {
+            sendAnalytics(createApiEvent('display.name.changed'));
+            APP.conference.changeLocalDisplayName(displayName);
+        },
+        'submit-feedback': feedback => {
+            sendAnalytics(createApiEvent('submit.feedback'));
+            APP.conference.submitFeedback(feedback.score, feedback.message);
+        },
         'toggle-audio': () => {
-            sendAnalyticsEvent(API_TOGGLE_AUDIO);
+            sendAnalytics(createApiEvent('toggle-audio'));
             logger.log('Audio toggle: API command received');
             APP.conference.toggleAudioMuted(false /* no UI */);
         },
         'toggle-video': () => {
-            sendAnalyticsEvent(API_TOGGLE_VIDEO);
+            sendAnalytics(createApiEvent('toggle-video'));
             logger.log('Video toggle: API command received');
             APP.conference.toggleVideoMuted(false /* no UI */);
         },
-        'toggle-film-strip': APP.UI.toggleFilmstrip,
-        'toggle-chat': APP.UI.toggleChat,
-        'toggle-contact-list': APP.UI.toggleContactList,
-        'toggle-share-screen': toggleScreenSharing,
-        'video-hangup': () => APP.conference.hangup(true),
-        'email': APP.conference.changeLocalEmail,
-        'avatar-url': APP.conference.changeLocalAvatarUrl
+        'toggle-film-strip': () => {
+            sendAnalytics(createApiEvent('film.strip.toggled'));
+            APP.UI.toggleFilmstrip();
+        },
+        'toggle-chat': () => {
+            sendAnalytics(createApiEvent('chat.toggled'));
+            APP.UI.toggleChat();
+        },
+        'toggle-contact-list': () => {
+            sendAnalytics(createApiEvent('contact.list.toggled'));
+            APP.UI.toggleContactList();
+        },
+        'toggle-share-screen': () => {
+            sendAnalytics(createApiEvent('screen.sharing.toggled'));
+            toggleScreenSharing();
+        },
+        'video-hangup': () => {
+            sendAnalytics(createApiEvent('video.hangup'));
+            APP.conference.hangup(true);
+        },
+        'email': email => {
+            sendAnalytics(createApiEvent('email.changed'));
+            APP.conference.changeLocalEmail(email);
+        },
+        'avatar-url': avatarUrl => {
+            sendAnalytics(createApiEvent('avatar.url.changed'));
+            APP.conference.changeLocalAvatarUrl(avatarUrl);
+        }
     };
     transport.on('event', ({ data, name }) => {
         if (name && commands[name]) {
@@ -434,6 +460,16 @@ class API {
         });
     }
 
+    /**
+     * Notify external application (if API is enabled) that conference feedback
+     * has been submitted. Intended to be used in conjunction with the
+     * submit-feedback command to get notified if feedback was submitted.
+     *
+     * @returns {void}
+     */
+    notifyFeedbackSubmitted() {
+        this._sendEvent({ name: 'feedback-submitted' });
+    }
 
     /**
      * Disposes the allocated resources.

@@ -35,7 +35,7 @@ deploy-appbundle:
 		$(BUILD_DIR)/device_selection_popup_bundle.min.map \
 		$(BUILD_DIR)/alwaysontop.min.js \
 		$(BUILD_DIR)/alwaysontop.min.map \
-		$(OUTPUT_DIR)/analytics.js \
+		$(OUTPUT_DIR)/analytics-ga.js \
 		$(DEPLOY_DIR)
 
 deploy-lib-jitsi-meet:
@@ -43,6 +43,7 @@ deploy-lib-jitsi-meet:
 		$(LIBJITSIMEET_DIR)/lib-jitsi-meet.min.js \
 		$(LIBJITSIMEET_DIR)/lib-jitsi-meet.min.map \
 		$(LIBJITSIMEET_DIR)/connection_optimization/external_connect.js \
+		$(LIBJITSIMEET_DIR)/modules/browser/capabilities.json \
 		$(DEPLOY_DIR)
 
 deploy-css:

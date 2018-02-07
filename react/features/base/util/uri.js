@@ -177,6 +177,13 @@ export function parseStandardURIString(str: string) {
     let regex;
     let match: Array<string> | null;
 
+    // XXX A URI string as defined by RFC 3986 does not contain any whitespace.
+    // Usually, a browser will have already encoded any whitespace. In order to
+    // avoid potential later problems related to whitespace in URI, strip any
+    // whitespace. Anyway, the Jitsi Meet app is not known to utilize unencoded
+    // whitespace so the stripping is deemed safe.
+    str = str.replace(/\s/g, '');
+
     // protocol
     regex = new RegExp(`^${_URI_PROTOCOL_PATTERN}`, 'gi');
     match = regex.exec(str);

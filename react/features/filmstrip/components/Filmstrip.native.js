@@ -5,14 +5,14 @@ import React, { Component } from 'react';
 import { ScrollView } from 'react-native';
 import { connect } from 'react-redux';
 
+import { Container } from '../../base/react';
 import {
     isNarrowAspectRatio,
     makeAspectRatioAware
-} from '../../base/aspect-ratio';
-import { Container } from '../../base/react';
+} from '../../base/responsive-ui';
 
-import Thumbnail from './Thumbnail';
 import { styles } from './_';
+import Thumbnail from './Thumbnail';
 
 /**
  * Implements a React {@link Component} which represents the filmstrip on
@@ -131,6 +131,7 @@ class Filmstrip extends Component<*> {
  */
 function _mapStateToProps(state) {
     const participants = state['features/base/participants'];
+    const { visible } = state['features/filmstrip'];
 
     return {
         /**
@@ -149,7 +150,7 @@ function _mapStateToProps(state) {
          * @private
          * @type {boolean}
          */
-        _visible: participants.length > 1
+        _visible: visible && participants.length > 1
     };
 }
 

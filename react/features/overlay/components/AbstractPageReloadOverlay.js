@@ -3,7 +3,10 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
-import { PAGE_RELOAD } from '../../analytics';
+import {
+    createPageReloadScheduledEvent,
+    sendAnalytics
+} from '../../analytics';
 import {
     isFatalJitsiConferenceError,
     isFatalJitsiConnectionError
@@ -27,6 +30,16 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
      * @static
      */
     static propTypes = {
+        /**
+         * The details is an object containing more information
+         * about the connection failed(shard changes, was the computer
+         * suspended, etc.).
+         *
+         * @public
+         * @type {object}
+         */
+        details: PropTypes.object,
+
         dispatch: PropTypes.func,
 
         /**
@@ -159,11 +172,17 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
         // sent to the backed.
         // FIXME: We should dispatch action for this.
         if (typeof APP !== 'undefined') {
-            APP.conference.logEvent(
-                PAGE_RELOAD,
-                /* value */ undefined,
-                /* label */ this.props.reason);
+            if (APP.conference && APP.conference._room) {
+                APP.conference._room.sendApplicationLog(JSON.stringify(
+                    {
+                        name: 'page.reload',
+                        label: this.props.reason
+                    }));
+            }
         }
+
+        sendAnalytics(createPageReloadScheduledEvent(
+            this.props.reason, this.state.timeoutSeconds, this.props.details));
 
         logger.info(
             `The conference will be reloaded after ${
@@ -250,7 +269,8 @@ export default class AbstractPageReloadOverlay extends Component<*, *> {
  * @protected
  * @returns {{
  *     isNetworkFailure: boolean,
- *     reason: string
+ *     reason: string,
+ *     details: Object
  * }}
  */
 export function abstractMapStateToProps(state: Object) {
@@ -260,6 +280,7 @@ export function abstractMapStateToProps(state: Object) {
 
     return {
         isNetworkFailure: Boolean(configError || connectionError),
-        reason: (configError || connectionError || conferenceError).message
+        reason: (configError || connectionError || conferenceError).message,
+        details: connectionError ? connectionError.details : undefined
     };
 }

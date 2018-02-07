@@ -3,12 +3,11 @@
 import UIEvents from '../../../../service/UI/UIEvents';
 
 import {
-    _LOCAL,
-    _REMOTE,
-    AUDIO_ONLY_DISABLED,
-    PINNED_,
-    UNPINNED_,
-    sendAnalyticsEvent
+    ACTION_PINNED,
+    ACTION_UNPINNED,
+    createAudioOnlyDisableEvent,
+    createPinnedEvent,
+    sendAnalytics
 } from '../../analytics';
 import { CONNECTION_ESTABLISHED } from '../connection';
 import { setVideoMuted, VIDEO_MUTISM_AUTHORITY } from '../media';
@@ -131,7 +130,7 @@ function _conferenceFailedOrLeft({ dispatch, getState }, next, action) {
     const result = next(action);
 
     if (getState()['features/base/conference'].audioOnly) {
-        sendAnalyticsEvent(AUDIO_ONLY_DISABLED);
+        sendAnalytics(createAudioOnlyDisableEvent());
         logger.log('Audio only disabled');
         dispatch(setAudioOnly(false));
     }
@@ -186,26 +185,29 @@ function _conferenceJoined(store, next, action) {
 function _pinParticipant(store, next, action) {
     const state = store.getState();
     const { conference } = state['features/base/conference'];
+
+    if (!conference) {
+        return next(action);
+    }
+
     const participants = state['features/base/participants'];
     const id = action.participant.id;
     const participantById = getParticipantById(participants, id);
-    let pin;
 
     if (typeof APP !== 'undefined') {
         const pinnedParticipant = getPinnedParticipant(participants);
-        const actionName = action.participant.id ? PINNED_ : UNPINNED_;
-        let videoType;
+        const actionName = id ? ACTION_PINNED : ACTION_UNPINNED;
+        const local
+            = (participantById && participantById.local)
+                || (!id && pinnedParticipant && pinnedParticipant.local);
 
-        if ((participantById && participantById.local)
-                || (!id && pinnedParticipant && pinnedParticipant.local)) {
-            videoType = _LOCAL;
-        } else {
-            videoType = _REMOTE;
-        }
-
-        sendAnalyticsEvent(
-                `${actionName}.${videoType}`,
-                { value: conference.getParticipantCount() });
+        sendAnalytics(createPinnedEvent(
+            actionName,
+            local ? 'local' : id,
+            {
+                local,
+                'participant_count': conference.getParticipantCount()
+            }));
     }
 
     // The following condition prevents signaling to pin local participant and
@@ -215,6 +217,8 @@ function _pinParticipant(store, next, action) {
     // - If we don't have an ID (i.e. no participant identified by an ID), we
     //   check for local participant. If she's currently pinned, then this
     //   action will unpin her and that's why we won't signal here too.
+    let pin;
+
     if (participantById) {
         pin = !participantById.local && !participantById.isBot;
     } else {
@@ -223,7 +227,6 @@ function _pinParticipant(store, next, action) {
         pin = !localParticipant || !localParticipant.pinned;
     }
     if (pin) {
-
         try {
             conference.pinParticipant(id);
         } catch (err) {
@@ -317,9 +320,11 @@ function _setLastN(store, next, action) {
 function _setReceiveVideoQuality({ dispatch, getState }, next, action) {
     const { audioOnly, conference } = getState()['features/base/conference'];
 
-    conference.setReceiverVideoConstraint(action.receiveVideoQuality);
-    if (audioOnly) {
-        dispatch(toggleAudioOnly());
+    if (conference) {
+        conference.setReceiverVideoConstraint(action.receiveVideoQuality);
+        if (audioOnly) {
+            dispatch(toggleAudioOnly());
+        }
     }
 
     return next(action);

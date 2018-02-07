@@ -2,6 +2,8 @@ import React from 'react';
 import { TextInput, TouchableHighlight, View } from 'react-native';
 import { connect } from 'react-redux';
 
+import { AppSettings } from '../../app-settings';
+import { Icon } from '../../base/font-icons';
 import { translate } from '../../base/i18n';
 import { MEDIA_TYPE } from '../../base/media';
 import { Link, LoadingIndicator, Text } from '../../base/react';
@@ -75,16 +77,30 @@ class WelcomePage extends AbstractWelcomePage {
                         autoCorrect = { false }
                         autoFocus = { false }
                         onChangeText = { this._onRoomChange }
+                        onSubmitEditing = { this._onJoin }
                         placeholder = { t('welcomepage.roomname') }
                         placeholderTextColor = { PLACEHOLDER_TEXT_COLOR }
+                        returnKeyType = { 'go' }
                         style = { styles.textInput }
                         underlineColorAndroid = 'transparent'
                         value = { this.state.room } />
-                    {
-                        this._renderJoinButton()
-                    }
+                    <View style = { styles.buttonRow }>
+                        <TouchableHighlight
+                            accessibilityLabel = { 'Tap for Settings.' }
+                            onPress = { this._onSettingsOpen }
+                            style = { [ styles.button, styles.settingsButton ] }
+                            underlayColor = { ColorPalette.white }>
+                            <Icon
+                                name = 'settings'
+                                style = { styles.settingsIcon } />
+                        </TouchableHighlight>
+                        {
+                            this._renderJoinButton()
+                        }
+                    </View>
                     <RecentList />
                 </View>
+                <AppSettings />
                 {
                     this._renderLegalese()
                 }
@@ -127,7 +143,7 @@ class WelcomePage extends AbstractWelcomePage {
                 accessibilityLabel = { 'Tap to Join.' }
                 disabled = { this._isJoinDisabled() }
                 onPress = { this._onJoin }
-                style = { styles.button }
+                style = { [ styles.button, styles.joinButton ] }
                 underlayColor = { ColorPalette.white }>
                 {
                     children

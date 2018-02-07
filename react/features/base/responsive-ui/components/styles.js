@@ -1,13 +1,13 @@
 import { createStyleSheet } from '../../styles';
 
 /**
- * The styles of the feature base/aspect-ratio.
+ * The styles of the feature base/responsive-ui.
  */
 export default createStyleSheet({
     /**
-     * The style of {@link AspectRatioDetector} used on react-native.
+     * The style of {@link DimensionsDetector} used on react-native.
      */
-    aspectRatioDetector: {
+    dimensionsDetector: {
         alignSelf: 'stretch',
         flex: 1
     }

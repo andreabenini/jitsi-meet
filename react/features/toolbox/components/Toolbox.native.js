@@ -4,15 +4,11 @@ import { View } from 'react-native';
 import { connect } from 'react-redux';
 
 import {
-    TOOLBAR_AUDIO_MUTED,
-    TOOLBAR_AUDIO_UNMUTED,
-    TOOLBAR_VIDEO_,
-    sendAnalyticsEvent
+    AUDIO_MUTE,
+    VIDEO_MUTE,
+    createToolbarEvent,
+    sendAnalytics
 } from '../../analytics';
-import {
-    isNarrowAspectRatio,
-    makeAspectRatioAware
-} from '../../base/aspect-ratio';
 import { toggleAudioOnly } from '../../base/conference';
 import {
     MEDIA_TYPE,
@@ -22,6 +18,10 @@ import {
     VIDEO_MUTISM_AUTHORITY
 } from '../../base/media';
 import { Container } from '../../base/react';
+import {
+    isNarrowAspectRatio,
+    makeAspectRatioAware
+} from '../../base/responsive-ui';
 import { ColorPalette } from '../../base/styles';
 import { beginRoomLockRequest } from '../../room-lock';
 import { beginShareRoom } from '../../share-room';
@@ -188,7 +188,11 @@ class Toolbox extends Component {
     _onToggleAudio() {
         const mute = !this.props._audioMuted;
 
-        sendAnalyticsEvent(mute ? TOOLBAR_AUDIO_MUTED : TOOLBAR_AUDIO_UNMUTED);
+        sendAnalytics(createToolbarEvent(
+            AUDIO_MUTE,
+            {
+                enable: mute
+            }));
 
         // The user sees the reality i.e. the state of base/tracks and intends
         // to change reality by tapping on the respective button i.e. the user
@@ -211,7 +215,11 @@ class Toolbox extends Component {
     _onToggleVideo() {
         const mute = !this.props._videoMuted;
 
-        sendAnalyticsEvent(`${TOOLBAR_VIDEO_}.${mute ? 'muted' : 'unmuted'}`);
+        sendAnalytics(createToolbarEvent(
+            VIDEO_MUTE,
+            {
+                enable: mute
+            }));
 
         // The user sees the reality i.e. the state of base/tracks and intends
         // to change reality by tapping on the respective button i.e. the user

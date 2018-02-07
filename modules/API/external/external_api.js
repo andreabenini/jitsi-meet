@@ -21,6 +21,7 @@ const commands = {
     displayName: 'display-name',
     email: 'email',
     hangup: 'video-hangup',
+    submitFeedback: 'submit-feedback',
     toggleAudio: 'toggle-audio',
     toggleChat: 'toggle-chat',
     toggleContactList: 'toggle-contact-list',
@@ -38,6 +39,7 @@ const events = {
     'audio-availability-changed': 'audioAvailabilityChanged',
     'audio-mute-status-changed': 'audioMuteStatusChanged',
     'display-name-change': 'displayNameChange',
+    'feedback-submitted': 'feedbackSubmitted',
     'incoming-message': 'incomingMessage',
     'outgoing-message': 'outgoingMessage',
     'participant-joined': 'participantJoined',
@@ -121,7 +123,8 @@ function parseArguments(args) {
             configOverwrite,
             interfaceConfigOverwrite,
             noSSL,
-            jwt
+            jwt,
+            onload
         ] = args;
 
         return {
@@ -132,7 +135,8 @@ function parseArguments(args) {
             configOverwrite,
             interfaceConfigOverwrite,
             noSSL,
-            jwt
+            jwt,
+            onload
         };
     case 'object': // new arguments format
         return args[0];
@@ -194,6 +198,8 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
      * used.
      * @param {string} [options.jwt] - The JWT token if needed by jitsi-meet for
      * authentication.
+     * @param {string} [options.onload] - The onload function that will listen
+     * for iframe onload event.
      */
     constructor(domain, ...args) {
         super();
@@ -205,7 +211,8 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
             configOverwrite = {},
             interfaceConfigOverwrite = {},
             noSSL = false,
-            jwt = undefined
+            jwt = undefined,
+            onload = undefined
         } = parseArguments(args);
 
         this._parentNode = parentNode;
@@ -216,7 +223,7 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
             noSSL,
             roomName
         });
-        this._createIFrame(height, width);
+        this._createIFrame(height, width, onload);
         this._transport = new Transport({
             backend: new PostMessageTransportBackend({
                 postisOptions: {
@@ -241,11 +248,13 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
      * parseSizeParam for format details.
      * @param {number|string} width - The with of the iframe. Check
      * parseSizeParam for format details.
+     * @param {Function} onload - The function that will listen
+     * for onload event.
      * @returns {void}
      *
      * @private
      */
-    _createIFrame(height, width) {
+    _createIFrame(height, width, onload) {
         const frameName = `jitsiConferenceFrame${id}`;
 
         this._frame = document.createElement('iframe');
@@ -256,6 +265,13 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
         this._setSize(height, width);
         this._frame.setAttribute('allowFullScreen', 'true');
         this._frame.style.border = 0;
+
+        if (onload) {
+            // waits for iframe resources to load
+            // and fires event when it is done
+            this._frame.onload = onload;
+        }
+
         this._frame = this._parentNode.appendChild(this._frame);
     }
 
