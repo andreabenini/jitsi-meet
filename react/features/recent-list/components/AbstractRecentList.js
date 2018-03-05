@@ -8,11 +8,19 @@ import { appNavigate } from '../../app';
  * The type of the React {@code Component} props of {@link AbstractRecentList}
  */
 type Props = {
+    _defaultURL: string,
+
+    _recentList: Array<Object>,
 
     /**
      * The redux store's {@code dispatch} function.
      */
-    dispatch: Dispatch<*>
+    dispatch: Dispatch<*>,
+
+    /**
+     * Whether {@code AbstractRecentList} is enabled.
+     */
+    enabled: boolean
 };
 
 /**
@@ -28,16 +36,20 @@ export default class AbstractRecentList extends Component<Props> {
      * Joins the selected room.
      *
      * @param {string} room - The selected room.
+     * @protected
      * @returns {void}
      */
     _onJoin(room) {
-        room && this.props.dispatch(appNavigate(room));
+        const { dispatch, enabled } = this.props;
+
+        enabled && room && dispatch(appNavigate(room));
     }
 
     /**
      * Creates a bound onPress action for the list item.
      *
      * @param {string} room - The selected room.
+     * @protected
      * @returns {Function}
      */
     _onSelect(room) {
@@ -46,17 +58,18 @@ export default class AbstractRecentList extends Component<Props> {
 }
 
 /**
- * Maps redux state to component props.
+ * Maps (parts of) the redux state into {@code AbstractRecentList}'s React
+ * {@code Component} props.
  *
  * @param {Object} state - The redux state.
  * @returns {{
- *      _homeServer: string,
- *      _recentList: Array
+ *     _defaultURL: string,
+ *     _recentList: Array
  * }}
  */
 export function _mapStateToProps(state: Object) {
     return {
-        _homeServer: state['features/app'].app._getDefaultURL(),
-        _recentList: state['features/recent-list'].list
+        _defaultURL: state['features/app'].app._getDefaultURL(),
+        _recentList: state['features/recent-list']
     };
 }

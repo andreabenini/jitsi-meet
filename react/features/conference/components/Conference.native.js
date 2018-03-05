@@ -3,7 +3,7 @@
 import React, { Component } from 'react';
 
 // eslint-disable-next-line react-native/split-platform-components
-import { BackAndroid, BackHandler, View } from 'react-native';
+import { BackAndroid, BackHandler, StatusBar, View } from 'react-native';
 import { connect as reactReduxConnect } from 'react-redux';
 
 import { appNavigate } from '../../app';
@@ -65,6 +65,14 @@ type Props = {
      * undesired, {@code true} is always returned.
      */
     _onHardwareBackPress: Function,
+
+    /**
+     * The indicator which determines whether the UI is reduced (to accommodate
+     * smaller display areas).
+     *
+     * @private
+     */
+    _reducedUI: boolean,
 
     /**
      * The handler which dispatches the (redux) action setToolboxVisible to
@@ -184,6 +192,9 @@ class Conference extends Component<Props> {
                 onClick = { this._onClick }
                 style = { styles.conference }
                 touchFeedback = { false }>
+                <StatusBar
+                    hidden = { true }
+                    translucent = { true } />
 
                 {/*
                   * The LargeVideo is the lowermost stacking layer.
@@ -192,8 +203,9 @@ class Conference extends Component<Props> {
 
                 {/*
                   * If there is a ringing call, show the callee's info.
-                  */}
-                <CalleeInfoContainer />
+                  */
+                    this.props._reducedUI || <CalleeInfoContainer />
+                }
 
                 {/*
                   * The activity/loading indicator goes above everything, except
@@ -223,8 +235,9 @@ class Conference extends Component<Props> {
 
                 {/*
                   * The dialogs are in the topmost stacking layers.
-                  */}
-                <DialogContainer />
+                  */
+                    this.props._reducedUI || <DialogContainer />
+                }
             </Container>
         );
     }
@@ -355,18 +368,20 @@ function _mapDispatchToProps(dispatch) {
 }
 
 /**
- * Maps (parts of) the Redux state to the associated Conference's props.
+ * Maps (parts of) the redux state to the associated {@code Conference}'s props.
  *
- * @param {Object} state - The Redux state.
+ * @param {Object} state - The redux state.
  * @private
  * @returns {{
  *     _connecting: boolean,
+ *     _reducedUI: boolean,
  *     _toolboxVisible: boolean
  * }}
  */
 function _mapStateToProps(state) {
     const { connecting, connection } = state['features/base/connection'];
     const { conference, joining, leaving } = state['features/base/conference'];
+    const { reducedUI } = state['features/base/responsive-ui'];
 
     // XXX There is a window of time between the successful establishment of the
     // XMPP connection and the subsequent commencement of joining the MUC during
@@ -391,6 +406,15 @@ function _mapStateToProps(state) {
          * @type {boolean}
          */
         _connecting: Boolean(connecting_),
+
+        /**
+         * The indicator which determines whether the UI is reduced (to
+         * accommodate smaller display areas).
+         *
+         * @private
+         * @type {boolean}
+         */
+        _reducedUI: reducedUI,
 
         /**
          * The indicator which determines whether the Toolbox is visible.

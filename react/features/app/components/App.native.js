@@ -17,6 +17,7 @@ import '../../mobile/callkit';
 import '../../mobile/external-api';
 import '../../mobile/full-screen';
 import '../../mobile/permissions';
+import '../../mobile/picture-in-picture';
 import '../../mobile/proximity';
 import '../../mobile/wake-lock';
 
@@ -35,6 +36,13 @@ export class App extends AbstractApp {
      */
     static propTypes = {
         ...AbstractApp.propTypes,
+
+        /**
+         * Whether Picture-in-Picture is enabled. If {@code true}, a toolbar
+         * button is rendered in the {@link Conference} view to afford entering
+         * Picture-in-Picture.
+         */
+        pictureInPictureEnabled: PropTypes.bool,
 
         /**
          * Whether the Welcome page is enabled. If {@code true}, the Welcome

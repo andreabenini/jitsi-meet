@@ -55,6 +55,7 @@
 @import 'chat';
 @import 'ringing/ringing';
 @import 'welcome_page';
+@import 'welcome_page_content';
 @import 'toolbars';
 @import 'side_toolbar_container';
 @import 'jquery.contextMenu';
@@ -65,7 +66,6 @@
 @import 'components/button-control';
 @import 'components/input-control';
 @import 'components/input-slider';
-@import "modals/invite/invite";
 @import "connection-info";
 @import 'aui-components/dropdown';
 @import '404';
