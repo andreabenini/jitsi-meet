@@ -268,8 +268,23 @@ class InfoDialog extends Component {
      * @returns {string}
      */
     _getDialInfoPageURL() {
-        return `${window.location.origin}/static/dialInInfo.html?room=${
-            encodeURIComponent(this.props._conferenceName)}`;
+        const origin = window.location.origin;
+        const encodedConferenceName
+            = encodeURIComponent(this.props._conferenceName);
+        const pathParts = window.location.pathname.split('/');
+
+        pathParts.length = pathParts.length - 1;
+
+        const newPath = pathParts.reduce((accumulator, currentValue) => {
+            if (currentValue) {
+                return `${accumulator}/${currentValue}`;
+            }
+
+            return accumulator;
+        }, '');
+
+        return `${origin}${newPath}/static/dialInInfo.html?room=${
+            encodedConferenceName}`;
     }
 
     /**
