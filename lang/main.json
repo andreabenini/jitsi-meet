@@ -51,6 +51,7 @@
             "audio": "Voice",
             "video": "Video"
         },
+        "calendar": "Calendar",
         "go": "GO",
         "join": "JOIN",
         "privacy": "Privacy",
@@ -452,17 +453,24 @@
         "qualityButtonTip": "Change received video quality"
     },
     "dialOut": {
-        "dial": "Dial",
-        "dialOut": "Call a number",
-        "statusMessage": "is now __status__",
-        "enterPhone": "Enter phone number",
-        "phoneNotAllowed": "Oh, we don't support that destination yet! Sorry!"
+        "statusMessage": "is now __status__"
     },
     "addPeople": {
         "add": "Add",
+        "countryNotSupported": "We do not support this destination yet.",
+        "countryReminder": "Calling outside the US? Please make sure you start with the country code!",
+        "disabled": "You can't invite people.",
+        "invite": "Invite",
+        "loading": "Searching for people and phone numbers",
+        "loadingNumber": "Validating phone number",
+        "loadingPeople": "Searching for people to invite",
         "noResults": "No matching search results",
-        "searchPlaceholder": "Search for people and rooms to add",
-        "title": "Add people to your call",
+        "noValidNumbers": "Please enter a phone number",
+        "searchNumbers": "Enter a phone number to invite",
+        "searchPeople": "Enter a name to invite",
+        "searchPeopleAndNumbers": "Enter a name or phone number to invite",
+        "telephone": "Telephone: __number__",
+        "title": "Invite people to your meeting",
         "failedToAdd": "Failed to add members"
     },
     "inlineDialogFailure": {
@@ -495,7 +503,7 @@
         "dialInConferenceID": "PIN: __conferenceID__#",
         "dialInNotSupported": "Sorry, dialing in is currently not suppported.",
         "genericError": "Whoops, something went wrong.",
-        "invitePhone": "To join by phone, dial __number__ and enter this PIN: __pin__#",
+        "invitePhone": "To join by phone, dial __number__ and enter this PIN: __conferenceID__#",
         "invitePhoneAlternatives": "To view more phone numbers, click this link: __url__",
         "inviteURL": "To join the video meeting, click this link: __url__",
         "moreNumbers": "More numbers",
@@ -519,5 +527,16 @@
         "serverURL": "Server URL",
         "startWithAudioMuted": "Start with audio muted",
         "startWithVideoMuted": "Start with video muted"
+    },
+    "calendarSync": {
+        "later": "Later",
+        "next": "Upcoming",
+        "nextMeeting": "next meeting",
+        "now": "Now"
+    },
+    "recentList": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "earlier": "Earlier"
     }
 }

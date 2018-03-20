@@ -114,6 +114,7 @@ public class JitsiMeetView extends FrameLayout {
                 .setApplication(application)
                 .setBundleAssetName("index.android.bundle")
                 .setJSMainModulePath("index.android")
+                .addPackage(new com.calendarevents.CalendarEventsPackage())
                 .addPackage(new com.corbt.keepawake.KCKeepAwakePackage())
                 .addPackage(new com.facebook.react.shell.MainReactPackage())
                 .addPackage(new com.i18n.reactnativei18n.ReactNativeI18n())
@@ -122,6 +123,7 @@ public class JitsiMeetView extends FrameLayout {
                 .addPackage(new com.oney.WebRTCModule.WebRTCModulePackage())
                 .addPackage(new com.RNFetchBlob.RNFetchBlobPackage())
                 .addPackage(new com.rnimmersive.RNImmersivePackage())
+                .addPackage(new com.zmxv.RNSound.RNSoundPackage())
                 .addPackage(new ReactPackageAdapter() {
                     @Override
                     public List<NativeModule> createNativeModules(

@@ -132,6 +132,13 @@ export default createStyleSheet({
     },
 
     /**
+     * A view that contains the field and hint box.
+     */
+    joinControls: {
+        padding: BoxModel.padding
+    },
+
+    /**
      * The style of the top-level container/{@code View} of
      * {@code LocalVideoTrackUnderlay}.
      */
@@ -149,15 +156,59 @@ export default createStyleSheet({
         flexDirection: 'column'
     },
 
+    pageIndicator: {
+        alignItems: 'center',
+        flex: 1,
+        flexDirection: 'column',
+        justifyContent: 'center'
+    },
+
+    pageIndicatorContainer: {
+        alignItems: 'stretch',
+        backgroundColor: ColorPalette.blue,
+        flexDirection: 'row',
+        height: 56,
+        justifyContent: 'center'
+    },
+
+    pageIndicatorIcon: {
+        color: ColorPalette.blueHighlight,
+        fontSize: 24
+    },
+
+    pageIndicatorText: {
+        color: ColorPalette.blueHighlight
+    },
+
+    pageIndicatorTextActive: {
+        color: ColorPalette.white
+    },
+
+    /**
+     * Top level style of the paged list.
+     */
+    pagedList: {
+        flex: 1
+    },
+
+    pagedListContainer: {
+        flex: 1,
+        flexDirection: 'column'
+    },
+
+    /**
+     * Disabled style for the container.
+     */
+    pagedListContainerDisabled: {
+        opacity: 0.2
+    },
+
     /**
      * Container for room name input box and 'join' button.
      */
     roomContainer: {
         alignSelf: 'stretch',
-        flex: 1,
-        flexDirection: 'column',
-        margin: BoxModel.margin,
-        marginTop: BoxModel.margin * 2
+        flexDirection: 'column'
     },
 
     /**
