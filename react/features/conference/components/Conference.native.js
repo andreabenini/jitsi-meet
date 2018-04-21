@@ -11,6 +11,7 @@ import { connect, disconnect } from '../../base/connection';
 import { DialogContainer } from '../../base/dialog';
 import { CalleeInfoContainer } from '../../base/jwt';
 import { Container, LoadingIndicator, TintedView } from '../../base/react';
+import { TestConnectionInfo } from '../../base/testing';
 import { createDesiredLocalTracks } from '../../base/tracks';
 import { ConferenceNotification } from '../../calendar-sync';
 import { Filmstrip } from '../../filmstrip';
@@ -187,20 +188,16 @@ class Conference extends Component<Props> {
      */
     render() {
         return (
-            <Container
-                accessibilityLabel = 'Conference'
-                accessible = { false }
-                onClick = { this._onClick }
-                style = { styles.conference }
-                touchFeedback = { false }>
+            <Container style = { styles.conference }>
                 <StatusBar
+                    barStyle = 'light-content'
                     hidden = { true }
                     translucent = { true } />
 
                 {/*
                   * The LargeVideo is the lowermost stacking layer.
                   */}
-                <LargeVideo />
+                <LargeVideo onPress = { this._onClick } />
 
                 {/*
                   * If there is a ringing call, show the callee's info.
@@ -218,7 +215,9 @@ class Conference extends Component<Props> {
                         </TintedView>
                 }
 
-                <View style = { styles.toolboxAndFilmstripContainer } >
+                <View
+                    pointerEvents = 'box-none'
+                    style = { styles.toolboxAndFilmstripContainer }>
                     {/*
                       * The Toolbox is in a stacking layer bellow the Filmstrip.
                       */}
@@ -233,6 +232,7 @@ class Conference extends Component<Props> {
                       */}
                     <Filmstrip />
                 </View>
+                <TestConnectionInfo />
 
                 <ConferenceNotification />
 

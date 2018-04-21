@@ -129,8 +129,7 @@ class Etherpad extends LargeContainer {
         let height, width;
 
         if (interfaceConfig.VERTICAL_FILMSTRIP) {
-            height = interfaceConfig._USE_NEW_TOOLBOX
-                ? containerHeight - getToolboxHeight() : containerHeight;
+            height = containerHeight - getToolboxHeight();
             width = containerWidth - Filmstrip.getFilmstripWidth();
         } else {
             height = containerHeight - Filmstrip.getFilmstripHeight();
@@ -156,6 +155,9 @@ class Etherpad extends LargeContainer {
                 document.body.style.background = '#eeeeee';
                 $iframe.css({ visibility: 'visible' });
                 $container.css({ zIndex: 2 });
+
+                APP.store.dispatch(setDocumentEditingState(true));
+
                 resolve();
             });
         });
@@ -174,6 +176,9 @@ class Etherpad extends LargeContainer {
             $iframe.fadeOut(300, () => {
                 $iframe.css({ visibility: 'hidden' });
                 $container.css({ zIndex: 0 });
+
+                APP.store.dispatch(setDocumentEditingState(false));
+
                 resolve();
             });
         });

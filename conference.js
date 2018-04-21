@@ -28,6 +28,7 @@ import {
     redirectWithStoredParams,
     reloadWithStoredParams
 } from './react/features/app';
+import { updateRecordingState } from './react/features/recording';
 
 import EventEmitter from 'events';
 
@@ -94,7 +95,6 @@ import {
     getLocationContextRoot,
     getJitsiMeetGlobalNS
 } from './react/features/base/util';
-import { statsEmitter } from './react/features/connection-indicator';
 import { showDesktopPicker } from './react/features/desktop-picker';
 import { appendSuffix } from './react/features/display-name';
 import {
@@ -106,10 +106,7 @@ import {
     suspendDetected
 } from './react/features/overlay';
 import { setSharedVideoStatus } from './react/features/shared-video';
-import {
-    isButtonEnabled,
-    showDesktopSharingButton
-} from './react/features/toolbox';
+import { isButtonEnabled } from './react/features/toolbox';
 
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
@@ -768,7 +765,6 @@ export default {
 
                 APP.store.dispatch(
                     setDesktopSharingEnabled(this.isDesktopSharingEnabled));
-                APP.store.dispatch(showDesktopSharingButton());
 
                 this._createRoom(tracks);
                 APP.remoteControl.init();
@@ -1359,7 +1355,6 @@ export default {
         this.isSharingScreen = newStream && newStream.videoType === 'desktop';
 
         if (wasSharingScreen !== this.isSharingScreen) {
-            APP.UI.updateDesktopSharingButtons();
             APP.API.notifyScreenSharingStatusChanged(this.isSharingScreen);
         }
     },
@@ -1380,37 +1375,6 @@ export default {
                 }
                 this.setAudioMuteStatus(this.isLocalAudioMuted());
             });
-    },
-
-    /**
-     * Triggers a tooltip to display when a feature was attempted to be used
-     * while in audio only mode.
-     *
-     * @param {string} featureName - The name of the feature that attempted to
-     * toggle.
-     * @private
-     * @returns {void}
-     */
-    _displayAudioOnlyTooltip(featureName) {
-        let buttonName = null;
-        let tooltipElementId = null;
-
-        switch (featureName) {
-        case 'screenShare':
-            buttonName = 'desktop';
-            tooltipElementId = 'screenshareWhileAudioOnly';
-            break;
-        case 'videoMute':
-            buttonName = 'camera';
-            tooltipElementId = 'unmuteWhileAudioOnly';
-            break;
-        }
-
-        if (tooltipElementId) {
-            APP.UI.showToolbar(6000);
-            APP.UI.showCustomToolbarPopup(
-                buttonName, tooltipElementId, true, 5000);
-        }
     },
 
     /**
@@ -1523,8 +1487,6 @@ export default {
         }
 
         if (this.isAudioOnly()) {
-            this._displayAudioOnlyTooltip('screenShare');
-
             return Promise.reject('No screensharing in audio only mode');
         }
 
@@ -1866,9 +1828,6 @@ export default {
 
         room.on(JitsiConferenceEvents.TALK_WHILE_MUTED, () => {
             APP.UI.showToolbar(6000);
-
-            APP.UI.showCustomToolbarPopup(
-                'microphone', 'talkWhileMutedPopup', true, 5000);
         });
 
         room.on(
@@ -1892,6 +1851,12 @@ export default {
         room.on(JitsiConferenceEvents.DOMINANT_SPEAKER_CHANGED, id => {
             APP.store.dispatch(dominantSpeakerChanged(id));
         });
+
+        room.on(JitsiConferenceEvents.LIVE_STREAM_URL_CHANGED,
+            (from, liveStreamViewURL) =>
+                APP.store.dispatch(updateRecordingState({
+                    liveStreamViewURL
+                })));
 
         if (!interfaceConfig.filmStripOnly) {
             room.on(JitsiConferenceEvents.CONNECTION_INTERRUPTED, () => {
@@ -1945,10 +1910,6 @@ export default {
                     reportError(e);
                 }
             });
-
-            APP.UI.addListener(
-                UIEvents.VIDEO_UNMUTING_WHILE_AUDIO_ONLY,
-                () => this._displayAudioOnlyTooltip('videoMute'));
         }
 
         room.on(JitsiConferenceEvents.CONNECTION_INTERRUPTED, () => {
@@ -2066,25 +2027,12 @@ export default {
             }
         });
 
-        room.on(
-            JitsiConferenceEvents.DTMF_SUPPORT_CHANGED,
-            isDTMFSupported => {
-                APP.UI.updateDTMFSupport(isDTMFSupported);
-            }
-        );
-
         APP.UI.addListener(UIEvents.AUDIO_MUTED, muted => {
             this.muteAudio(muted);
         });
         APP.UI.addListener(UIEvents.VIDEO_MUTED, muted => {
-            if (this.isAudioOnly() && !muted) {
-                this._displayAudioOnlyTooltip('videoMute');
-            } else {
-                this.muteVideo(muted);
-            }
+            this.muteVideo(muted);
         });
-
-        statsEmitter.startListeningForStats(room);
 
         room.addCommandListener(this.commands.defaults.ETHERPAD,
             ({ value }) => {
@@ -2181,13 +2129,6 @@ export default {
         // Starts or stops the recording for the conference.
         APP.UI.addListener(UIEvents.RECORDING_TOGGLED, options => {
             room.toggleRecording(options);
-        });
-
-        APP.UI.addListener(UIEvents.SUBJECT_CHANGED, topic => {
-            room.setSubject(topic);
-        });
-        room.on(JitsiConferenceEvents.SUBJECT_CHANGED, subject => {
-            APP.UI.setSubject(subject);
         });
 
         APP.UI.addListener(UIEvents.AUTH_CLICKED, () => {

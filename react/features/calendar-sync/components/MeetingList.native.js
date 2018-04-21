@@ -1,18 +1,29 @@
 // @flow
+
 import React, { Component } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
-
-import styles from './styles';
-
-import { refreshCalendarEntryList } from '../actions';
 
 import { appNavigate } from '../../app';
 import { getLocalizedDateFormatter, translate } from '../../base/i18n';
 import { NavigateSectionList } from '../../base/react';
 import { openSettings } from '../../mobile/permissions';
 
+import { refreshCalendar } from '../actions';
+import { CALENDAR_ENABLED } from '../constants';
+import styles from './styles';
+
 type Props = {
+
+    /**
+     * The current state of the calendar access permission.
+     */
+    _authorization: string,
+
+    /**
+     * The calendar event list.
+     */
+    _eventList: Array<Object>,
 
     /**
      * Indicates if the list is disabled or not.
@@ -23,24 +34,6 @@ type Props = {
      * The Redux dispatch function.
      */
     dispatch: Function,
-
-    /**
-     * Tells the component if it's being displayed at the moment, or not.
-     * Note: as an example, on Android it can happen that the component
-     * is rendered but not displayed, because components like ViewPagerAndroid
-     * render their children even if they are not visible at the moment.
-     */
-    displayed: boolean,
-
-    /**
-     * The current state of the calendar access permission.
-     */
-    _calendarAccessStatus: string,
-
-    /**
-     * The calendar event list.
-     */
-    _eventList: Array<Object>,
 
     /**
      * The translate function.
@@ -60,18 +53,29 @@ class MeetingList extends Component<Props> {
     };
 
     /**
+     * Public API method for {@code Component}s rendered in
+     * {@link AbstractPagedList}. When invoked, refreshes the calendar entries
+     * in the app.
+     *
+     * Note: It is a static method as the {@code Component} may not be
+     * initialized yet when the UI invokes refresh (e.g. {@link TabBarIOS} tab
+     * change).
+     *
+     * @param {Function} dispatch - The Redux dispatch function.
+     * @public
+     * @returns {void}
+     */
+    static refresh(dispatch) {
+        dispatch(refreshCalendar());
+    }
+
+    /**
      * Constructor of the MeetingList component.
      *
      * @inheritdoc
      */
     constructor(props) {
         super(props);
-
-        const { dispatch, displayed } = props;
-
-        if (displayed) {
-            dispatch(refreshCalendarEntryList());
-        }
 
         this._getRenderListEmptyComponent
             = this._getRenderListEmptyComponent.bind(this);
@@ -83,22 +87,7 @@ class MeetingList extends Component<Props> {
     }
 
     /**
-     * Implements React Component's componentWillReceiveProps function.
-     *
-     * @inheritdoc
-     */
-    componentWillReceiveProps(newProps) {
-        const { displayed } = this.props;
-
-        if (newProps.displayed && !displayed) {
-            const { dispatch } = this.props;
-
-            dispatch(refreshCalendarEntryList());
-        }
-    }
-
-    /**
-     * Implements the React Components's render method.
+     * Implements the React Components's render.
      *
      * @inheritdoc
      */
@@ -110,14 +99,12 @@ class MeetingList extends Component<Props> {
                 disabled = { disabled }
                 onPress = { this._onPress }
                 onRefresh = { this._onRefresh }
-                renderListEmptyComponent = {
-                    this._getRenderListEmptyComponent
-                }
+                renderListEmptyComponent = { this._getRenderListEmptyComponent }
                 sections = { this._toDisplayableList() } />
         );
     }
 
-    _getRenderListEmptyComponent: () => Object
+    _getRenderListEmptyComponent: () => Object;
 
     /**
      * Returns a list empty component if a custom one has to be rendered instead
@@ -127,9 +114,9 @@ class MeetingList extends Component<Props> {
      * @returns {Component}
      */
     _getRenderListEmptyComponent() {
-        const { _calendarAccessStatus, t } = this.props;
+        const { _authorization, t } = this.props;
 
-        if (_calendarAccessStatus === 'denied') {
+        if (_authorization === 'denied') {
             return (
                 <View style = { styles.noPermissionMessageView }>
                     <Text style = { styles.noPermissionMessageText }>
@@ -149,7 +136,7 @@ class MeetingList extends Component<Props> {
         return null;
     }
 
-    _onPress: string => Function
+    _onPress: string => Function;
 
     /**
      * Handles the list's navigate action.
@@ -159,12 +146,10 @@ class MeetingList extends Component<Props> {
      * @returns {void}
      */
     _onPress(url) {
-        const { dispatch } = this.props;
-
-        dispatch(appNavigate(url));
+        this.props.dispatch(appNavigate(url));
     }
 
-    _onRefresh: () => void
+    _onRefresh: () => void;
 
     /**
      * Callback to execute when the list is doing a pull-to-refresh.
@@ -173,18 +158,16 @@ class MeetingList extends Component<Props> {
      * @returns {void}
      */
     _onRefresh() {
-        const { dispatch } = this.props;
-
-        dispatch(refreshCalendarEntryList(true));
+        this.props.dispatch(refreshCalendar(true));
     }
 
-    _toDisplayableItem: Object => Object
+    _toDisplayableItem: Object => Object;
 
     /**
      * Creates a displayable object from an event.
      *
-     * @private
      * @param {Object} event - The calendar event.
+     * @private
      * @returns {Object}
      */
     _toDisplayableItem(event) {
@@ -199,11 +182,10 @@ class MeetingList extends Component<Props> {
         };
     }
 
-    _toDisplayableList: () => Array<Object>
+    _toDisplayableList: () => Array<Object>;
 
     /**
-     * Transforms the event list to a displayable list
-     * with sections.
+     * Transforms the event list to a displayable list with sections.
      *
      * @private
      * @returns {Array<Object>}
@@ -211,18 +193,10 @@ class MeetingList extends Component<Props> {
     _toDisplayableList() {
         const { _eventList, t } = this.props;
         const now = Date.now();
-        const nowSection = NavigateSectionList.createSection(
-            t('calendarSync.now'),
-            'now'
-        );
-        const nextSection = NavigateSectionList.createSection(
-            t('calendarSync.next'),
-            'next'
-        );
-        const laterSection = NavigateSectionList.createSection(
-            t('calendarSync.later'),
-            'later'
-        );
+        const { createSection } = NavigateSectionList;
+        const nowSection = createSection(t('calendarSync.now'), 'now');
+        const nextSection = createSection(t('calendarSync.next'), 'next');
+        const laterSection = createSection(t('calendarSync.later'), 'later');
 
         for (const event of _eventList) {
             const displayableEvent = this._toDisplayableItem(event);
@@ -231,7 +205,7 @@ class MeetingList extends Component<Props> {
                 nowSection.data.push(displayableEvent);
             } else if (event.startDate > now) {
                 if (nextSection.data.length
-                && nextSection.data[0].startDate !== event.startDate) {
+                        && nextSection.data[0].startDate !== event.startDate) {
                     laterSection.data.push(displayableEvent);
                 } else {
                     nextSection.data.push(displayableEvent);
@@ -254,13 +228,13 @@ class MeetingList extends Component<Props> {
         return sectionList;
     }
 
-    _toDateString: Object => string
+    _toDateString: Object => string;
 
     /**
      * Generates a date (interval) string for a given event.
      *
-     * @private
      * @param {Object} event - The event.
+     * @private
      * @returns {string}
      */
     _toDateString(event) {
@@ -278,16 +252,18 @@ class MeetingList extends Component<Props> {
  *
  * @param {Object} state - The redux state.
  * @returns {{
- *      _eventList: Array
+ *     _eventList: Array
  * }}
  */
-export function _mapStateToProps(state: Object) {
+function _mapStateToProps(state: Object) {
     const calendarSyncState = state['features/calendar-sync'];
 
     return {
-        _calendarAccessStatus: calendarSyncState.calendarAccessStatus,
+        _authorization: calendarSyncState.authorization,
         _eventList: calendarSyncState.events
     };
 }
 
-export default translate(connect(_mapStateToProps)(MeetingList));
+export default CALENDAR_ENABLED
+    ? translate(connect(_mapStateToProps)(MeetingList))
+    : undefined;

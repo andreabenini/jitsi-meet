@@ -1,5 +1,3 @@
-/* global interfaceConfig */
-
 import InlineDialog from '@atlaskit/inline-dialog';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
@@ -8,29 +6,11 @@ import { connect } from 'react-redux';
 import { createToolbarEvent, sendAnalytics } from '../../analytics';
 import { translate } from '../../base/i18n';
 import { getParticipantCount } from '../../base/participants';
-import {
-    ToolbarButton,
-    ToolbarButtonV2,
-    TOOLTIP_TO_POPUP_POSITION
-} from '../../toolbox';
+import { ToolbarButton } from '../../toolbox';
 
 import { updateDialInNumbers } from '../actions';
 
 import { InfoDialog } from './info-dialog';
-
-/**
- * A configuration object to describe how {@code ToolbarButton} should render
- * the button.
- *
- * @type {object}
- */
-const DEFAULT_BUTTON_CONFIGURATION = {
-    buttonName: 'info',
-    classNames: [ 'button', 'icon-info' ],
-    enabled: true,
-    id: 'toolbar_button_info',
-    tooltipKey: 'info.tooltip'
-};
 
 /**
  * The amount of time, in milliseconds, to wait until automatically showing
@@ -55,18 +35,20 @@ class InfoDialogButton extends Component {
     static propTypes = {
 
         /**
-         * Phone numbers for dialing into the conference.
+         * The redux state representing the dial-in numbers feature.
          */
-        _dialInNumbers: PropTypes.oneOfType([
-            PropTypes.object,
-            PropTypes.array
-        ]),
+        _dialIn: PropTypes.object,
 
         /**
          * Whether or not the {@code InfoDialog} should display automatically
          * after {@link INFO_DIALOG_AUTO_SHOW_TIMEOUT}.
          */
         _disableAutoShow: PropTypes.bool,
+
+        /**
+         * The URL for a currently active live broadcast
+         */
+        _liveStreamViewURL: PropTypes.string,
 
         /**
          * The number of real participants in the call. If in a lonely call,
@@ -98,7 +80,7 @@ class InfoDialogButton extends Component {
     };
 
     /**
-     * Initializes new {@code ToolbarButtonWithDialog} instance.
+     * Initializes new {@code InfoDialogButton} instance.
      *
      * @param {Object} props - The read-only properties with which the new
      * instance is to be initialized.
@@ -137,7 +119,7 @@ class InfoDialogButton extends Component {
             this._maybeAutoShowDialog();
         }, INFO_DIALOG_AUTO_SHOW_TIMEOUT);
 
-        if (!this.props._dialInNumbers) {
+        if (!this.props._dialIn.numbers) {
             this.props.dispatch(updateDialInNumbers());
         }
     }
@@ -170,9 +152,29 @@ class InfoDialogButton extends Component {
      * @returns {ReactElement}
      */
     render() {
-        return interfaceConfig._USE_NEW_TOOLBOX
-            ? this._renderNewToolbarButton()
-            : this._renderOldToolbarButton();
+        const { _dialIn, _liveStreamViewURL, t } = this.props;
+        const { showDialog } = this.state;
+        const iconClass = `icon-info ${showDialog ? 'toggled' : ''}`;
+
+        return (
+            <div className = 'toolbox-button-wth-dialog'>
+                <InlineDialog
+                    content = {
+                        <InfoDialog
+                            dialIn = { _dialIn }
+                            liveStreamViewURL = { _liveStreamViewURL }
+                            onClose = { this._onDialogClose } /> }
+                    isOpen = { showDialog }
+                    onClose = { this._onDialogClose }
+                    position = { 'top right' }>
+                    <ToolbarButton
+                        accessibilityLabel = 'Info'
+                        iconName = { iconClass }
+                        onClick = { this._onDialogToggle }
+                        tooltip = { t('info.tooltip') } />
+                </InlineDialog>
+            </div>
+        );
     }
 
     /**
@@ -209,69 +211,6 @@ class InfoDialogButton extends Component {
 
         this.setState({ showDialog: !this.state.showDialog });
     }
-
-    /**
-     * Renders a React Element for the {@code InfoDialog} using legacy
-     * {@code ToolbarButton}.
-     *
-     * @private
-     * @returns {ReactElement}
-     */
-    _renderOldToolbarButton() {
-        const { tooltipPosition } = this.props;
-        const { showDialog } = this.state;
-
-        const buttonConfiguration = {
-            ...DEFAULT_BUTTON_CONFIGURATION,
-            classNames: [
-                ...DEFAULT_BUTTON_CONFIGURATION.classNames,
-                showDialog ? 'toggled button-active' : ''
-            ]
-        };
-
-        return (
-            <InlineDialog
-                content = { <InfoDialog onClose = { this._onDialogClose } /> }
-                isOpen = { showDialog }
-                onClose = { this._onDialogClose }
-                position = { TOOLTIP_TO_POPUP_POSITION[tooltipPosition] }>
-                <ToolbarButton
-                    button = { buttonConfiguration }
-                    onClick = { this._onDialogToggle }
-                    tooltipPosition = { tooltipPosition } />
-            </InlineDialog>
-        );
-    }
-
-    /**
-     * Renders a React Element for the {@code InfoDialog} using the newer
-     * {@code ToolbarButtonV2}.
-     *
-     * @private
-     * @returns {ReactElement}
-     */
-    _renderNewToolbarButton() {
-        const { t } = this.props;
-        const { showDialog } = this.state;
-        const iconClass = `icon-info ${showDialog ? 'toggled' : ''}`;
-
-        return (
-            <div className = 'toolbox-button-wth-dialog'>
-                <InlineDialog
-                    content = {
-                        <InfoDialog onClose = { this._onDialogClose } /> }
-                    isOpen = { showDialog }
-                    onClose = { this._onDialogClose }
-                    position = { 'top right' }>
-                    <ToolbarButtonV2
-                        accessibilityLabel = 'Info'
-                        iconName = { iconClass }
-                        onClick = { this._onDialogToggle }
-                        tooltip = { t('info.tooltip') } />
-                </InlineDialog>
-            </div>
-        );
-    }
 }
 
 /**
@@ -281,16 +220,18 @@ class InfoDialogButton extends Component {
  * @param {Object} state - The Redux state.
  * @private
  * @returns {{
- *     _dialInNumbers: Array,
- *     _disableAutoShow: bolean,
+ *     _dialIn: Object,
+ *     _disableAutoShow: boolean,
+ *     _liveStreamViewURL: string,
  *     _participantCount: number,
  *     _toolboxVisible: boolean
  * }}
  */
 function _mapStateToProps(state) {
     return {
-        _dialInNumbers: state['features/invite'].numbers,
+        _dialIn: state['features/invite'],
         _disableAutoShow: state['features/base/config'].iAmRecorder,
+        _liveStreamViewURL: state['features/recording'].liveStreamViewURL,
         _participantCount:
             getParticipantCount(state['features/base/participants']),
         _toolboxVisible: state['features/toolbox'].visible

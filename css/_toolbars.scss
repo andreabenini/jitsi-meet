@@ -30,248 +30,6 @@
     }
 }
 
-.toolbar-container {
-    display: block;
-    left:0;
-    min-height: 100px;
-    opacity: 0;
-    pointer-events: none;
-    position: absolute;
-    right:0;
-    text-align: center;
-    top:0;
-    z-index: $toolbarZ;
-}
-
-/**
- * Common toolbar styles.
- */
-.toolbar {
-    height: 100%;
-    pointer-events: auto;
-    position: relative;
-    z-index: $toolbarZ;
-
-    /**
-     * Ensure nested elements that don't have a button class, maybe because they
-     * are wrapped in a React Element, still display in a line.
-     */
-    > div {
-        display: inline-block;
-    }
-
-    /**
-     * Always on top overrides.
-     */
-    &.always-on-top {
-        /**
-         * Toolbar button styles for always on top.
-         */
-        .button {
-            font-size: $alwaysOnTopToolbarFontSize;
-            height: $alwaysOnTopToolbarSize;
-            line-height: $alwaysOnTopToolbarSize;
-            width: $alwaysOnTopToolbarSize;
-            &_hangup, &_hangup:hover {
-                font-size: $alwaysOnTopToolbarFontSize;
-            }
-        }
-    }
-
-    /**
-     * Toolbar button styles.
-     */
-    .button {
-        color: $toolbarButtonColor;
-        cursor: pointer;
-        z-index: $zindex1;
-        display: inline-block;
-        font-size: $toolbarFontSize;
-        height: $defaultToolbarSize;
-        line-height: $defaultToolbarSize;
-        position: relative;
-        text-align: center;
-        top:0px;
-        vertical-align: middle;
-        width: $defaultToolbarSize;
-
-        &[disabled] {
-            opacity: 0.5;
-        }
-
-        &:hover, &:active {
-            color: $toolbarButtonColor;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        &_hangup, &_hangup:hover {
-            color: $hangupColor;
-            font-size: $hangupFontSize;
-        }
-
-        &:not(.toggled) {
-            &:hover, &:active {
-                // sum opacity with background layer should give us 0.8
-                background: $toolbarSelectBackground;
-            }
-        }
-
-        &.toggled {
-            background: $toolbarToggleBackground;
-
-            &.icon-camera {
-                @extend .icon-camera-disabled;
-            }
-
-            &.icon-full-screen {
-                @extend .icon-exit-full-screen;
-            }
-
-            &.icon-microphone {
-                @extend .icon-mic-disabled;
-            }
-        }
-
-        &.unclickable {
-            cursor: default;
-
-            &:hover, &:active, &.selected {
-                background: none;
-                cursor: default;
-            }
-        }
-    }
-
-    /**
-     * Primary toolbar styles.
-     */
-    &_primary {
-        background-color: $toolbarBackground;
-        position: absolute;
-        left: 50%;
-        top: 30px;
-        display: inline-block;
-        width: auto;
-        height: $defaultToolbarSize;
-        border-radius: 3px;
-        opacity: 0;
-
-        &.always-on-top {
-            height: $alwaysOnTopToolbarSize;
-            top: 10px;
-        }
-
-        @include transform(translateX(-50%));
-
-        > a:first-child.button,
-        > div:first-child .button {
-            border-bottom-left-radius: 3px;
-            border-top-left-radius: 3px;
-        }
-
-        > a:last-child.button,
-        > div:last-child .button {
-            border-bottom-right-radius: 3px;
-            border-top-right-radius: 3px;
-        }
-    }
-
-    &_primary a.button:last-child::after {
-        content: none;
-    }
-
-    /**
-     * Secondary toolbar styles.
-     */
-    &_secondary {
-        background-color: $secondaryToolbarBg;
-        position: absolute;
-        align-items: center;
-        box-sizing: border-box;
-        display: -moz-box;
-        display: -ms-flexbox;
-        display: -webkit-box;
-        display: -webkit-flex;
-        display: flex;
-        flex-direction: column;
-        flex-wrap: nowrap;
-        height: 100%;
-        justify-content: flex-start;
-        left: 0;
-        padding-top: 24px;
-        pointer-events: none;
-        top: 0;
-        transform: translateX(-100%);
-        width: $defaultToolbarSize;
-        -webkit-transform: translateX(-100%);
-
-        .button {
-            font-size: $secToolbarFontSize;
-            height: $secToolbarLineHeight;
-            line-height: $secToolbarLineHeight;
-        }
-
-        > * {
-            pointer-events: auto
-        }
-
-        .button.toggled:not(.icon-raised-hand):not(.button-active) {
-            background: $secondaryToolbarBg;
-            cursor: pointer;
-            text-decoration: none;
-
-            &.unclickable {
-                cursor: default;
-
-                &:hover, &:active, &.selected {
-                    background: none;
-                    cursor: default;
-                }
-            }
-        }
-    }
-
-    /**
-     * Styles the toolbar in filmstrip-only mode.
-     */
-    &_filmstrip-only {
-        background-color: $toolbarBackground;
-        border-radius: 3px;
-        display: inline-block;
-        height: auto;
-        width: $defaultFilmStripOnlyToolbarSize;
-
-        .button {
-            height: 37px;
-            line-height: 37px !important;
-            width: 37px;
-        }
-
-        .button-popover-message {
-            width: 100px;
-        }
-
-        .toolbar-button-wrapper:first-child .button {
-            border-top-left-radius: 3px;
-            border-top-right-radius: 3px;
-        }
-        .toolbar-button-wrapper:last-child .button {
-            border-bottom-right-radius: 3px;
-            border-bottom-left-radius: 3px;
-        }
-    }
-
-    /**
-     * Toolbar specific round badge.
-     */
-    .badge-round {
-        bottom: 9px;
-        position: absolute;
-        right: 9px;
-    }
-}
-
 /**
  * TODO: when the old filmstrip has been removed, remove the "new-" prefix.
  */
@@ -314,7 +72,9 @@
      * Overwrite font-awesome styling to match jitsi-icon styling.
      */
     .fa {
-        font-size: 1.22em;
+        height: 24px;
+        margin-left: 2px;
+        width: 24px;
     }
 
     i {
@@ -358,7 +118,7 @@
          * Undo atlaskit padding by reducing margins.
          */
         margin: -15px -24px;
-        padding: 0;
+        padding: 4px 0;
 
         .overflow-menu-item {
             align-items: center;
@@ -366,7 +126,7 @@
             cursor: pointer;
             display: flex;
             font-size: 14px;
-            height: 32px;
+            height: 22px;
             padding: 5px 12px;
 
             &:hover {
@@ -412,7 +172,7 @@
         cursor: pointer;
         display: inline-block;
         line-height: $newToolbarSize;
-        margin: 0 8px;
+        margin: 0 4px;
         text-align: center;
     }
 
@@ -420,12 +180,13 @@
         position: relative;
 
         .badge-round {
-            bottom: 9px;
+            bottom: -5px;
             font-size: 12px;
             line-height: 20px;
             min-width: 20px;
+            pointer-events: none;
             position: absolute;
-            right: 9px;
+            right: -5px;
         }
     }
 
@@ -435,11 +196,12 @@
 
     .toolbox-icon {
         height: $newToolbarSize;
-        font-size: 36px;
+        font-size: 24px;
         width: $newToolbarSize;
     }
 }
 
+.always-on-top-toolbox,
 .filmstrip-toolbox {
     background-color: $newToolbarBackgroundColor;
     box-sizing: border-box;
@@ -450,10 +212,6 @@
     i {
         cursor: pointer;
         display: block;
-        font-size: 1.9em;
-        height: 37px;
-        line-height: 37px;
-        width: 37px;
     }
 
     i:hover {
@@ -464,7 +222,7 @@
         background: $newToolbarButtonToggleColor;
     }
 
-    i.toggled:hover {
+    i.toggled:hover:not(.disabled) {
         background-color: $newToolbarButtonHoverColor;
     }
 
@@ -479,6 +237,45 @@
     }
 
     border-radius: 3px;
+}
+
+.always-on-top-toolbox {
+    flex-direction: row;
+    left: 50%;
+    position: absolute;
+    top: 10px;
+    transform: translateX(-50%);
+    z-index: $toolbarZ;
+
+    i {
+        font-size: $alwaysOnTopToolbarFontSize;
+        height: $alwaysOnTopToolbarSize;
+        line-height: $alwaysOnTopToolbarSize;
+        width: $alwaysOnTopToolbarSize;
+    }
+
+    .disabled {
+        cursor: initial;
+    }
+
+    .toolbox-button:first-child i {
+        border-top-left-radius: 3px;
+        border-bottom-left-radius: 3px;
+    }
+
+    .toolbox-button:last-child i {
+        border-top-right-radius: 3px;
+        border-bottom-right-radius: 3px;
+    }
+}
+
+.filmstrip-toolbox {
+    i {
+        font-size: 1.9em;
+        height: 37px;
+        line-height: 37px;
+        width: 37px;
+    }
 
     .toolbox-button:first-child i {
         border-top-left-radius: 3px;
@@ -490,119 +287,6 @@
         border-bottom-right-radius: 3px;
     }
 }
-
-.filmstrip-only {
-    .toolbox,
-    .toolbox-toolbars {
-        align-items: center;
-        display: flex;
-    }
-}
-
-.subject {
-    background: linear-gradient(to bottom, rgba(255,255,255,.85) , rgba(255,255,255,.35));
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
-    box-shadow: 0 0 2px #000000, 0 0 10px #000000;
-    margin-left: 40%;
-    margin-right: 40%;
-    padding: 5px;
-    position: relative;
-    text-align: center;
-    width: auto;
-    z-index: $zindex3;
-
-    &.subject_slide-in {
-        top: 80px;
-        @include transition(top .3s ease-in);
-    }
-
-    &.subject_slide-out {
-        top: 0;
-        @include transition(top .3s ease-out);
-    }
-}
-
-#toolbar_button_profile {
-    height: $toolbarAvatarSize + 2*$toolbarAvatarPadding;
-}
-
-a.button>#avatar {
-    border-radius: 50%;
-    padding-bottom: $toolbarAvatarPadding;
-    padding-top: $toolbarAvatarPadding;
-    width: $toolbarAvatarSize;
-}
-
-#feedbackButton {
-    margin-top: auto;
-}
-
-/**
- * START of slide in animation for extended toolbar.
- */
-@include keyframes(slideInX) {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(0%); }
-}
-
-.slideInX {
-  @include animation('slideInX .5s forwards');
-}
-
-@include keyframes(slideOutX) {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-100%); }
-}
-
-.slideOutX {
-  @include animation('slideOutX .5s forwards');
-}
-
-@include keyframes(slideInExtX) {
-    0% { transform: translateX(-500%); }
-    100% { transform: translateX(0%); }
-}
-
-.slideInExtX {
-  @include animation('slideInExtX .5s forwards');
-}
-
-@include keyframes(slideOutExtX) {
-    0% { transform: translateX(0%); }
-    100% { transform: translateX(-500%); }
-}
-
-.slideOutExtX {
-  @include animation('slideOutExtX .5s forwards');
-}
-
-/**
- * END of slide out animation for extended toolbar.
- */
-
-/**
- * START of slide in / out animation for main toolbar.
- */
-@include keyframes(slideInY) {
-    100% { transform: translateY(0%); }
-}
-
-.slideInY {
-  @include animation('slideInY .5s forwards');
-}
-
-@include keyframes(slideOutY) {
-    0% { transform: translateY(0%); }
-    100% { transform: translateY(-100%); }
-}
-
-.slideOutY {
-    @include animation('slideOutY .5s forwards');
-}
-/**
- * END of slide in / out animation for main toolbar.
- */
 
 /**
  * START of slide in animation for extended toolbar panel.

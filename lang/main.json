@@ -1,5 +1,4 @@
 {
-    "contactlist": "__count__ Member",
     "contactlist_plural": "__count__ Members",
     "passwordSetRemotely": "set by another member",
     "poweredby": "powered by",
@@ -96,7 +95,6 @@
         "hangup": "Leave",
         "login": "Login",
         "logout": "Logout",
-        "dialpad": "Open / Close dialpad",
         "sharedVideoMutedPopup": "Your shared video has been muted so that you can talk to the other members.",
         "micMutedPopup": "Your microphone has been muted so that you would fully enjoy your shared video.",
         "talkWhileMutedPopup": "Trying to speak? You are muted.",
@@ -108,16 +106,6 @@
         "raiseHand": "Raise / Lower your hand",
         "shortcuts": "View shortcuts",
         "speakerStats": "Speaker stats"
-    },
-    "unsupportedBrowser": {
-        "appNotInstalled": "Join this meeting with __app__ on your phone.",
-        "downloadApp": "Download the app",
-        "openApp": "Continue to __app__"
-    },
-    "bottomtoolbar": {
-        "chat": "Open / close chat",
-        "filmstrip": "Show / hide videos",
-        "contactlist": "View and invite members"
     },
     "chat":{
         "nickname": {
@@ -457,10 +445,13 @@
     "videoStatus": {
         "callQuality": "Call Quality",
         "hd": "HD",
+        "hdTooltip": "Viewing high definition video",
         "highDefinition": "High definition",
-        "labelTooltipVideo": "Current video quality",
         "labelTooltipAudioOnly":  "Audio-only mode enabled",
+        "labelTooiltipNoVideo": "No video",
+        "labelTooltipVideo": "Current video quality",
         "ld": "LD",
+        "ldTooltip": "Viewing low definition video",
         "lowDefinition": "Low definition",
         "onlyAudioAvailable": "Only audio is available",
         "onlyAudioSupported": "We only support audio in this browser.",
@@ -468,6 +459,7 @@
         "p2pVideoQualityDescription": "In peer to peer mode, received call quality can only be toggled between high and audio only. Other settings will not be honored until peer to peer is exited.",
         "recHighDefinitionOnly": "Will prefer high definition.",
         "sd": "SD",
+        "sdTooltip": "Viewing standard definition video",
         "standardDefinition": "Standard definition",
         "qualityButtonTip": "Change received video quality"
     },
@@ -475,7 +467,7 @@
         "statusMessage": "is now __status__"
     },
     "addPeople": {
-        "add": "Add",
+        "add": "Invite",
         "countryNotSupported": "We do not support this destination yet.",
         "countryReminder": "Calling outside the US? Please make sure you start with the country code!",
         "disabled": "You can't invite people.",
@@ -486,11 +478,11 @@
         "noResults": "No matching search results",
         "noValidNumbers": "Please enter a phone number",
         "notAvailable": "You can't invite people.",
-        "searchNumbers": "Enter a phone number to invite",
-        "searchPeople": "Enter a name to invite",
-        "searchPeopleAndNumbers": "Enter a name or phone number to invite",
+        "searchNumbers": "Add phone numbers",
+        "searchPeople": "Search for people",
+        "searchPeopleAndNumbers": "Search for people or add their phone numbers",
         "telephone": "Telephone: __number__",
-        "title": "Invite people to your meeting",
+        "title": "Invite people to this meeting",
         "failedToAdd": "Failed to add members"
     },
     "inlineDialogFailure": {
@@ -509,7 +501,8 @@
         "average": "Average",
         "bad": "Bad",
         "good": "Good",
-        "rateExperience": "Please rate your meeting experience.",
+        "detailsLabel": "Tell us more about it.",
+        "rateExperience": "Rate your meeting experience",
         "veryBad": "Very Bad",
         "veryGood": "Very Good"
     },
@@ -523,9 +516,11 @@
         "dialInConferenceID": "PIN:",
         "dialInNotSupported": "Sorry, dialing in is currently not suppported.",
         "genericError": "Whoops, something went wrong.",
+        "inviteLiveStream": "To view the live stream of this meeting, click this link: __url__",
         "invitePhone": "To join by phone, dial __number__ and enter this PIN: __conferenceID__#",
         "invitePhoneAlternatives": "To view more phone numbers, click this link: __url__",
         "inviteURL": "To join the video meeting, click this link: __url__",
+        "liveStreamURL": "Live stream:",
         "moreNumbers": "More numbers",
         "noNumbers": "No dial-in numbers.",
         "noPassword": "None",
@@ -563,5 +558,14 @@
     },
     "sectionList": {
         "pullToRefresh": "Pull to refresh"
+    },
+    "deepLinking": {
+        "title": "Launching your meeting in __app__...",
+        "description": "Nothing happened? We tried launching your meeting in the __app__ desktop app. Try again or launch it in the __app__ web app.",
+        "tryAgainButton": "Try again in desktop",
+        "launchWebButton": "Launch in web",
+        "appNotInstalled": "You need the __app__ mobile app to join this meeting on your phone.",
+        "downloadApp": "Download the app",
+        "openApp": "Continue to the app"
     }
 }
