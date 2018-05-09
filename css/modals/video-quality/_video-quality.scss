@@ -153,6 +153,12 @@
     position: absolute;
     box-sizing: border-box;
 
+    &.is-recording {
+        background: none;
+        opacity: 0.9;
+        padding: 0;
+    }
+
     i {
         line-height: $videoStateIndicatorSize;
     }
@@ -164,6 +170,38 @@
         line-height: $videoStateIndicatorSize;
         min-width: $videoStateIndicatorSize;
         text-align: center;
+    }
+
+    .recording-icon,
+    .recording-icon i {
+        line-height: $videoStateIndicatorSize;
+        font-size: $videoStateIndicatorSize;
+        opacity: 0.9;
+        position: relative;
+    }
+
+    .icon-rec {
+        color: #FF5630;
+    }
+
+    .icon-live {
+        color: #0065FF;
+    }
+
+    .recording-icon-background {
+        background: white;
+        border-radius: 50%;
+        height: calc(#{$videoStateIndicatorSize} - 1px);
+        left: 50%;
+        opacity: 0.9;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: calc(#{$videoStateIndicatorSize} - 1px);
+    }
+
+    #recordingLabelText {
+        display: inline-block;
     }
 }
 
@@ -186,8 +224,6 @@
     &.moveToCorner {
         bottom: auto;
         transform: none;
-        -webkit-transition: all 2s 2s linear;
-        transition: all 2s 2s linear;
     }
 }
 

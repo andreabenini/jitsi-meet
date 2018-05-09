@@ -21,10 +21,16 @@ import { ChatCounter } from '../../chat';
 import { openDeviceSelectionDialog } from '../../device-selection';
 import { toggleDocument } from '../../etherpad';
 import { openFeedbackDialog } from '../../feedback';
-import { AddPeopleDialog, InfoDialogButton } from '../../invite';
+import {
+    beginAddPeople,
+    InfoDialogButton,
+    isAddPeopleEnabled,
+    isDialOutEnabled
+} from '../../invite';
 import { openKeyboardShortcutsDialog } from '../../keyboard-shortcuts';
 import { RECORDING_TYPES, toggleRecording } from '../../recording';
 import { toggleSharedVideo } from '../../shared-video';
+import { shouldShowOnlyDeviceSelection } from '../../settings';
 import { toggleChat, toggleProfile, toggleSettings } from '../../side-panel';
 import { SpeakerStats } from '../../speaker-stats';
 import {
@@ -41,12 +47,6 @@ import ToolbarButton from './ToolbarButton';
 import { AudioMuteButton, HangupButton, VideoMuteButton } from './buttons';
 
 type Props = {
-
-    /**
-     * Whether or not the feature for adding people directly into the call
-     * is enabled.
-     */
-    _addPeopleAvailable: boolean,
 
     /**
      * Whether or not the chat feature is currently displayed.
@@ -67,12 +67,6 @@ type Props = {
      * Whether or not screensharing is initialized.
      */
     _desktopSharingEnabled: boolean,
-
-    /**
-     * Whether or not the feature for telephony to dial out to a number is
-     * enabled.
-     */
-    _dialOutAvailable: boolean,
 
     /**
      * Whether or not a dialog is displayed.
@@ -369,7 +363,7 @@ class Toolbox extends Component<Props, State> {
                             accessibilityLabel = 'Invite'
                             iconName = 'icon-add'
                             onClick = { this._onToolbarOpenInvite }
-                            tooltip = { t('addPeople.title') } /> }
+                            tooltip = { t('toolbar.invite') } /> }
                     { this._shouldShowButton('info') && <InfoDialogButton /> }
                     { overflowHasItems
                         && <OverflowMenuButton
@@ -396,23 +390,6 @@ class Toolbox extends Component<Props, State> {
         const { _conference } = this.props;
 
         this.props.dispatch(openFeedbackDialog(_conference));
-    }
-
-    /**
-     * Opens the dialog for inviting people directly into the conference.
-     *
-     * @private
-     * @returns {void}
-     */
-    _doOpenInvite() {
-        const { _addPeopleAvailable, _dialOutAvailable, dispatch } = this.props;
-
-        if (_addPeopleAvailable || _dialOutAvailable) {
-            dispatch(openDialog(AddPeopleDialog, {
-                enableAddPeople: _addPeopleAvailable,
-                enableDialOut: _dialOutAvailable
-            }));
-        }
     }
 
     /**
@@ -535,8 +512,7 @@ class Toolbox extends Component<Props, State> {
      * @returns {void}
      */
     _doToggleSettings() {
-        if (interfaceConfig.SETTINGS_SECTIONS.length === 1
-            && interfaceConfig.SETTINGS_SECTIONS.includes('devices')) {
+        if (shouldShowOnlyDeviceSelection()) {
             this.props.dispatch(openDeviceSelectionDialog());
         } else {
             this.props.dispatch(toggleSettings());
@@ -692,8 +668,7 @@ class Toolbox extends Component<Props, State> {
      */
     _onToolbarOpenInvite() {
         sendAnalytics(createToolbarEvent('invite'));
-
-        this._doOpenInvite();
+        this.props.dispatch(beginAddPeople());
     }
 
     _onToolbarOpenKeyboardShortcuts: () => void;
@@ -944,7 +919,7 @@ class Toolbox extends Component<Props, State> {
             _desktopSharingEnabled ? '' : 'disabled'}`;
         const tooltip = showDisabledTooltip
             ? disabledTooltipText
-            : t('toolbar.sharescreen');
+            : t('dialog.shareYourScreen');
 
         return (
             <ToolbarButton
@@ -1062,13 +1037,15 @@ class Toolbox extends Component<Props, State> {
             return null;
         }
 
-        let translationKey;
+        let iconClass, translationKey;
 
         if (_recordingType === RECORDING_TYPES.JIBRI) {
+            iconClass = 'icon-public';
             translationKey = _isRecording
                 ? 'dialog.stopLiveStreaming'
                 : 'dialog.startLiveStreaming';
         } else {
+            iconClass = 'icon-camera-take-picture';
             translationKey = _isRecording
                 ? 'dialog.stopRecording'
                 : 'dialog.startRecording';
@@ -1077,7 +1054,7 @@ class Toolbox extends Component<Props, State> {
         return (
             <OverflowMenuItem
                 accessibilityLabel = 'Record'
-                icon = 'fa fa-play-circle'
+                icon = { iconClass }
                 key = 'recording'
                 onClick = { this._onToolbarToggleRecording }
                 text = { t(translationKey) } />
@@ -1116,10 +1093,8 @@ function _mapStateToProps(state) {
         callStatsID,
         disableDesktopSharing,
         enableRecording,
-        enableUserRolesBasedOnToken,
         iAmRecorder
     } = state['features/base/config'];
-    const { isGuest } = state['features/base/jwt'];
     const { isRecording, recordingType } = state['features/recording'];
     const sharedVideoStatus = state['features/shared-video'].status;
     const { current } = state['features/side-panel'];
@@ -1132,25 +1107,20 @@ function _mapStateToProps(state) {
     const localParticipant = getLocalParticipant(state);
     const localVideo = getLocalVideoTrack(state['features/base/tracks']);
     const isModerator = localParticipant.role === PARTICIPANT_ROLE.MODERATOR;
-    const isAddPeopleAvailable = !isGuest;
-    const isDialOutAvailable
-        = isModerator
-            && conference && conference.isSIPCallingSupported()
-            && (!enableUserRolesBasedOnToken || !isGuest);
+    const addPeopleEnabled = isAddPeopleEnabled(state);
+    const dialOutEnabled = isDialOutEnabled(state);
 
     return {
-        _addPeopleAvailable: isAddPeopleAvailable,
         _chatOpen: current === 'chat_container',
         _conference: conference,
         _desktopSharingEnabled: desktopSharingEnabled,
         _desktopSharingDisabledByConfig: disableDesktopSharing,
-        _dialOutAvailable: isDialOutAvailable,
         _dialog: Boolean(state['features/base/dialog'].component),
         _editingDocument: Boolean(state['features/etherpad'].editing),
         _etherpadInitialized: Boolean(state['features/etherpad'].initialized),
         _feedbackConfigured: Boolean(callStatsID),
-        _hideInviteButton: iAmRecorder
-            || (!isAddPeopleAvailable && !isDialOutAvailable),
+        _hideInviteButton:
+            iAmRecorder || (!addPeopleEnabled && !dialOutEnabled),
         _isRecording: isRecording,
         _fullScreen: fullScreen,
         _localParticipantID: localParticipant.id,

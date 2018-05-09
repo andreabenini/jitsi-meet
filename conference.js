@@ -21,7 +21,6 @@ import {
     createSelectParticipantFailedEvent,
     createStreamSwitchDelayEvent,
     createTrackMutedEvent,
-    initAnalytics,
     sendAnalytics
 } from './react/features/analytics';
 import {
@@ -47,9 +46,11 @@ import {
     sendLocalParticipant,
     setDesktopSharingEnabled
 } from './react/features/base/conference';
-import { updateDeviceList } from './react/features/base/devices';
 import {
-    isAnalyticsEnabled,
+    setAudioOutputDeviceId,
+    updateDeviceList
+} from './react/features/base/devices';
+import {
     isFatalJitsiConnectionError,
     JitsiConferenceErrors,
     JitsiConferenceEvents,
@@ -84,6 +85,7 @@ import {
     participantRoleChanged,
     participantUpdated
 } from './react/features/base/participants';
+import { updateSettings } from './react/features/base/settings';
 import {
     createLocalTracksF,
     isLocalTrackMuted,
@@ -685,53 +687,20 @@ export default {
     /**
      * Open new connection and join to the conference.
      * @param {object} options
-     * @param {string} roomName name of the conference
+     * @param {string} roomName - The name of the conference.
      * @returns {Promise}
      */
     init(options) {
         this.roomName = options.roomName;
 
-        // attaches global error handler, if there is already one, respect it
-        if (JitsiMeetJS.getGlobalOnErrorHandler) {
-            const oldOnErrorHandler = window.onerror;
-
-            // eslint-disable-next-line max-params
-            window.onerror = (message, source, lineno, colno, error) => {
-                JitsiMeetJS.getGlobalOnErrorHandler(
-                    message, source, lineno, colno, error);
-
-                if (oldOnErrorHandler) {
-                    oldOnErrorHandler(message, source, lineno, colno, error);
-                }
-            };
-
-            const oldOnUnhandledRejection = window.onunhandledrejection;
-
-            window.onunhandledrejection = function(event) {
-                JitsiMeetJS.getGlobalOnErrorHandler(
-                    null, null, null, null, event.reason);
-
-                if (oldOnUnhandledRejection) {
-                    oldOnUnhandledRejection(event);
-                }
-            };
-        }
-
         return (
-            JitsiMeetJS.init({
-                enableAnalyticsLogging: isAnalyticsEnabled(APP.store),
-                ...config
-            }).then(() => {
-                initAnalytics(APP.store);
-
-                return this.createInitialLocalTracksAndConnect(
-                    options.roomName, {
-                        startAudioOnly: config.startAudioOnly,
-                        startScreenSharing: config.startScreenSharing,
-                        startWithAudioMuted: config.startWithAudioMuted,
-                        startWithVideoMuted: config.startWithVideoMuted
-                    });
-            })
+            this.createInitialLocalTracksAndConnect(
+                options.roomName, {
+                    startAudioOnly: config.startAudioOnly,
+                    startScreenSharing: config.startScreenSharing,
+                    startWithAudioMuted: config.startWithAudioMuted,
+                    startWithVideoMuted: config.startWithVideoMuted
+                })
             .then(([ tracks, con ]) => {
                 tracks.forEach(track => {
                     if ((track.isAudioTrack() && this.isLocalAudioMuted())
@@ -1308,7 +1277,7 @@ export default {
                     : 'colibri';
         }
 
-        const nick = APP.settings.getDisplayName();
+        const nick = APP.store.getState()['features/base/settings'].displayName;
 
         if (nick) {
             options.displayName = nick;
@@ -2166,7 +2135,9 @@ export default {
                 })
                 .then(() => {
                     logger.log('switched local video device');
-                    APP.settings.setCameraDeviceId(cameraDeviceId, true);
+                    APP.store.dispatch(updateSettings({
+                        cameraDeviceId
+                    }));
                 })
                 .catch(err => {
                     APP.UI.showCameraErrorNotification(err);
@@ -2198,7 +2169,9 @@ export default {
                 .then(stream => {
                     this.useAudioStream(stream);
                     logger.log('switched local audio device');
-                    APP.settings.setMicDeviceId(micDeviceId, true);
+                    APP.store.dispatch(updateSettings({
+                        micDeviceId
+                    }));
                 })
                 .catch(err => {
                     APP.UI.showMicErrorNotification(err);
@@ -2210,7 +2183,7 @@ export default {
             UIEvents.AUDIO_OUTPUT_DEVICE_CHANGED,
             audioOutputDeviceId => {
                 sendAnalytics(createDeviceChangedEvent('audio', 'output'));
-                APP.settings.setAudioOutputDeviceId(audioOutputDeviceId)
+                setAudioOutputDeviceId(audioOutputDeviceId)
                     .then(() => logger.log('changed audio output device'))
                     .catch(err => {
                         logger.warn('Failed to change audio output device. '
@@ -2352,7 +2325,8 @@ export default {
         APP.store.dispatch(conferenceJoined(room));
 
         APP.UI.mucJoined();
-        const displayName = APP.settings.getDisplayName();
+        const displayName
+            = APP.store.getState()['features/base/settings'].displayName;
 
         APP.API.notifyConferenceJoined(
             this.roomName,
@@ -2402,14 +2376,18 @@ export default {
                         // storage and settings menu. This is a workaround until
                         // getConstraints() method will be implemented
                         // in browsers.
+                        const { dispatch } = APP.store;
+
                         if (this.localAudio) {
-                            APP.settings.setMicDeviceId(
-                                this.localAudio.getDeviceId(), false);
+                            dispatch(updateSettings({
+                                micDeviceId: this.localAudio.getDeviceId()
+                            }));
                         }
 
                         if (this.localVideo) {
-                            APP.settings.setCameraDeviceId(
-                                this.localVideo.getDeviceId(), false);
+                            dispatch(updateSettings({
+                                cameraDeviceId: this.localVideo.getDeviceId()
+                            }));
                         }
 
                         mediaDeviceHelper.setCurrentMediaDevices(devices);
@@ -2461,8 +2439,7 @@ export default {
 
         if (typeof newDevices.audiooutput !== 'undefined') {
             // Just ignore any errors in catch block.
-            promises.push(APP.settings
-                .setAudioOutputDeviceId(newDevices.audiooutput)
+            promises.push(setAudioOutputDeviceId(newDevices.audiooutput)
                 .catch());
         }
 
@@ -2560,6 +2537,11 @@ export default {
         eventEmitter.emit(JitsiMeetConferenceEvents.BEFORE_HANGUP);
         APP.UI.removeLocalMedia();
 
+        // Remove unnecessary event listeners from firing callbacks.
+        JitsiMeetJS.mediaDevices.removeEventListener(
+            JitsiMediaDevicesEvents.DEVICE_LIST_CHANGED,
+            this.deviceChangeListener);
+
         let requestFeedbackPromise;
 
         if (requestFeedback) {
@@ -2606,7 +2588,10 @@ export default {
             email: formattedEmail
         }));
 
-        APP.settings.setEmail(formattedEmail);
+        APP.store.dispatch(updateSettings({
+            email: formattedEmail
+        }));
+
         APP.UI.setUserEmail(localId, formattedEmail);
         sendData(commands.EMAIL, formattedEmail);
     },
@@ -2630,7 +2615,9 @@ export default {
             avatarURL: formattedUrl
         }));
 
-        APP.settings.setAvatarUrl(url);
+        APP.store.dispatch(updateSettings({
+            avatarURL: formattedUrl
+        }));
         sendData(commands.AVATAR_URL, url);
     },
 
@@ -2684,7 +2671,10 @@ export default {
             name: formattedNickname
         }));
 
-        APP.settings.setDisplayName(formattedNickname);
+        APP.store.dispatch(updateSettings({
+            displayName: formattedNickname
+        }));
+
         APP.API.notifyDisplayNameChanged(id, {
             displayName: formattedNickname,
             formattedDisplayName:

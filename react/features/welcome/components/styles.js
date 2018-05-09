@@ -1,14 +1,15 @@
-import {
-    BoxModel,
-    ColorPalette,
-    createStyleSheet
-} from '../../base/styles';
+// @flow
+
+import { BoxModel, ColorPalette, createStyleSheet } from '../../base/styles';
+
+export const PLACEHOLDER_TEXT_COLOR = 'rgba(255, 255, 255, 0.3)';
+
+export const SIDEBAR_AVATAR_SIZE = 100;
 
 const SIDEBAR_HEADER_HEIGHT = 150;
 
-export const PLACEHOLDER_TEXT_COLOR = 'rgba(255, 255, 255, 0.3)';
-export const SIDEBAR_AVATAR_SIZE = 100;
 export const SWITCH_THUMB_COLOR = ColorPalette.blueHighlight;
+
 export const SWITCH_UNDER_COLOR = 'rgba(0, 0, 0, 0.4)';
 
 /**
@@ -159,53 +160,6 @@ export default createStyleSheet({
     page: {
         flex: 1,
         flexDirection: 'column'
-    },
-
-    pageIndicator: {
-        alignItems: 'center',
-        flex: 1,
-        flexDirection: 'column',
-        justifyContent: 'center'
-    },
-
-    pageIndicatorContainer: {
-        alignItems: 'stretch',
-        backgroundColor: ColorPalette.blue,
-        flexDirection: 'row',
-        height: 56,
-        justifyContent: 'center'
-    },
-
-    pageIndicatorIcon: {
-        color: ColorPalette.blueHighlight,
-        fontSize: 24
-    },
-
-    pageIndicatorText: {
-        color: ColorPalette.blueHighlight
-    },
-
-    pageIndicatorTextActive: {
-        color: ColorPalette.white
-    },
-
-    /**
-     * Top level style of the paged list.
-     */
-    pagedList: {
-        flex: 1
-    },
-
-    pagedListContainer: {
-        flex: 1,
-        flexDirection: 'column'
-    },
-
-    /**
-     * Disabled style for the container.
-     */
-    pagedListContainerDisabled: {
-        opacity: 0.2
     },
 
     /**

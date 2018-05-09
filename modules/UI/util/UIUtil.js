@@ -74,17 +74,6 @@ const UIUtil = {
             .html();
     },
 
-    /**
-     * Unescapes the given text.
-     *
-     * @param {string} safe string which contains escaped html
-     * @returns {string} unescaped html string.
-     */
-    unescapeHtml(safe) {
-        return $('<div />').html(safe)
-            .text();
-    },
-
     imageToGrayScale(canvas) {
         const context = canvas.getContext('2d');
         const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -119,18 +108,6 @@ const UIUtil = {
         } else {
             container.appendChild(newChild);
         }
-    },
-
-    /**
-     * Indicates if the setting section is enabled.
-     *
-     * @param name the name of the setting section as defined in
-     * interface_config.js and SettingsMenu.js
-     * @returns {boolean} {true} to indicate that the given setting section
-     * is enabled, {false} - otherwise
-     */
-    isSettingEnabled(name) {
-        return interfaceConfig.SETTINGS_SECTIONS.indexOf(name) !== -1;
     },
 
     /**

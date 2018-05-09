@@ -35,6 +35,7 @@ import {
     setNotificationsEnabled,
     showWarningNotification
 } from '../../react/features/notifications';
+import { shouldShowOnlyDeviceSelection } from '../../react/features/settings';
 import {
     dockToolbox,
     showToolbox
@@ -104,8 +105,7 @@ const UIListeners = new Map([
             // opened through a button in settings and not directly displayed in
             // settings itself. As it is not useful to only have a settings menu
             // with a button to open a dialog, open the dialog directly instead.
-            if (interfaceConfig.SETTINGS_SECTIONS.length === 1
-                    && UIUtil.isSettingEnabled('devices')) {
+            if (shouldShowOnlyDeviceSelection()) {
                 APP.store.dispatch(openDeviceSelectionDialog());
             } else {
                 UI.toggleSidePanel('settings_container');
@@ -340,32 +340,28 @@ UI.start = function() {
     VideoLayout.resizeVideoArea(true, true);
 
     sharedVideoManager = new SharedVideoManager(eventEmitter);
-    // eslint-disable-next-line no-negated-condition
-    if (!interfaceConfig.filmStripOnly) {
+
+    if (interfaceConfig.filmStripOnly) {
+        $('body').addClass('filmstrip-only');
+        Filmstrip.setFilmstripOnly();
+        APP.store.dispatch(setNotificationsEnabled(false));
+    } else {
         // Initialise the recording module.
-        if (config.enableRecording) {
-            Recording.init(eventEmitter, config.recordingType);
-        }
+        config.enableRecording
+            && Recording.init(eventEmitter, config.recordingType);
 
         // Initialize side panels
         SidePanels.init(eventEmitter);
-    } else {
-        $('body').addClass('filmstrip-only');
-        UI.showToolbar();
-        Filmstrip.setFilmstripOnly();
-        APP.store.dispatch(setNotificationsEnabled(false));
-    }
 
-    if (interfaceConfig.VERTICAL_FILMSTRIP) {
-        $('body').addClass('vertical-filmstrip');
-    }
-
-    // TODO: remove this class once the old toolbar has been removed. This class
-    // is set so that any CSS changes needed to adjust elements outside of the
-    // new toolbar can be scoped to just the app with the new toolbar enabled.
-    if (!interfaceConfig.filmStripOnly) {
+        // TODO: remove this class once the old toolbar has been removed. This
+        // class is set so that any CSS changes needed to adjust elements
+        // outside of the new toolbar can be scoped to just the app with the new
+        // toolbar enabled.
         $('body').addClass('use-new-toolbox');
     }
+
+    interfaceConfig.VERTICAL_FILMSTRIP
+        && $('body').addClass('vertical-filmstrip');
 
     document.title = interfaceConfig.APP_NAME;
 };

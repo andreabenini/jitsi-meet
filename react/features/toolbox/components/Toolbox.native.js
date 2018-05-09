@@ -14,11 +14,11 @@ import {
     isNarrowAspectRatio,
     makeAspectRatioAware
 } from '../../base/responsive-ui';
+import { InviteButton } from '../../invite';
 import {
     EnterPictureInPictureToolbarButton
 } from '../../mobile/picture-in-picture';
 import { beginRoomLockRequest } from '../../room-lock';
-import { beginShareRoom } from '../../share-room';
 
 import {
     abstractMapDispatchToProps,
@@ -30,16 +30,6 @@ import styles from './styles';
 import ToolbarButton from './ToolbarButton';
 
 import { AudioMuteButton, HangupButton, VideoMuteButton } from './buttons';
-
-/**
- * The indicator which determines (at bundle time) whether there should be a
- * {@code ToolbarButton} in {@code Toolbox} to expose the functionality of the
- * feature share-room in the user interface of the app.
- *
- * @private
- * @type {boolean}
- */
-const _SHARE_ROOM_TOOLBAR_BUTTON = true;
 
 /**
  * The type of {@link Toolbox}'s React {@code Component} props.
@@ -77,11 +67,6 @@ type Props = {
     _onRoomLock: Function,
 
     /**
-     * Begins the UI procedure to share the conference/room URL.
-     */
-    _onShareRoom: Function,
-
-    /**
      * Toggles the audio-only flag of the conference.
      */
     _onToggleAudioOnly: Function,
@@ -104,7 +89,6 @@ type Props = {
 
     dispatch: Function
 };
-
 
 /**
  * Implements the conference toolbox on React Native.
@@ -251,15 +235,10 @@ class Toolbox extends Component<Props> {
                     onClick = { this.props._onRoomLock }
                     style = { style }
                     underlayColor = { underlayColor } />
-                {
-                    _SHARE_ROOM_TOOLBAR_BUTTON
-                        && <ToolbarButton
-                            iconName = 'link'
-                            iconStyle = { iconStyle }
-                            onClick = { this.props._onShareRoom }
-                            style = { style }
-                            underlayColor = { underlayColor } />
-                }
+                <InviteButton
+                    iconStyle = { iconStyle }
+                    style = { style }
+                    underlayColor = { underlayColor } />
                 <EnterPictureInPictureToolbarButton
                     iconStyle = { iconStyle }
                     style = { style }
@@ -322,17 +301,6 @@ function _mapDispatchToProps(dispatch) {
          */
         _onRoomLock() {
             dispatch(beginRoomLockRequest());
-        },
-
-        /**
-         * Begins the UI procedure to share the conference/room URL.
-         *
-         * @private
-         * @returns {void}
-         * @type {Function}
-         */
-        _onShareRoom() {
-            dispatch(beginShareRoom());
         },
 
         /**
