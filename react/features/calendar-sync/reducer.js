@@ -1,10 +1,10 @@
 // @flow
 
-import { ReducerRegistry } from '../base/redux';
+import { APP_WILL_MOUNT } from '../app';
+import { ReducerRegistry, set } from '../base/redux';
 import { PersistenceRegistry } from '../base/storage';
 
 import {
-    ADD_KNOWN_DOMAIN,
     SET_CALENDAR_AUTHORIZATION,
     SET_CALENDAR_EVENTS
 } from './actionTypes';
@@ -17,14 +17,13 @@ const DEFAULT_STATE = {
      * need to re-request the calendar permission from the user.
      */
     authorization: undefined,
-    events: [],
-    knownDomains: []
+    events: []
 };
-
-const MAX_DOMAIN_LIST_SIZE = 10;
 
 const STORE_NAME = 'features/calendar-sync';
 
+// XXX For legacy purposes, read any {@code knownDomains} persisted by the
+// feature calendar-sync.
 CALENDAR_ENABLED
     && PersistenceRegistry.register(STORE_NAME, {
         knownDomains: true
@@ -33,8 +32,15 @@ CALENDAR_ENABLED
 CALENDAR_ENABLED
     && ReducerRegistry.register(STORE_NAME, (state = DEFAULT_STATE, action) => {
         switch (action.type) {
-        case ADD_KNOWN_DOMAIN:
-            return _addKnownDomain(state, action);
+        case APP_WILL_MOUNT:
+            // For legacy purposes, we've allowed the deserialization of
+            // knownDomains. At this point, it should have already been
+            // translated into the new state format (namely, base/known-domains)
+            // and the app no longer needs it.
+            if (typeof state.knownDomains !== 'undefined') {
+                return set(state, 'knownDomains', undefined);
+            }
+            break;
 
         case SET_CALENDAR_AUTHORIZATION:
             return {
@@ -47,46 +53,7 @@ CALENDAR_ENABLED
                 ...state,
                 events: action.events
             };
-
-        default:
-            return state;
         }
+
+        return state;
     });
-
-/**
- * Adds a new domain to the known domain list if not present yet.
- *
- * @param {Object} state - The redux state.
- * @param {Object} action - The redux action.
- * @private
- * @returns {Object}
- */
-function _addKnownDomain(state, action) {
-    let { knownDomain } = action;
-
-    if (knownDomain) {
-        knownDomain = knownDomain.toLowerCase();
-
-        let { knownDomains } = state;
-
-        if (knownDomains.indexOf(knownDomain) === -1) {
-            // Add the specified known domain and at the same time avoid
-            // modifying the knownDomains Array instance referenced by the
-            // current redux state.
-            knownDomains = [
-                ...state.knownDomains,
-                knownDomain
-            ];
-
-            // Ensure the list doesn't exceed a/the maximum size.
-            knownDomains.splice(0, knownDomains.length - MAX_DOMAIN_LIST_SIZE);
-
-            return {
-                ...state,
-                knownDomains
-            };
-        }
-    }
-
-    return state;
-}

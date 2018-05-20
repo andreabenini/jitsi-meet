@@ -1,10 +1,11 @@
 // @flow
 
-import { ReducerRegistry } from '../base/redux';
+import { ReducerRegistry, set } from '../base/redux';
 
 import {
     CLEAR_TOOLBOX_TIMEOUT,
     FULL_SCREEN_CHANGED,
+    SET_OVERFLOW_MENU_VISIBLE,
     SET_TOOLBAR_HOVERED,
     SET_TOOLBOX_ALWAYS_VISIBLE,
     SET_TOOLBOX_ENABLED,
@@ -23,6 +24,7 @@ declare var interfaceConfig: Object;
  *     alwaysVisible: boolean,
  *     enabled: boolean,
  *     hovered: boolean,
+ *     overflowMenuVisible: boolean,
  *     timeoutID: number,
  *     timeoutMS: number,
  *     visible: boolean
@@ -47,8 +49,7 @@ function _getInitialState() {
         alwaysVisible: false,
 
         /**
-         * The indicator which determines whether the Toolbox is enabled. For
-         * example, modules/UI/recording/Recording.js disables the Toolbox.
+         * The indicator which determines whether the Toolbox is enabled.
          *
          * @type {boolean}
          */
@@ -61,6 +62,13 @@ function _getInitialState() {
          * @type {boolean}
          */
         hovered: false,
+
+        /**
+         * The indicator which determines whether the OverflowMenu is visible.
+         *
+         * @type {boolean}
+         */
+        overflowMenuVisible: false,
 
         /**
          * A number, non-zero value which identifies the timer created by a call
@@ -103,6 +111,12 @@ ReducerRegistry.register(
                 fullScreen: action.fullScreen
             };
 
+        case SET_OVERFLOW_MENU_VISIBLE:
+            return {
+                ...state,
+                overflowMenuVisible: action.visible
+            };
+
         case SET_TOOLBAR_HOVERED:
             return {
                 ...state,
@@ -135,10 +149,7 @@ ReducerRegistry.register(
             };
 
         case SET_TOOLBOX_VISIBLE:
-            return {
-                ...state,
-                visible: action.visible
-            };
+            return set(state, 'visible', action.visible);
         }
 
         return state;
