@@ -16,11 +16,10 @@ if not muc_domain_base then
 end
 
 -- Status strings that trigger call events.
-local invited_status  = "Invited"
-local calling_status  = "Calling"
-local ringing_status  = "Ringing"
-local busy_status     = "Busy"
-local rejected_status = "Rejected"
+local calling_status   = "calling"
+local ringing_status   = "ringing"
+local busy_status      = "busy"
+local rejected_status  = "rejected"
 local connected_status = "connected"
 
 
@@ -53,11 +52,10 @@ end
 --    -------------------------
 --    Status      | Event Type
 --    _________________________
---    "Calling"   | INVITE
---    "Invited"   | INVITE
---    "Ringing"   | CANCEL
---    "Busy"      | CANCEL
---    "Rejected"  | CANCEL
+--    "calling"   | INVITE
+--    "ringing"   | CANCEL
+--    "busy"      | CANCEL
+--    "rejected"  | CANCEL
 --    "connected" | CANCEL
 module:hook("muc-broadcast-presence", function (event)
     -- Detect if the presence is for a poltergeist or not.
@@ -82,7 +80,6 @@ module:hook("muc-broadcast-presence", function (event)
 
 	local switch = function(status)
 	   case = {
-		  [invited_status]   = function() invite() end,
 		  [calling_status]   = function() invite() end,
 		  [ringing_status]   = function() cancel() end,
 		  [busy_status]      = function() cancel() end,

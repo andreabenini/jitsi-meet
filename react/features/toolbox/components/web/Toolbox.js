@@ -53,6 +53,7 @@ import AudioMuteButton from '../AudioMuteButton';
 import HangupButton from '../HangupButton';
 import OverflowMenuButton from './OverflowMenuButton';
 import OverflowMenuItem from './OverflowMenuItem';
+import OverflowMenuLiveStreamingItem from './OverflowMenuLiveStreamingItem';
 import OverflowMenuProfileItem from './OverflowMenuProfileItem';
 import ToolbarButton from './ToolbarButton';
 import VideoMuteButton from '../VideoMuteButton';
@@ -504,6 +505,12 @@ class Toolbox extends Component<Props> {
         const { _localParticipantID, _raisedHand } = this.props;
 
         this.props.dispatch(participantUpdated({
+            // XXX Only the local participant is allowed to update without
+            // stating the JitsiConference instance (i.e. participant property
+            // `conference` for a remote participant) because the local
+            // participant is uniquely identified by the very fact that there is
+            // only one local participant.
+
             id: _localParticipantID,
             local: true,
             raisedHand: !_raisedHand
@@ -942,30 +949,6 @@ class Toolbox extends Component<Props> {
     }
 
     /**
-     * Renders an {@code OverflowMenuItem} for starting or stopping a live
-     * streaming of the current conference.
-     *
-     * @private
-     * @returns {ReactElement}
-     */
-    _renderLiveStreamingButton() {
-        const { _liveStreamingSession, t } = this.props;
-
-        const translationKey = _liveStreamingSession
-            ? 'dialog.stopLiveStreaming'
-            : 'dialog.startLiveStreaming';
-
-        return (
-            <OverflowMenuItem
-                accessibilityLabel = 'Live stream'
-                icon = 'icon-public'
-                key = 'liveStreaming'
-                onClick = { this._onToolbarToggleLiveStreaming }
-                text = { t(translationKey) } />
-        );
-    }
-
-    /**
      * Renders the list elements of the overflow menu.
      *
      * @private
@@ -978,6 +961,7 @@ class Toolbox extends Component<Props> {
             _feedbackConfigured,
             _fullScreen,
             _isGuest,
+            _liveStreamingSession,
             _recordingEnabled,
             _sharingVideo,
             t
@@ -1006,7 +990,10 @@ class Toolbox extends Component<Props> {
                         : t('toolbar.enterFullScreen') } />,
             _recordingEnabled
                 && this._shouldShowButton('livestreaming')
-                && this._renderLiveStreamingButton(),
+                && <OverflowMenuLiveStreamingItem
+                    key = 'livestreaming'
+                    onClick = { this._onToolbarToggleLiveStreaming }
+                    session = { _liveStreamingSession } />,
             _recordingEnabled
                 && this._shouldShowButton('recording')
                 && this._renderRecordingButton(),

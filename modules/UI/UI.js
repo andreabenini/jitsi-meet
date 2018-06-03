@@ -24,7 +24,6 @@ import { updateDeviceList } from '../../react/features/base/devices';
 import { JitsiTrackErrors } from '../../react/features/base/lib-jitsi-meet';
 import {
     getLocalParticipant,
-    participantPresenceChanged,
     showParticipantJoinedNotification
 } from '../../react/features/base/participants';
 import { destroyLocalTracks } from '../../react/features/base/tracks';
@@ -487,18 +486,11 @@ UI.addUser = function(user) {
     const status = user.getStatus();
 
     if (status) {
-        // if user has initial status dispatch it
-        // and skip 'connected' notifications
-        APP.store.dispatch(participantPresenceChanged(id, status));
-
         // FIXME: move updateUserStatus in participantPresenceChanged action
         UI.updateUserStatus(user, status);
     } else {
         APP.store.dispatch(showParticipantJoinedNotification(displayName));
     }
-
-    // Add Peer's container
-    VideoLayout.addParticipantContainer(user);
 
     // Configure avatar
     UI.setUserEmail(id);
@@ -507,18 +499,6 @@ UI.addUser = function(user) {
     if (displayName) {
         UI.changeDisplayName(id, displayName);
     }
-};
-
-/**
- * Remove user from UI.
- * @param {string} id   user id
- * @param {string} displayName user nickname
- */
-UI.removeUser = function(id, displayName) {
-    messageHandler.participantNotification(
-        displayName, 'notify.somebody', 'disconnected', 'notify.disconnected');
-
-    VideoLayout.removeParticipantContainer(id);
 };
 
 /**
@@ -827,25 +807,8 @@ UI.notifyInitiallyMuted = function() {
         null);
 };
 
-/**
- * Mark user as dominant speaker.
- * @param {string} id user id
- */
-UI.markDominantSpeaker = function(id) {
-    VideoLayout.onDominantSpeakerChanged(id);
-};
-
 UI.handleLastNEndpoints = function(leavingIds, enteringIds) {
     VideoLayout.onLastNEndpointsChanged(leavingIds, enteringIds);
-};
-
-/**
- * Will handle notification about participant's connectivity status change.
- *
- * @param {string} id the id of remote participant(MUC jid)
- */
-UI.participantConnectionStatusChanged = function(id) {
-    VideoLayout.onParticipantConnectionStatusChanged(id);
 };
 
 /**
@@ -971,15 +934,6 @@ UI.getLargeVideoID = function() {
 UI.getLargeVideo = function() {
     return VideoLayout.getLargeVideo();
 };
-
-/**
- * Returns whether or not the passed in user id is currently pinned to the large
- * video.
- *
- * @param {string} userId - The id of the user to check is pinned or not.
- * @returns {boolean} True if the user is currently pinned to the large video.
- */
-UI.isPinned = userId => VideoLayout.getPinnedId() === userId;
 
 /**
  * Shows "Please go to chrome webstore to install the desktop sharing extension"

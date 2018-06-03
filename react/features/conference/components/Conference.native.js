@@ -10,6 +10,7 @@ import { appNavigate } from '../../app';
 import { connect, disconnect } from '../../base/connection';
 import { DialogContainer } from '../../base/dialog';
 import { CalleeInfoContainer } from '../../base/jwt';
+import { getParticipantCount } from '../../base/participants';
 import { Container, LoadingIndicator, TintedView } from '../../base/react';
 import { TestConnectionInfo } from '../../base/testing';
 import { createDesiredLocalTracks } from '../../base/tracks';
@@ -18,6 +19,7 @@ import { Filmstrip } from '../../filmstrip';
 import { LargeVideo } from '../../large-video';
 import { setToolboxVisible, Toolbox } from '../../toolbox';
 
+import ConferenceIndicators from './ConferenceIndicators';
 import styles from './styles';
 
 /**
@@ -88,7 +90,14 @@ type Props = {
      *
      * @private
      */
-    _toolboxVisible: boolean
+    _toolboxVisible: boolean,
+
+    /**
+     * The indicator which determines whether the Toolbox is always visible.
+     *
+     * @private
+     */
+    _toolboxAlwaysVisible: boolean
 };
 
 /**
@@ -244,6 +253,12 @@ class Conference extends Component<Props> {
                       * participants.
                       */}
                     <Filmstrip />
+
+                    {/*
+                      * A container that automatically renders indicators such
+                      * as VideoQualityLabel or RecordingLabel if need be.
+                      */}
+                    <ConferenceIndicators />
                 </View>
                 <TestConnectionInfo />
 
@@ -270,6 +285,10 @@ class Conference extends Component<Props> {
      * @returns {void}
      */
     _onClick() {
+        if (this.props._toolboxAlwaysVisible) {
+            return;
+        }
+
         const toolboxVisible = !this.props._toolboxVisible;
 
         this.props._setToolboxVisible(toolboxVisible);
@@ -376,14 +395,15 @@ function _mapDispatchToProps(dispatch) {
  *     _connecting: boolean,
  *     _participantCount: number,
  *     _reducedUI: boolean,
- *     _toolboxVisible: boolean
+ *     _toolboxVisible: boolean,
+ *     _toolboxAlwaysVisible: boolean
  * }}
  */
 function _mapStateToProps(state) {
     const { connecting, connection } = state['features/base/connection'];
     const { conference, joining, leaving } = state['features/base/conference'];
     const { reducedUI } = state['features/base/responsive-ui'];
-    const participants = state['features/base/participants'];
+    const { alwaysVisible, visible } = state['features/toolbox'];
 
     // XXX There is a window of time between the successful establishment of the
     // XMPP connection and the subsequent commencement of joining the MUC during
@@ -415,7 +435,7 @@ function _mapStateToProps(state) {
          * @private
          * @type {number}
          */
-        _participantCount: participants.length,
+        _participantCount: getParticipantCount(state),
 
         /**
          * The indicator which determines whether the UI is reduced (to
@@ -432,7 +452,15 @@ function _mapStateToProps(state) {
          * @private
          * @type {boolean}
          */
-        _toolboxVisible: state['features/toolbox'].visible
+        _toolboxVisible: visible,
+
+        /**
+         * The indicator which determines whether the Toolbox is always visible.
+         *
+         * @private
+         * @type {boolean}
+         */
+        _toolboxAlwaysVisible: alwaysVisible
     };
 }
 
