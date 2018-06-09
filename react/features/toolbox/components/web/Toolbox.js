@@ -104,6 +104,11 @@ type Props = {
     _feedbackConfigured: boolean,
 
     /**
+     * Whether or not the file recording feature is enabled for use.
+     */
+    _fileRecordingsEnabled: boolean,
+
+    /**
      * The current file recording session, if any.
      */
     _fileRecordingSession: Object,
@@ -125,6 +130,11 @@ type Props = {
     _isGuest: boolean,
 
     /**
+     * Whether or not the live streaming feature is enabled for use.
+     */
+    _liveStreamingEnabled: boolean,
+
+    /**
      * The current live streaming session, if any.
      */
     _liveStreamingSession: ?Object,
@@ -143,11 +153,6 @@ type Props = {
      * Whether or not the local participant's hand is raised.
      */
     _raisedHand: boolean,
-
-    /**
-     * Whether or not the recording feature is enabled for use.
-     */
-    _recordingEnabled: boolean,
 
     /**
      * Whether or not the local participant is screensharing.
@@ -331,6 +336,7 @@ class Toolbox extends Component<Props> {
         const overflowMenuContent = this._renderOverflowMenuContent();
         const overflowHasItems = Boolean(overflowMenuContent.filter(
             child => child).length);
+        const toolbarAccLabel = 'toolbar.accessibilityLabel.moreActionsMenu';
 
         return (
             <div
@@ -343,7 +349,8 @@ class Toolbox extends Component<Props> {
                         && this._renderDesktopSharingButton() }
                     { this._shouldShowButton('raisehand')
                         && <ToolbarButton
-                            accessibilityLabel = 'Raised hand'
+                            accessibilityLabel =
+                                { t('toolbar.accessibilityLabel.raiseHand') }
                             iconName = { _raisedHand
                                 ? 'icon-raised-hand toggled'
                                 : 'icon-raised-hand' }
@@ -352,7 +359,8 @@ class Toolbox extends Component<Props> {
                     { this._shouldShowButton('chat')
                         && <div className = 'toolbar-button-with-badge'>
                             <ToolbarButton
-                                accessibilityLabel = 'Chat'
+                                accessibilityLabel =
+                                    { t('toolbar.accessibilityLabel.chat') }
                                 iconName = { _chatOpen
                                     ? 'icon-chat toggled'
                                     : 'icon-chat' }
@@ -373,7 +381,8 @@ class Toolbox extends Component<Props> {
                     { this._shouldShowButton('invite')
                         && !_hideInviteButton
                         && <ToolbarButton
-                            accessibilityLabel = 'Invite'
+                            accessibilityLabel =
+                                { t('toolbar.accessibilityLabel.invite') }
                             iconName = 'icon-add'
                             onClick = { this._onToolbarOpenInvite }
                             tooltip = { t('toolbar.invite') } /> }
@@ -383,7 +392,7 @@ class Toolbox extends Component<Props> {
                             isOpen = { _overflowMenuVisible }
                             onVisibilityChange = { this._onSetOverflowVisible }>
                             <ul
-                                aria-label = 'Overflow menu'
+                                aria-label = { t(toolbarAccLabel) }
                                 className = 'overflow-menu'>
                                 { overflowMenuContent }
                             </ul>
@@ -941,7 +950,8 @@ class Toolbox extends Component<Props> {
 
         return (
             <ToolbarButton
-                accessibilityLabel = 'Screenshare'
+                accessibilityLabel
+                    = { t('toolbar.accessibilityLabel.shareYourScreen') }
                 iconName = { classNames }
                 onClick = { this._onToolbarToggleScreenshare }
                 tooltip = { tooltip } />
@@ -959,10 +969,11 @@ class Toolbox extends Component<Props> {
             _editingDocument,
             _etherpadInitialized,
             _feedbackConfigured,
+            _fileRecordingsEnabled,
             _fullScreen,
             _isGuest,
+            _liveStreamingEnabled,
             _liveStreamingSession,
-            _recordingEnabled,
             _sharingVideo,
             t
         } = this.props;
@@ -979,7 +990,8 @@ class Toolbox extends Component<Props> {
                     onClick = { this._onToolbarOpenVideoQuality } />,
             this._shouldShowButton('fullscreen')
                 && <OverflowMenuItem
-                    accessibilityLabel = 'Full screen'
+                    accessibilityLabel =
+                        { t('toolbar.accessibilityLabel.fullScreen') }
                     icon = { _fullScreen
                         ? 'icon-exit-full-screen'
                         : 'icon-full-screen' }
@@ -988,18 +1000,19 @@ class Toolbox extends Component<Props> {
                     text = { _fullScreen
                         ? t('toolbar.exitFullScreen')
                         : t('toolbar.enterFullScreen') } />,
-            _recordingEnabled
+            _liveStreamingEnabled
                 && this._shouldShowButton('livestreaming')
                 && <OverflowMenuLiveStreamingItem
                     key = 'livestreaming'
                     onClick = { this._onToolbarToggleLiveStreaming }
                     session = { _liveStreamingSession } />,
-            _recordingEnabled
+            _fileRecordingsEnabled
                 && this._shouldShowButton('recording')
                 && this._renderRecordingButton(),
             this._shouldShowButton('sharedvideo')
                 && <OverflowMenuItem
-                    accessibilityLabel = 'Shared video'
+                    accessibilityLabel =
+                        { t('toolbar.accessibilityLabel.sharedvideo') }
                     icon = 'icon-shared-video'
                     key = 'sharedvideo'
                     onClick = { this._onToolbarToggleSharedVideo }
@@ -1009,7 +1022,8 @@ class Toolbox extends Component<Props> {
             this._shouldShowButton('etherpad')
                 && _etherpadInitialized
                 && <OverflowMenuItem
-                    accessibilityLabel = 'Etherpad'
+                    accessibilityLabel =
+                        { t('toolbar.accessibilityLabel.document') }
                     icon = 'icon-share-doc'
                     key = 'etherpad'
                     onClick = { this._onToolbarToggleEtherpad }
@@ -1022,7 +1036,8 @@ class Toolbox extends Component<Props> {
                 visible = { this._shouldShowButton('settings') } />,
             this._shouldShowButton('stats')
                 && <OverflowMenuItem
-                    accessibilityLabel = 'Speaker stats'
+                    accessibilityLabel =
+                        { t('toolbar.accessibilityLabel.speakerStats') }
                     icon = 'icon-presentation'
                     key = 'stats'
                     onClick = { this._onToolbarOpenSpeakerStats }
@@ -1030,14 +1045,16 @@ class Toolbox extends Component<Props> {
             this._shouldShowButton('feedback')
                 && _feedbackConfigured
                 && <OverflowMenuItem
-                    accessibilityLabel = 'Feedback'
+                    accessibilityLabel =
+                        { t('toolbar.accessibilityLabel.feedback') }
                     icon = 'icon-feedback'
                     key = 'feedback'
                     onClick = { this._onToolbarOpenFeedback }
                     text = { t('toolbar.feedback') } />,
             this._shouldShowButton('shortcuts')
                 && <OverflowMenuItem
-                    accessibilityLabel = 'Shortcuts'
+                    accessibilityLabel =
+                        { t('toolbar.accessibilityLabel.shortcuts') }
                     icon = 'icon-open_in_new'
                     key = 'shortcuts'
                     onClick = { this._onToolbarOpenKeyboardShortcuts }
@@ -1061,7 +1078,8 @@ class Toolbox extends Component<Props> {
 
         return (
             <OverflowMenuItem
-                accessibilityLabel = 'Record'
+                accessibilityLabel =
+                    { t('toolbar.accessibilityLabel.recording') }
                 icon = 'icon-camera-take-picture'
                 key = 'recording'
                 onClick = { this._onToolbarToggleRecording }
@@ -1100,8 +1118,9 @@ function _mapStateToProps(state) {
     const {
         callStatsID,
         disableDesktopSharing,
-        enableRecording,
-        iAmRecorder
+        fileRecordingsEnabled,
+        iAmRecorder,
+        liveStreamingEnabled
     } = state['features/base/config'];
     const sharedVideoStatus = state['features/shared-video'].status;
     const { current } = state['features/side-panel'];
@@ -1130,15 +1149,16 @@ function _mapStateToProps(state) {
         _hideInviteButton:
             iAmRecorder || (!addPeopleEnabled && !dialOutEnabled),
         _isGuest: state['features/base/jwt'].isGuest,
+        _fileRecordingsEnabled: isModerator && fileRecordingsEnabled,
         _fileRecordingSession:
             getActiveSession(state, JitsiRecordingConstants.mode.FILE),
         _fullScreen: fullScreen,
+        _liveStreamingEnabled: isModerator && liveStreamingEnabled,
         _liveStreamingSession:
              getActiveSession(state, JitsiRecordingConstants.mode.STREAM),
         _localParticipantID: localParticipant.id,
         _overflowMenuVisible: overflowMenuVisible,
         _raisedHand: localParticipant.raisedHand,
-        _recordingEnabled: isModerator && enableRecording,
         _screensharing: localVideo && localVideo.videoType === 'desktop',
         _sharingVideo: sharedVideoStatus === 'playing'
             || sharedVideoStatus === 'start'

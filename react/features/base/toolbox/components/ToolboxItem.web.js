@@ -1,7 +1,7 @@
 // @flow
 
 import Tooltip from '@atlaskit/tooltip';
-import React from 'react';
+import React, { Fragment } from 'react';
 
 import AbstractToolboxItem from './AbstractToolboxItem';
 import type { Props } from './AbstractToolboxItem';
@@ -21,24 +21,21 @@ export default class ToolboxItem extends AbstractToolboxItem<Props> {
      */
     _renderItem() {
         const {
-            accessibilityLabel,
             onClick,
             showLabel
         } = this.props;
         const props = {
-            'aria-label': accessibilityLabel,
+            'aria-label': this.accessibilityLabel,
             className: showLabel ? 'overflow-menu-item' : 'toolbox-button',
             onClick
         };
         const elementType = showLabel ? 'li' : 'div';
         // eslint-disable-next-line no-extra-parens
         const children = (
-
-            // $FlowFixMe
-            <React.Fragment>
+            <Fragment>
                 { this._renderIcon() }
                 { showLabel && this.label }
-            </React.Fragment>
+            </Fragment>
         );
 
         return React.createElement(elementType, props, children);

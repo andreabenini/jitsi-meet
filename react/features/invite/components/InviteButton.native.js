@@ -1,6 +1,7 @@
 // @flow
 
 import { connect } from 'react-redux';
+import type { Dispatch } from 'redux';
 
 import { AbstractButton } from '../../base/toolbox';
 import type { AbstractButtonProps } from '../../base/toolbox';
@@ -51,7 +52,7 @@ const _SHARE_ROOM_TOOLBAR_BUTTON = true;
  * current call/conference/meeting.
  */
 class InviteButton extends AbstractButton<Props, *> {
-    accessibilityLabel = 'Share room';
+    accessibilityLabel = 'toolbar.accessibilityLabel.shareRoom';
     iconName = 'icon-link';
     label = 'toolbar.shareRoom';
 
@@ -105,7 +106,7 @@ class InviteButton extends AbstractButton<Props, *> {
  * }}
  * @private
  */
-function _mapDispatchToProps(dispatch) {
+function _mapDispatchToProps(dispatch: Dispatch<*>) {
     return {
         /**
          * Launches native invite dialog.
