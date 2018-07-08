@@ -17,9 +17,9 @@ import { createDesiredLocalTracks } from '../../base/tracks';
 import { ConferenceNotification } from '../../calendar-sync';
 import { Filmstrip } from '../../filmstrip';
 import { LargeVideo } from '../../large-video';
+import { NotificationsContainer } from '../../notifications';
 import { setToolboxVisible, Toolbox } from '../../toolbox';
 
-import ConferenceIndicators from './ConferenceIndicators';
 import styles from './styles';
 
 /**
@@ -253,19 +253,14 @@ class Conference extends Component<Props> {
                       * participants.
                       */}
                     <Filmstrip />
-
-                    {/*
-                      * Examples of conference indicators are VideoQualityLabel
-                      * and RecordingLabel.
-                      */
-                        this.props._reducedUI || <ConferenceIndicators />
-                    }
                 </View>
                 <TestConnectionInfo />
 
                 {
                     this._renderConferenceNotification()
                 }
+
+                <NotificationsContainer />
 
                 {/*
                   * The dialogs are in the topmost stacking layers.

@@ -33,6 +33,7 @@ import EventEmitter from 'events';
 import {
     AVATAR_ID_COMMAND,
     AVATAR_URL_COMMAND,
+    authStatusChanged,
     conferenceFailed,
     conferenceJoined,
     conferenceLeft,
@@ -484,27 +485,13 @@ export default {
 
     /**
      * Indicates if the desktop sharing functionality has been enabled.
-     * It takes into consideration {@link isDesktopSharingDisabledByConfig}
-     * as well as the status returned by
+     * It takes into consideration the status returned by
      * {@link JitsiMeetJS.isDesktopSharingEnabled()}. The latter can be false
      * either if the desktop sharing is not supported by the current browser
      * or if it was disabled through lib-jitsi-meet specific options (check
      * config.js for listed options).
      */
     isDesktopSharingEnabled: false,
-
-    /**
-     * Set to <tt>true</tt> if the desktop sharing functionality has been
-     * explicitly disabled in the config.
-     */
-    isDesktopSharingDisabledByConfig: false,
-
-    /**
-     * The text displayed when the desktop sharing button is disabled through
-     * the config. The value is set through
-     * {@link interfaceConfig.DESKTOP_SHARING_BUTTON_DISABLED_TOOLTIP}.
-     */
-    desktopSharingDisabledTooltip: null,
 
     /**
      * The local audio track (if any).
@@ -720,13 +707,8 @@ export default {
                 APP.connection = connection = con;
 
                 // Desktop sharing related stuff:
-                this.isDesktopSharingDisabledByConfig
-                    = config.disableDesktopSharing;
                 this.isDesktopSharingEnabled
-                    = !this.isDesktopSharingDisabledByConfig
-                        && JitsiMeetJS.isDesktopSharingEnabled();
-                this.desktopSharingDisabledTooltip
-                    = interfaceConfig.DESKTOP_SHARING_BUTTON_DISABLED_TOOLTIP;
+                    = JitsiMeetJS.isDesktopSharingEnabled();
                 eventEmitter.emit(
                     JitsiMeetConferenceEvents.DESKTOP_SHARING_ENABLED_CHANGED,
                     this.isDesktopSharingEnabled);
@@ -1669,7 +1651,7 @@ export default {
         room.on(
             JitsiConferenceEvents.AUTH_STATUS_CHANGED,
             (authEnabled, authLogin) =>
-                APP.UI.updateAuthInfo(authEnabled, authLogin));
+                APP.store.dispatch(authStatusChanged(authEnabled, authLogin)));
 
         room.on(JitsiConferenceEvents.PARTCIPANT_FEATURES_CHANGED,
             user => APP.UI.onUserFeaturesChanged(user));
@@ -1803,13 +1785,6 @@ export default {
             id => APP.store.dispatch(dominantSpeakerChanged(id, room)));
 
         if (!interfaceConfig.filmStripOnly) {
-            room.on(JitsiConferenceEvents.CONNECTION_INTERRUPTED, () => {
-                APP.UI.markVideoInterrupted(true);
-            });
-            room.on(JitsiConferenceEvents.CONNECTION_RESTORED, () => {
-                APP.UI.markVideoInterrupted(false);
-            });
-
             if (isButtonEnabled('chat')) {
                 room.on(
                     JitsiConferenceEvents.MESSAGE_RECEIVED,
@@ -1859,15 +1834,11 @@ export default {
         room.on(JitsiConferenceEvents.CONNECTION_INTERRUPTED, () => {
             APP.store.dispatch(localParticipantConnectionStatusChanged(
                 JitsiParticipantConnectionStatus.INTERRUPTED));
-
-            APP.UI.showLocalConnectionInterrupted(true);
         });
 
         room.on(JitsiConferenceEvents.CONNECTION_RESTORED, () => {
             APP.store.dispatch(localParticipantConnectionStatusChanged(
                 JitsiParticipantConnectionStatus.ACTIVE));
-
-            APP.UI.showLocalConnectionInterrupted(false);
         });
 
         room.on(
@@ -1909,6 +1880,14 @@ export default {
             JitsiConferenceEvents.PARTICIPANT_PROPERTY_CHANGED,
             (participant, name, oldValue, newValue) => {
                 switch (name) {
+                case 'features_screen-sharing': {
+                    APP.store.dispatch(participantUpdated({
+                        conference: room,
+                        id: participant.getId(),
+                        features: { 'screen-sharing': true }
+                    }));
+                    break;
+                }
                 case 'raisedHand':
                     APP.store.dispatch(participantUpdated({
                         conference: room,
@@ -1925,31 +1904,6 @@ export default {
 
                 // ignore
                 }
-            });
-
-        /* eslint-enable max-params */
-        room.on(
-            JitsiConferenceEvents.RECORDER_STATE_CHANGED,
-            recorderSession => {
-                if (!recorderSession) {
-                    logger.error(
-                        'Received invalid recorder status update',
-                        recorderSession);
-
-                    return;
-                }
-
-                // These errors fire when the local participant has requested a
-                // recording but the request itself failed, hence the missing
-                // session ID because the recorder never started.
-                if (recorderSession.getError()) {
-                    this._showRecordingErrorNotification(recorderSession);
-
-                    return;
-                }
-
-                logger.error(
-                    'Received a recorder status update with no ID or error');
             });
 
         room.on(JitsiConferenceEvents.KICKED, () => {
@@ -2008,7 +1962,6 @@ export default {
                 id: from,
                 email: data.value
             }));
-            APP.UI.setUserEmail(from, data.value);
         });
 
         room.addCommandListener(
@@ -2312,10 +2265,10 @@ export default {
 
         APP.store.dispatch(conferenceJoined(room));
 
-        APP.UI.mucJoined();
         const displayName
             = APP.store.getState()['features/base/settings'].displayName;
 
+        APP.UI.changeDisplayName('localVideoContainer', displayName);
         APP.API.notifyConferenceJoined(
             this.roomName,
             this._room.myUserId(),
@@ -2328,7 +2281,6 @@ export default {
                     APP.store.getState(), this._room.myUserId())
             }
         );
-        APP.UI.markVideoInterrupted(false);
     },
 
     /**
@@ -2586,7 +2538,6 @@ export default {
             email: formattedEmail
         }));
 
-        APP.UI.setUserEmail(localId, formattedEmail);
         sendData(commands.EMAIL, formattedEmail);
     },
 
@@ -2751,58 +2702,6 @@ export default {
     submitFeedback(score = -1, message = '') {
         if (score === -1 || (score >= 1 && score <= 5)) {
             APP.store.dispatch(submitFeedback(score, message, room));
-        }
-    },
-
-    /**
-     * Shows a notification about an error in the recording session. A
-     * default notification will display if no error is specified in the passed
-     * in recording session.
-     *
-     * @param {Object} recorderSession - The recorder session model from the
-     * lib.
-     * @private
-     * @returns {void}
-     */
-    _showRecordingErrorNotification(recorderSession) {
-        const isStreamMode
-            = recorderSession.getMode()
-                === JitsiMeetJS.constants.recording.mode.STREAM;
-
-        switch (recorderSession.getError()) {
-        case JitsiMeetJS.constants.recording.error.SERVICE_UNAVAILABLE:
-            APP.UI.messageHandler.showError({
-                descriptionKey: 'recording.unavailable',
-                descriptionArguments: {
-                    serviceName: isStreamMode
-                        ? 'Live Streaming service'
-                        : 'Recording service'
-                },
-                titleKey: isStreamMode
-                    ? 'liveStreaming.unavailableTitle'
-                    : 'recording.unavailableTitle'
-            });
-            break;
-        case JitsiMeetJS.constants.recording.error.RESOURCE_CONSTRAINT:
-            APP.UI.messageHandler.showError({
-                descriptionKey: isStreamMode
-                    ? 'liveStreaming.busy'
-                    : 'recording.busy',
-                titleKey: isStreamMode
-                    ? 'liveStreaming.busyTitle'
-                    : 'recording.busyTitle'
-            });
-            break;
-        default:
-            APP.UI.messageHandler.showError({
-                descriptionKey: isStreamMode
-                    ? 'liveStreaming.error'
-                    : 'recording.error',
-                titleKey: isStreamMode
-                    ? 'liveStreaming.failedToStart'
-                    : 'recording.failedToStart'
-            });
-            break;
         }
     }
 };
