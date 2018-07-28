@@ -45,10 +45,10 @@ var interfaceConfig = {
      * jwt.
      */
     TOOLBAR_BUTTONS: [
-        'microphone', 'camera', 'desktop', 'fullscreen', 'fodeviceselection', 'hangup',
-        'profile', 'info', 'chat', 'recording', 'livestreaming', 'etherpad',
-        'sharedvideo', 'settings', 'raisehand', 'videoquality', 'filmstrip',
-        'invite', 'feedback', 'stats', 'shortcuts'
+        'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
+        'fodeviceselection', 'hangup', 'profile', 'info', 'chat', 'recording',
+        'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+        'videoquality', 'filmstrip', 'invite', 'feedback', 'stats', 'shortcuts'
     ],
 
     SETTINGS_SECTIONS: [ 'devices', 'language', 'moderator', 'profile' ],
@@ -79,6 +79,14 @@ var interfaceConfig = {
     ENABLE_FEEDBACK_ANIMATION: false,
     DISABLE_FOCUS_INDICATOR: false,
     DISABLE_DOMINANT_SPEAKER_INDICATOR: false,
+
+    /**
+     * Whether the speech to text transcription subtitles panel is disabled.
+     * If {@code undefined}, defaults to {@code false}.
+     *
+     * @type {boolean}
+     */
+    DISABLE_TRANSCRIPTION_SUBTITLES: false,
 
     /**
      * Whether the ringing sound in the call/ring overlay is disabled. If
