@@ -2,6 +2,8 @@
 
 import { loadGoogleAPI } from '../google-api';
 
+import { createCalendarConnectedEvent, sendAnalytics } from '../analytics';
+
 import {
     CLEAR_CALENDAR_INTEGRATION,
     REFRESH_CALENDAR,
@@ -9,7 +11,8 @@ import {
     SET_CALENDAR_AUTHORIZATION,
     SET_CALENDAR_EVENTS,
     SET_CALENDAR_INTEGRATION,
-    SET_CALENDAR_PROFILE_EMAIL
+    SET_CALENDAR_PROFILE_EMAIL,
+    SET_LOADING_CALENDAR_EVENTS
 } from './actionTypes';
 import { _getCalendarIntegration, isCalendarEnabled } from './functions';
 import { generateRoomWithoutSeparator } from '../welcome';
@@ -174,6 +177,23 @@ export function setCalendarProfileEmail(newEmail: ?string) {
 }
 
 /**
+ * Sends an to denote a request in is flight to get calendar events.
+ *
+ * @param {boolean} isLoadingEvents - Whether or not calendar events are being
+ * fetched.
+ * @returns {{
+ *     type: SET_LOADING_CALENDAR_EVENTS,
+ *     isLoadingEvents: boolean
+ * }}
+ */
+export function setLoadingCalendarEvents(isLoadingEvents: boolean) {
+    return {
+        type: SET_LOADING_CALENDAR_EVENTS,
+        isLoadingEvents
+    };
+}
+
+/**
  * Sets the calendar integration type to be used by web and signals that the
  * integration is ready to be used.
  *
@@ -211,6 +231,8 @@ export function signIn(calendarType: string): Function {
             .then(() => dispatch(integration.signIn()))
             .then(() => dispatch(setIntegrationReady(calendarType)))
             .then(() => dispatch(updateProfile(calendarType)))
+            .then(() => dispatch(refreshCalendar()))
+            .then(() => sendAnalytics(createCalendarConnectedEvent()))
             .catch(error => {
                 logger.error(
                     'Error occurred while signing into calendar integration',

@@ -57,10 +57,13 @@
             "video": "Video"
         },
         "calendar": "Calendar",
+        "connectCalendarText": "Connect your calendar to view all your meetings in __app__. Plus, add __app__ meetings to your calendar and start them with one click.",
+        "connectCalendarButton": "Connect your calendar",
         "go": "GO",
         "join": "JOIN",
         "privacy": "Privacy",
-        "recentList": "History",
+        "recentList": "Recent",
+        "recentListEmpty": "Your recent list is currently empty. Chat with your team and you will find all your recent meetings here.",
         "roomname": "Enter room name",
         "roomnameHint": "Enter the name or URL of the room you want to join. You may make a name up, just let the people you are meeting know it so that they enter the same name.",
         "sendFeedback": "Send feedback",
@@ -480,7 +483,9 @@
         "failedToStart": "Transcribing failed to start",
         "tr": "TR",
         "labelToolTip": "The meeting is being transcribed",
-        "ccButtonTooltip": "Start / Stop showing subtitles"
+        "ccButtonTooltip": "Start / Stop showing subtitles",
+        "start": "Start showing subtitles",
+        "stop": "Stop showing subtitles"
     },
     "liveStreaming":
     {
@@ -499,7 +504,9 @@
         "on": "Live Streaming",
         "pending": "Starting Live Stream...",
         "serviceName": "Live Streaming service",
+        "signedInAs": "You are currently signed in as:",
         "signIn": "Sign in with Google",
+        "signOut": "Sign out",
         "signInCTA": "Sign in or enter your live stream key from YouTube.",
         "start": "Start a live stream",
         "streamIdHelp": "What's this?",
@@ -639,16 +646,19 @@
         "startWithVideoMuted": "Start with video muted"
     },
     "calendarSync": {
-        "later": "Later",
-        "next": "Upcoming",
+        "addMeetingURL": "Add a meeting link",
+        "join": "Join",
+        "joinTooltip": "Join the meeting",
         "nextMeeting": "next meeting",
-        "now": "Now",
+        "noEvents": "There are no upcoming events scheduled.",
         "ongoingMeeting": "ongoing meeting",
         "permissionButton": "Open settings",
-        "permissionMessage": "The Calendar permission is required to see your meetings in the app."
+        "permissionMessage": "The Calendar permission is required to see your meetings in the app.",
+        "refresh": "Refresh calendar",
+        "today": "Today"
     },
     "recentList": {
-        "joinPastMeeting": "Join A Past Meeting"
+        "joinPastMeeting": "Join a past meeting"
     },
     "sectionList": {
         "pullToRefresh": "Pull to refresh"
