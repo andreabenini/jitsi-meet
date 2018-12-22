@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 // Top-level build file where you can add configuration options common to all
 // sub-projects/modules.
 
@@ -7,7 +9,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.4'
+        classpath 'com.android.tools.build:gradle:3.2.1'
         classpath 'com.google.gms:google-services:3.2.1'
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -17,7 +19,6 @@ buildscript {
 
 allprojects {
     repositories {
-        maven { url "https://maven.google.com" }
         google()
         jcenter()
         maven { url "$rootDir/../node_modules/jsc-android/dist" }
@@ -34,13 +35,13 @@ allprojects {
                 if (details.requested.group == 'com.facebook.react'
                         && details.requested.name == 'react-native') {
                     def file = new File("$rootDir/../node_modules/react-native/package.json")
-                    def version = new groovy.json.JsonSlurper().parseText(file.text).version
+                    def version = new JsonSlurper().parseText(file.text).version
                     details.useVersion version
                 }
                 if (details.requested.group == 'org.webkit'
                         && details.requested.name == 'android-jsc') {
                     def file = new File("$rootDir/../node_modules/jsc-android/package.json")
-                    def version = new groovy.json.JsonSlurper().parseText(file.text).version
+                    def version = new JsonSlurper().parseText(file.text).version
                     details.useVersion "r${version.tokenize('.')[0]}"
                 }
             }
@@ -65,7 +66,7 @@ allprojects {
     afterEvaluate { project ->
         if (project.name.startsWith('react-native-')) {
             def npmManifest = project.file('../package.json')
-            def json = new groovy.json.JsonSlurper().parseText(npmManifest.text)
+            def json = new JsonSlurper().parseText(npmManifest.text)
 
             // React Native modules have an npm peer dependency on react-native,
             // they do not have an npm dependency on it. Further below though we
@@ -77,15 +78,15 @@ allprojects {
             if ('react-native-background-timer' == project.name)
                 versionQualifier = '-jitsi-3' // 2.0.0 + react-native 0.57
             else if ('react-native-calendar-events' == project.name)
-                versionQualifier = '-jitsi-1' // 056807286da610d884fb6b4c8ca187a767b261f7 + react-native 0.57
+                versionQualifier = '-jitsi-2' // 1.6.4 + react-native 0.57
             else if ('react-native-fast-image' == project.name)
                 versionQualifier = '-jitsi-2' // 5.1.1 + react-native 0.57
             else if ('react-native-google-signin' == project.name)
-                versionQualifier = '-jitsi-1' // 1.0.0-rc6 + react-native 0.57
+                versionQualifier = '-jitsi-2' // 1.0.2 + react-native 0.57
             else if ('react-native-immersive' == project.name)
-                versionQualifier = '-jitsi-4' // 1.1.0 + react-native 0.57
+                versionQualifier = '-jitsi-5' // 2.0.0 + react-native 0.57
             else if ('react-native-keep-awake' == project.name)
-                versionQualifier = '-jitsi-3' // 2.0.6 + react-native 0.57
+                versionQualifier = '-jitsi-4' // 4.0.0 + react-native 0.57
             else if ('react-native-linear-gradient' == project.name)
                 versionQualifier = '-jitsi-1' // 2.4.0 + react-native 0.57
             else if ('react-native-sound' == project.name)
@@ -171,11 +172,11 @@ allprojects {
 }
 
 ext {
-    buildToolsVersion = "27.0.3"
-    compileSdkVersion = 27
+    buildToolsVersion = "28.0.3"
+    compileSdkVersion = 28
     minSdkVersion    = 21
-    targetSdkVersion = 26
-    supportLibVersion = "27.1.1"
+    targetSdkVersion = 28
+    supportLibVersion = "28.0.0"
 
     // The Maven artifact groupdId of the third-party react-native modules which
     // Jitsi Meet SDK for Android depends on and which are not available in
@@ -245,9 +246,4 @@ subprojects { subproject ->
             }
         }
     }
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.4'
-    distributionUrl = distributionUrl.replace("bin", "all")
 }
