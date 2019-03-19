@@ -5,6 +5,7 @@ import {
     createApiEvent,
     sendAnalytics
 } from '../../react/features/analytics';
+import { setSubject } from '../../react/features/base/conference';
 import { parseJWTFromURLParams } from '../../react/features/base/jwt';
 import { invite } from '../../react/features/invite';
 import { getJitsiMeetTransport } from '../transport';
@@ -65,7 +66,7 @@ function initCommands() {
         },
         'subject': subject => {
             sendAnalytics(createApiEvent('subject.changed'));
-            APP.conference.setSubject(subject);
+            APP.store.dispatch(setSubject(subject));
         },
         'submit-feedback': feedback => {
             sendAnalytics(createApiEvent('submit.feedback'));
@@ -549,6 +550,21 @@ class API {
      */
     notifyFeedbackPromptDisplayed() {
         this._sendEvent({ name: 'feedback-prompt-displayed' });
+    }
+
+    /**
+     * Notify external application (if API is enabled) that the display
+     * configuration of the filmstrip has been changed.
+     *
+     * @param {boolean} visible - Whether or not the filmstrip has been set to
+     * be displayed or hidden.
+     * @returns {void}
+     */
+    notifyFilmstripDisplayChanged(visible: boolean) {
+        this._sendEvent({
+            name: 'filmstrip-display-changed',
+            visible
+        });
     }
 
     /**

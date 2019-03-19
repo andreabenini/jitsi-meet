@@ -5,86 +5,12 @@ import { StyleSheet } from 'react-native';
 import { BoxModel, ColorPalette, createStyleSheet } from '../../../styles';
 
 const AVATAR_OPACITY = 0.4;
-const HEADER_COLOR = ColorPalette.blue;
-
-// Header height is from Android guidelines. Also, this looks good.
-const HEADER_HEIGHT = 56;
 const OVERLAY_FONT_COLOR = 'rgba(255, 255, 255, 0.6)';
 const SECONDARY_ACTION_BUTTON_SIZE = 30;
 
 export const AVATAR_SIZE = 65;
-export const HEADER_PADDING = BoxModel.padding;
-export const STATUSBAR_COLOR = ColorPalette.blueHighlight;
 export const SIDEBAR_WIDTH = 250;
 export const UNDERLAY_COLOR = 'rgba(255, 255, 255, 0.2)';
-
-const HEADER_STYLES = {
-
-    disabledButtonText: {
-        opacity: 0.6
-    },
-
-    /**
-     * Platform specific header button (e.g. back, menu, etc).
-     */
-    headerButtonIcon: {
-        alignSelf: 'center',
-        color: ColorPalette.white,
-        fontSize: 26,
-        paddingRight: 22
-    },
-
-    headerButtonText: {
-        color: ColorPalette.white,
-        fontSize: 20
-    },
-
-    /**
-     * Style of the header overlay to cover the unsafe areas.
-     */
-    headerOverlay: {
-        backgroundColor: HEADER_COLOR
-    },
-
-    /**
-     * Generic style for a label placed in the header.
-     */
-    headerText: {
-        color: ColorPalette.white,
-        fontSize: 20
-    },
-
-    headerTextWrapper: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        left: 0,
-        position: 'absolute',
-        right: 0
-    },
-
-    /**
-     * The top-level element of a page.
-     */
-    page: {
-        ...StyleSheet.absoluteFillObject,
-        alignItems: 'stretch',
-        flex: 1,
-        flexDirection: 'column',
-        overflow: 'hidden'
-    },
-
-    /**
-     * Base style of Header.
-     */
-    screenHeader: {
-        alignItems: 'center',
-        backgroundColor: HEADER_COLOR,
-        flexDirection: 'row',
-        height: HEADER_HEIGHT,
-        justifyContent: 'space-between',
-        padding: HEADER_PADDING
-    }
-};
 
 /**
  * Style classes of the PagedList-based components.
@@ -103,9 +29,9 @@ const PAGED_LIST_STYLES = {
      */
     pageIndicator: {
         alignItems: 'center',
-        flex: 1,
         flexDirection: 'column',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        padding: BoxModel.padding / 2
     },
 
     /**
@@ -119,10 +45,15 @@ const PAGED_LIST_STYLES = {
      * Container for the page indicators (Android).
      */
     pageIndicatorContainer: {
-        alignItems: 'stretch',
+        alignItems: 'center',
         backgroundColor: ColorPalette.blue,
         flexDirection: 'row',
-        height: 56,
+        justifyContent: 'space-around'
+    },
+
+    pageIndicatorContent: {
+        alignItems: 'center',
+        flexDirection: 'column',
         justifyContent: 'center'
     },
 
@@ -349,7 +280,6 @@ export const TINTED_VIEW_DEFAULT = {
  * base/react.
  */
 export default createStyleSheet({
-    ...HEADER_STYLES,
     ...PAGED_LIST_STYLES,
     ...SECTION_LIST_STYLES,
     ...SIDEBAR_STYLES

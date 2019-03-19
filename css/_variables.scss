@@ -63,7 +63,7 @@ $audioLevelShadow: rgba(9, 36, 77, 0.9);
 $videoStateIndicatorColor: $defaultColor;
 $videoStateIndicatorBackground: $toolbarBackground;
 $videoStateIndicatorSize: 40px;
-$remoteVideoMenuIconLeft: initial;
+$remoteVideoMenuIconMargin: initial;
 
 /**
  * Feedback Modal
@@ -156,3 +156,9 @@ $welcomePageDescriptionColor: #fff;
 $welcomePageFontFamily: inherit;
 $welcomePageHeaderBackground: linear-gradient(-90deg, #1251AE 0%, #0074FF 50%, #1251AE 100%);
 $welcomePageTitleColor: #fff;
+
+/**
+ * Deep-linking page variables.
+ */
+$deepLinkingMobileLogoHeight: 40px;
+$deepLinkingMobileHeaderBackground: #f1f2f5;
