@@ -35,6 +35,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.module.annotations.ReactModule;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,8 +59,11 @@ import java.util.concurrent.Executors;
  * Before a call has started and after it has ended the
  * {@code AudioModeModule.DEFAULT} mode should be used.
  */
+@ReactModule(name = AudioModeModule.NAME)
 class AudioModeModule extends ReactContextBaseJavaModule
     implements AudioManager.OnAudioFocusChangeListener {
+
+    public static final String NAME = "AudioMode";
 
     /**
      * Constants representing the audio mode.
@@ -90,15 +94,9 @@ class AudioModeModule extends ReactContextBaseJavaModule
     private static final int TYPE_USB_HEADSET = 22;
 
     /**
-     * The name of {@code AudioModeModule} to be used in the React Native
-     * bridge.
-     */
-    private static final String MODULE_NAME = "AudioMode";
-
-    /**
      * The {@code Log} tag {@code AudioModeModule} is to log messages with.
      */
-    static final String TAG = MODULE_NAME;
+    static final String TAG = NAME;
 
     /**
      * Converts any of the "DEVICE_" constants into the corresponding
@@ -160,7 +158,7 @@ class AudioModeModule extends ReactContextBaseJavaModule
     /**
      * Whether or not the ConnectionService is used for selecting audio devices.
      */
-    private static boolean useConnectionService() {
+    static boolean useConnectionService() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
     }
 
@@ -297,9 +295,9 @@ class AudioModeModule extends ReactContextBaseJavaModule
             = (AudioManager)
                 reactContext.getSystemService(Context.AUDIO_SERVICE);
 
-        // Starting Oreo the ConnectionImpl from ConnectionService us used to
+        // Starting Oreo the ConnectionImpl from ConnectionService is used to
         // detect the available devices.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        if (!useConnectionService()) {
             // Setup runtime device change detection.
             setupAudioRouteChangeDetection();
 
@@ -373,7 +371,7 @@ class AudioModeModule extends ReactContextBaseJavaModule
      */
     @Override
     public String getName() {
-        return MODULE_NAME;
+        return NAME;
     }
 
     /**

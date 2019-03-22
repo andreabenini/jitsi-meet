@@ -1,5 +1,6 @@
 /*
- * Copyright @ 2017-present Atlassian Pty Ltd
+ * Copyright @ 2019-present 8x8, Inc.
+ * Copyright @ 2017-2018 Atlassian Pty Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +25,7 @@ import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.common.LifecycleState;
+import com.facebook.react.devsupport.DevInternalSettings;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.ArrayList;
@@ -58,8 +60,7 @@ class ReactInstanceManagerHolder {
                 new org.jitsi.meet.sdk.dropbox.Dropbox(reactContext),
                 new org.jitsi.meet.sdk.net.NAT64AddrInfoModule(reactContext)));
 
-        if (android.os.Build.VERSION.SDK_INT
-                >= android.os.Build.VERSION_CODES.O) {
+        if (AudioModeModule.useConnectionService()) {
             nativeModules.add(new RNConnectionService(reactContext));
         }
 
@@ -155,5 +156,12 @@ class ReactInstanceManagerHolder {
                 .setUseDeveloperSupport(BuildConfig.DEBUG)
                 .setInitialLifecycleState(LifecycleState.RESUMED)
                 .build();
+
+        // Disable delta updates on Android, they have caused trouble.
+        DevInternalSettings devSettings
+            = (DevInternalSettings)reactInstanceManager.getDevSupportManager().getDevSettings();
+        if (devSettings != null) {
+            devSettings.setBundleDeltasEnabled(false);
+        }
     }
 }
