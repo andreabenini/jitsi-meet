@@ -2,12 +2,14 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import { connect } from 'react-redux';
+
+import { connect } from '../../../base/redux';
 
 import AbstractNotificationsContainer, {
     _abstractMapStateToProps,
     type Props as AbstractProps
-} from './AbstractNotificationsContainer';
+} from '../AbstractNotificationsContainer';
+
 import Notification from './Notification';
 import styles from './styles';
 
@@ -63,5 +65,4 @@ class NotificationsContainer
     _onDismissed: number => void;
 }
 
-// $FlowExpectedError
 export default connect(_abstractMapStateToProps)(NotificationsContainer);
