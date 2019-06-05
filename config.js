@@ -269,6 +269,10 @@ var config = {
     // Enable lock room for all moderators, even when userRolesBasedOnToken is enabled and participants are guests.
     // lockRoomGuestEnabled: false,
 
+    // When enabled the password used for locking a room is restricted to up to the number of digits specified
+    // roomPasswordNumberOfDigits: 10,
+    // default: roomPasswordNumberOfDigits: false,
+
     // Message to show the users. Example: 'The service will be down for
     // maintenance at 01:00 AM GMT,
     // noticeMessage: '',
@@ -410,6 +414,10 @@ var config = {
     // use only.
     // _desktopSharingSourceDevice: 'sample-id-or-label'
 
+    // A property to disable the right click context menu for localVideo
+    // the menu has option to flip the locally seen video for local presentations
+    // disableLocalVideoFlip: false
+
     // List of undocumented settings used in jitsi-meet
     /**
      _immediateReloadThreshold
@@ -424,7 +432,6 @@ var config = {
      dialOutCodesUrl
      disableRemoteControl
      displayJids
-     enableLocalVideoFlip
      etherpad_base
      externalConnectUrl
      firefox_fake_device
