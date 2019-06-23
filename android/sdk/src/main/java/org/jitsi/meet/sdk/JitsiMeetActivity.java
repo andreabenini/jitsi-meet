@@ -38,8 +38,8 @@ public class JitsiMeetActivity extends FragmentActivity
 
     protected static final String TAG = JitsiMeetActivity.class.getSimpleName();
 
-    public static final String ACTION_JITSI_MEET_CONFERENCE = "org.jitsi.meet.CONFERENCE";
-    public static final String JITSI_MEET_CONFERENCE_OPTIONS = "JitsiMeetConferenceOptions";
+    private static final String ACTION_JITSI_MEET_CONFERENCE = "org.jitsi.meet.CONFERENCE";
+    private static final String JITSI_MEET_CONFERENCE_OPTIONS = "JitsiMeetConferenceOptions";
 
     // Helpers for starting the activity
     //
@@ -69,6 +69,13 @@ public class JitsiMeetActivity extends FragmentActivity
         if (!extraInitialize()) {
             initialize();
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        leave();
+
+        super.onDestroy();
     }
 
     @Override
@@ -144,12 +151,19 @@ public class JitsiMeetActivity extends FragmentActivity
     //
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        JitsiMeetActivityDelegate.onActivityResult(this, requestCode, resultCode, data);
+    }
+
+    @Override
     public void onBackPressed() {
         JitsiMeetActivityDelegate.onBackPressed();
     }
 
     @Override
     public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
         JitsiMeetConferenceOptions options;
 
         if ((options = getConferenceOptions(intent)) != null) {
