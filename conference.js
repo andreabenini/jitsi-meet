@@ -79,7 +79,6 @@ import {
 import { showNotification } from './react/features/notifications';
 import {
     dominantSpeakerChanged,
-    getAvatarURLByParticipantId,
     getLocalParticipant,
     getNormalizedDisplayName,
     getParticipantById,
@@ -1999,6 +1998,8 @@ export default {
                 this.localAudio.dispose();
                 this.localAudio = null;
             }
+
+            APP.API.notifySuspendDetected();
         });
 
         APP.UI.addListener(UIEvents.AUDIO_MUTED, muted => {
@@ -2278,18 +2279,6 @@ export default {
             = APP.store.getState()['features/base/settings'].displayName;
 
         APP.UI.changeDisplayName('localVideoContainer', displayName);
-        APP.API.notifyConferenceJoined(
-            this.roomName,
-            this._room.myUserId(),
-            {
-                displayName,
-                formattedDisplayName: appendSuffix(
-                    displayName,
-                    interfaceConfig.DEFAULT_LOCAL_DISPLAY_NAME),
-                avatarURL: getAvatarURLByParticipantId(
-                    APP.store.getState(), this._room.myUserId())
-            }
-        );
     },
 
     /**
@@ -2752,14 +2741,6 @@ export default {
         APP.store.dispatch(updateSettings({
             displayName: formattedNickname
         }));
-
-        APP.API.notifyDisplayNameChanged(id, {
-            displayName: formattedNickname,
-            formattedDisplayName:
-                appendSuffix(
-                    formattedNickname,
-                    interfaceConfig.DEFAULT_LOCAL_DISPLAY_NAME)
-        });
 
         if (room) {
             APP.UI.changeDisplayName(id, formattedNickname);
