@@ -43,6 +43,7 @@ import {
     conferenceWillJoin,
     conferenceWillLeave,
     dataChannelOpened,
+    kickedOut,
     lockStateChanged,
     onStartMutedPolicyChanged,
     p2pStatusChanged,
@@ -104,7 +105,6 @@ import {
     getLocationContextRoot,
     getJitsiMeetGlobalNS
 } from './react/features/base/util';
-import { notifyKickedOut } from './react/features/conference';
 import { addMessage } from './react/features/chat';
 import { showDesktopPicker } from './react/features/desktop-picker';
 import { appendSuffix } from './react/features/display-name';
@@ -1781,11 +1781,6 @@ export default {
 
             logger.log(`USER ${id} LEFT:`, user);
             APP.API.notifyUserLeft(id);
-            APP.UI.messageHandler.participantNotification(
-                user.getDisplayName(),
-                'notify.somebody',
-                'disconnected',
-                'notify.disconnected');
             APP.UI.onSharedVideoStop(id);
         });
 
@@ -1962,7 +1957,7 @@ export default {
 
         room.on(JitsiConferenceEvents.KICKED, participant => {
             APP.UI.hideStats();
-            APP.store.dispatch(notifyKickedOut(participant));
+            APP.store.dispatch(kickedOut(room, participant));
 
             // FIXME close
         });
