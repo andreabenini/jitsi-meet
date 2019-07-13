@@ -23,7 +23,8 @@ import {
     sendAnalytics
 } from './react/features/analytics';
 import {
-    redirectWithStoredParams,
+    maybeRedirectToWelcomePage,
+    redirectToStaticPage,
     reloadWithStoredParams
 } from './react/features/app';
 
@@ -77,7 +78,10 @@ import {
     setVideoAvailable,
     setVideoMuted
 } from './react/features/base/media';
-import { showNotification } from './react/features/notifications';
+import {
+    hideNotification,
+    showNotification
+} from './react/features/notifications';
 import {
     dominantSpeakerChanged,
     getLocalParticipant,
@@ -97,14 +101,12 @@ import {
     createLocalTracksF,
     destroyLocalTracks,
     isLocalTrackMuted,
+    isUserInteractionRequiredForUnmute,
     replaceLocalTrack,
     trackAdded,
     trackRemoved
 } from './react/features/base/tracks';
-import {
-    getLocationContextRoot,
-    getJitsiMeetGlobalNS
-} from './react/features/base/util';
+import { getJitsiMeetGlobalNS } from './react/features/base/util';
 import { addMessage } from './react/features/chat';
 import { showDesktopPicker } from './react/features/desktop-picker';
 import { appendSuffix } from './react/features/display-name';
@@ -112,10 +114,8 @@ import {
     maybeOpenFeedbackDialog,
     submitFeedback
 } from './react/features/feedback';
-import {
-    mediaPermissionPromptVisibilityChanged,
-    suspendDetected
-} from './react/features/overlay';
+import { mediaPermissionPromptVisibilityChanged } from './react/features/overlay';
+import { suspendDetected } from './react/features/power-monitor';
 import { setSharedVideoStatus } from './react/features/shared-video';
 import { isButtonEnabled } from './react/features/toolbox';
 import { endpointMessageReceived } from './react/features/subtitles';
@@ -212,77 +212,6 @@ function muteLocalVideo(muted) {
 }
 
 /**
- * Check if the welcome page is enabled and redirects to it.
- * If requested show a thank you dialog before that.
- * If we have a close page enabled, redirect to it without
- * showing any other dialog.
- *
- * @param {object} options used to decide which particular close page to show
- * or if close page is disabled, whether we should show the thankyou dialog
- * @param {boolean} options.showThankYou - whether we should
- * show thank you dialog
- * @param {boolean} options.feedbackSubmitted - whether feedback was submitted
- */
-function maybeRedirectToWelcomePage(options) {
-    // if close page is enabled redirect to it, without further action
-    if (config.enableClosePage) {
-        const { isGuest } = APP.store.getState()['features/base/jwt'];
-
-        // save whether current user is guest or not, before navigating
-        // to close page
-        window.sessionStorage.setItem('guest', isGuest);
-        redirectToStaticPage(`static/${
-            options.feedbackSubmitted ? 'close.html' : 'close2.html'}`);
-
-        return;
-    }
-
-    // else: show thankYou dialog only if there is no feedback
-    if (options.showThankYou) {
-        APP.store.dispatch(showNotification({
-            titleArguments: { appName: interfaceConfig.APP_NAME },
-            titleKey: 'dialog.thankYou'
-        }));
-    }
-
-    // if Welcome page is enabled redirect to welcome page after 3 sec, if
-    // there is a thank you message to be shown, 0.5s otherwise.
-    if (config.enableWelcomePage) {
-        setTimeout(
-            () => {
-                APP.store.dispatch(redirectWithStoredParams('/'));
-            },
-            options.showThankYou ? 3000 : 500);
-    }
-}
-
-/**
- * Assigns a specific pathname to window.location.pathname taking into account
- * the context root of the Web app.
- *
- * @param {string} pathname - The pathname to assign to
- * window.location.pathname. If the specified pathname is relative, the context
- * root of the Web app will be prepended to the specified pathname before
- * assigning it to window.location.pathname.
- * @return {void}
- */
-function redirectToStaticPage(pathname) {
-    const windowLocation = window.location;
-    let newPathname = pathname;
-
-    if (!newPathname.startsWith('/')) {
-        // A pathname equal to ./ specifies the current directory. It will be
-        // fine but pointless to include it because contextRoot is the current
-        // directory.
-        newPathname.startsWith('./')
-            && (newPathname = newPathname.substring(2));
-        newPathname = getLocationContextRoot(windowLocation) + newPathname;
-    }
-
-    windowLocation.pathname = newPathname;
-}
-
-/**
  * A queue for the async replaceLocalTrack action so that multiple audio
  * replacements cannot happen simultaneously. This solves the issue where
  * replaceLocalTrack is called multiple times with an oldTrack of null, causing
@@ -347,7 +276,7 @@ class ConferenceConnector {
 
         case JitsiConferenceErrors.NOT_ALLOWED_ERROR: {
             // let's show some auth not allowed page
-            redirectToStaticPage('static/authError.html');
+            APP.store.dispatch(redirectToStaticPage('static/authError.html'));
             break;
         }
 
@@ -629,8 +558,7 @@ export default {
             // Resolve with no tracks
             tryCreateLocalTracks = Promise.resolve([]);
         } else {
-            tryCreateLocalTracks = createLocalTracksF(
-                { devices: initialDevices }, true)
+            tryCreateLocalTracks = createLocalTracksF({ devices: initialDevices }, true)
                 .catch(err => {
                     if (requestedAudio && requestedVideo) {
 
@@ -734,8 +662,11 @@ export default {
                 options.roomName, {
                     startAudioOnly: config.startAudioOnly,
                     startScreenSharing: config.startScreenSharing,
-                    startWithAudioMuted: config.startWithAudioMuted || config.startSilent,
+                    startWithAudioMuted: config.startWithAudioMuted
+                        || config.startSilent
+                        || isUserInteractionRequiredForUnmute(APP.store.getState()),
                     startWithVideoMuted: config.startWithVideoMuted
+                        || isUserInteractionRequiredForUnmute(APP.store.getState())
                 }))
             .then(([ tracks, con ]) => {
                 tracks.forEach(track => {
@@ -836,6 +767,13 @@ export default {
      * dialogs in case of media permissions error.
      */
     muteAudio(mute, showUI = true) {
+        if (!mute
+                && isUserInteractionRequiredForUnmute(APP.store.getState())) {
+            logger.error('Unmuting audio requires user interaction');
+
+            return;
+        }
+
         // Not ready to modify track's state yet
         if (!this._localTracksInitialized) {
             // This will only modify base/media.audio.muted which is then synced
@@ -899,6 +837,13 @@ export default {
      * dialogs in case of media permissions error.
      */
     muteVideo(mute, showUI = true) {
+        if (!mute
+                && isUserInteractionRequiredForUnmute(APP.store.getState())) {
+            logger.error('Unmuting video requires user interaction');
+
+            return;
+        }
+
         // If not ready to modify track's state yet adjust the base/media
         if (!this._localTracksInitialized) {
             // This will only modify base/media.video.muted which is then synced
@@ -1018,17 +963,15 @@ export default {
      * Returns the connection times stored in the library.
      */
     getConnectionTimes() {
-        return this._room.getConnectionTimes();
+        return room.getConnectionTimes();
     },
 
     // used by torture currently
     isJoined() {
-        return this._room
-            && this._room.isJoined();
+        return room && room.isJoined();
     },
     getConnectionState() {
-        return this._room
-            && this._room.getConnectionState();
+        return room && room.getConnectionState();
     },
 
     /**
@@ -1037,8 +980,7 @@ export default {
      * P2P connection
      */
     getP2PConnectionState() {
-        return this._room
-            && this._room.getP2PConnectionState();
+        return room && room.getP2PConnectionState();
     },
 
     /**
@@ -1047,7 +989,7 @@ export default {
      */
     _startP2P() {
         try {
-            this._room && this._room.startP2PSession();
+            room && room.startP2PSession();
         } catch (error) {
             logger.error('Start P2P failed', error);
             throw error;
@@ -1060,7 +1002,7 @@ export default {
      */
     _stopP2P() {
         try {
-            this._room && this._room.stopP2PSession();
+            room && room.stopP2PSession();
         } catch (error) {
             logger.error('Stop P2P failed', error);
             throw error;
@@ -1075,7 +1017,7 @@ export default {
      * false otherwise.
      */
     isConnectionInterrupted() {
-        return this._room.isConnectionInterrupted();
+        return room.isConnectionInterrupted();
     },
 
     /**
@@ -1136,7 +1078,7 @@ export default {
     },
 
     getMyUserId() {
-        return this._room && this._room.myUserId();
+        return room && room.myUserId();
     },
 
     /**
@@ -1159,7 +1101,7 @@ export default {
      * least one track.
      */
     getNumberOfParticipantsWithTracks() {
-        return this._room.getParticipants()
+        return room.getParticipants()
             .filter(p => p.getTracks().length > 0)
             .length;
     },
@@ -1297,15 +1239,32 @@ export default {
         const options = config;
 
         const nick = APP.store.getState()['features/base/settings'].displayName;
+        const { locationURL } = APP.store.getState()['features/base/connection'];
 
         if (nick) {
             options.displayName = nick;
         }
 
         options.applicationName = interfaceConfig.APP_NAME;
-        options.getWiFiStatsMethod = getJitsiMeetGlobalNS().getWiFiStats;
+        options.getWiFiStatsMethod = this._getWiFiStatsMethod;
+        options.confID = `${locationURL.host}${locationURL.pathname}`;
 
         return options;
+    },
+
+    /**
+     * Returns the result of getWiFiStats from the global NS or does nothing
+     * (returns empty result).
+     * Fixes a concurrency problem where we need to pass a function when creating
+     * JitsiConference, but that method is added to the context later.
+     *
+     * @returns {Promise}
+     * @private
+     */
+    _getWiFiStatsMethod() {
+        const gloabalNS = getJitsiMeetGlobalNS();
+
+        return gloabalNS.getWiFiStats ? gloabalNS.getWiFiStats() : Promise.resolve('{}');
     },
 
     /**
@@ -1323,7 +1282,7 @@ export default {
                         this.localVideo = newStream;
                         this._setSharingScreen(newStream);
                         if (newStream) {
-                            APP.UI.addLocalStream(newStream);
+                            APP.UI.addLocalVideoStream(newStream);
                         }
                         this.setVideoMuteStatus(this.isLocalVideoMuted());
                     })
@@ -1374,9 +1333,6 @@ export default {
                 replaceLocalTrack(this.localAudio, newStream, room))
                     .then(() => {
                         this.localAudio = newStream;
-                        if (newStream) {
-                            APP.UI.addLocalStream(newStream);
-                        }
                         this.setAudioMuteStatus(this.isLocalAudioMuted());
                     })
                     .then(resolve)
@@ -1757,14 +1713,7 @@ export default {
                 return;
             }
 
-            const displayName = user.getDisplayName();
-
             logger.log(`USER ${id} connnected:`, user);
-            APP.API.notifyUserJoined(id, {
-                displayName,
-                formattedDisplayName: appendSuffix(
-                    displayName || interfaceConfig.DEFAULT_REMOTE_DISPLAY_NAME)
-            });
             APP.UI.addUser(user);
 
             // check the roles for the new user and reflect them
@@ -1780,7 +1729,7 @@ export default {
             }
 
             logger.log(`USER ${id} LEFT:`, user);
-            APP.API.notifyUserLeft(id);
+
             APP.UI.onSharedVideoStop(id);
         });
 
@@ -1849,14 +1798,29 @@ export default {
             APP.UI.setAudioLevel(id, newLvl);
         });
 
-        room.on(JitsiConferenceEvents.TRACK_MUTE_CHANGED, (_, participantThatMutedUs) => {
+        // we store the last start muted notification id that we showed,
+        // so we can hide it when unmuted mic is detected
+        let lastNotificationId;
+
+        room.on(JitsiConferenceEvents.TRACK_MUTE_CHANGED, (track, participantThatMutedUs) => {
             if (participantThatMutedUs) {
                 APP.store.dispatch(participantMutedUs(participantThatMutedUs));
+            }
+
+            if (lastNotificationId && track.isAudioTrack() && track.isLocal() && !track.isMuted()) {
+                APP.store.dispatch(hideNotification(lastNotificationId));
+                lastNotificationId = undefined;
             }
         });
 
         room.on(JitsiConferenceEvents.TALK_WHILE_MUTED, () => {
-            APP.UI.showToolbar(6000);
+            const action = APP.store.dispatch(showNotification({
+                titleKey: 'toolbar.talkWhileMutedPopup',
+                customActionNameKey: 'notify.unmute',
+                customActionHandler: muteLocalAudio.bind(this, false)
+            }));
+
+            lastNotificationId = action.uid;
         });
         room.on(JitsiConferenceEvents.SUBJECT_CHANGED,
             subject => APP.store.dispatch(conferenceSubjectChanged(subject)));
@@ -1968,33 +1932,6 @@ export default {
 
         room.on(JitsiConferenceEvents.SUSPEND_DETECTED, () => {
             APP.store.dispatch(suspendDetected());
-
-            // After wake up, we will be in a state where conference is left
-            // there will be dialog shown to user.
-            // We do not want video/audio as we show an overlay and after it
-            // user need to rejoin or close, while waking up we can detect
-            // camera wakeup as a problem with device.
-            // We also do not care about device change, which happens
-            // on resume after suspending PC.
-            if (this.deviceChangeListener) {
-                JitsiMeetJS.mediaDevices.removeEventListener(
-                    JitsiMediaDevicesEvents.DEVICE_LIST_CHANGED,
-                    this.deviceChangeListener);
-            }
-
-            // stop local video
-            if (this.localVideo) {
-                this.localVideo.dispose();
-                this.localVideo = null;
-            }
-
-            // stop local audio
-            if (this.localAudio) {
-                this.localAudio.dispose();
-                this.localAudio = null;
-            }
-
-            APP.API.notifySuspendDetected();
         });
 
         APP.UI.addListener(UIEvents.AUDIO_MUTED, muted => {
@@ -2251,6 +2188,27 @@ export default {
     },
 
     /**
+     * Cleanups local conference on suspend.
+     */
+    onSuspendDetected() {
+        // After wake up, we will be in a state where conference is left
+        // there will be dialog shown to user.
+        // We do not want video/audio as we show an overlay and after it
+        // user need to rejoin or close, while waking up we can detect
+        // camera wakeup as a problem with device.
+        // We also do not care about device change, which happens
+        // on resume after suspending PC.
+        if (this.deviceChangeListener) {
+            JitsiMeetJS.mediaDevices.removeEventListener(
+                JitsiMediaDevicesEvents.DEVICE_LIST_CHANGED,
+                this.deviceChangeListener);
+        }
+
+        this.localVideo = null;
+        this.localAudio = null;
+    },
+
+    /**
      * Callback invoked when the conference has been successfully joined.
      * Initializes the UI and various other features.
      *
@@ -2264,7 +2222,7 @@ export default {
 
         if (config.requireDisplayName
                 && !APP.conference.getLocalDisplayName()
-                && !this._room.isHidden()) {
+                && !room.isHidden()) {
             APP.UI.promptDisplayName();
         }
 
@@ -2596,7 +2554,7 @@ export default {
             room = undefined;
 
             APP.API.notifyReadyToClose();
-            maybeRedirectToWelcomePage(values[0]);
+            APP.store.dispatch(maybeRedirectToWelcomePage(values[0]));
         });
     },
 

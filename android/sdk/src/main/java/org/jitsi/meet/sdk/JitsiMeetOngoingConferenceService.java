@@ -21,6 +21,7 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -47,7 +48,12 @@ public class JitsiMeetOngoingConferenceService extends Service
         Intent intent = new Intent(context, JitsiMeetOngoingConferenceService.class);
         intent.setAction(Actions.START);
 
-        ComponentName componentName = context.startService(intent);
+        ComponentName componentName;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            componentName = context.startForegroundService(intent);
+        } else {
+            componentName = context.startService(intent);
+        }
         if (componentName == null) {
             Log.w(TAG, "Ongoing conference service not started");
         }
@@ -82,8 +88,13 @@ public class JitsiMeetOngoingConferenceService extends Service
         final String action = intent.getAction();
         if (action.equals(Actions.START)) {
             Notification notification = OngoingNotification.buildOngoingConferenceNotification();
-            startForeground(OngoingNotification.NOTIFICATION_ID, notification);
-            Log.i(TAG, "Service started");
+            if (notification == null) {
+                stopSelf();
+                Log.w(TAG, "Couldn't start service, notification is null");
+            } else {
+                startForeground(OngoingNotification.NOTIFICATION_ID, notification);
+                Log.i(TAG, "Service started");
+            }
         } else if (action.equals(Actions.HANGUP)) {
             Log.i(TAG, "Hangup requested");
             // Abort all ongoing calls
