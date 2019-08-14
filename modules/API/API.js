@@ -627,10 +627,14 @@ class API {
      * has been submitted. Intended to be used in conjunction with the
      * submit-feedback command to get notified if feedback was submitted.
      *
+     * @param {string} error - A failure message, if any.
      * @returns {void}
      */
-    notifyFeedbackSubmitted() {
-        this._sendEvent({ name: 'feedback-submitted' });
+    notifyFeedbackSubmitted(error: string) {
+        this._sendEvent({
+            name: 'feedback-submitted',
+            error
+        });
     }
 
     /**
@@ -702,6 +706,20 @@ class API {
             name: 'screen-sharing-status-changed',
             on,
             details
+        });
+    }
+
+    /**
+     * Notify external application (if API is enabled) that the dominant speaker
+     * has been turned on/off.
+     *
+     * @param {string} id - Id of the dominant participant.
+     * @returns {void}
+     */
+    notifyDominantSpeakerChanged(id: string) {
+        this._sendEvent({
+            name: 'dominant-speaker-changed',
+            id
         });
     }
 
