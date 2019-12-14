@@ -1637,9 +1637,27 @@ export default {
 
         if (!this.localPresenterVideo && !mute) {
             // create a new presenter track and apply the presenter effect.
-            const { height } = this.localVideo.track.getSettings();
-            const defaultCamera
-                = getUserSelectedCameraDeviceId(APP.store.getState());
+            let { height } = this.localVideo.track.getSettings();
+
+            // Workaround for Firefox since it doesn't return the correct width/height of the desktop stream
+            // that is being currently shared.
+            if (!height) {
+                const desktopResizeConstraints = {
+                    width: 1280,
+                    height: 720,
+                    resizeMode: 'crop-and-scale'
+                };
+
+                try {
+                    await this.localVideo.track.applyConstraints(desktopResizeConstraints);
+                } catch (err) {
+                    logger.error('Failed to apply constraints on the desktop stream for presenter mode', err);
+
+                    return;
+                }
+                height = desktopResizeConstraints.height;
+            }
+            const defaultCamera = getUserSelectedCameraDeviceId(APP.store.getState());
             let effect;
 
             try {
@@ -1654,6 +1672,7 @@ export default {
             try {
                 await this.localVideo.setEffect(effect);
                 APP.store.dispatch(setVideoMuted(mute, MEDIA_TYPE.PRESENTER));
+                this.setVideoMuteStatus(mute);
             } catch (err) {
                 logger.error('Failed to apply the Presenter effect', err);
             }
