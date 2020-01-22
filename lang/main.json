@@ -634,6 +634,8 @@
         "noAudioSignalTitle": "There is no input coming from your mic!",
         "noAudioSignalDesc": "If you did not purposely mute it from system settings or hardware, consider changing the device.",
         "noAudioSignalDescSuggestion": "If you did not purposely mute it from system settings or hardware, consider using the following device:",
+        "noisyAudioInputTitle": "Your microphone appears to be noisy!",
+        "noisyAudioInputDesc": "Jitsi has detected noise coming from your microphone, please consider muting or changing the device.",
         "openChat": "Open chat",
         "pip": "Enter Picture-in-Picture mode",
         "privateMessage": "Send private message",
@@ -719,7 +721,7 @@
         "moderator": "Moderator",
         "mute": "Participant is muted",
         "muted": "Muted",
-        "remoteControl": "Remote control",
+        "remoteControl": "Start / Stop remote control",
         "show": "Show on stage",
         "videomute": "Participant has stopped the camera"
     },

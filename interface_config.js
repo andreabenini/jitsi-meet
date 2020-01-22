@@ -188,7 +188,18 @@ var interfaceConfig = {
      *
      * Note: this mode is experimental and subject to breakage.
      */
-    AUTO_PIN_LATEST_SCREEN_SHARE: 'remote-only'
+    AUTO_PIN_LATEST_SCREEN_SHARE: 'remote-only',
+
+    /**
+     * If we should capture periodic screenshots of the content sharing.
+     */
+    ENABLE_SCREENSHOT_CAPTURE: false,
+
+    // If true, presence status: busy, calling, connected etc. is not displayed
+    DISABLE_PRESENCE_STATUS: false,
+
+    // If true, notifications regarding joining/leaving are no longer displayed
+    DISABLE_JOIN_LEAVE_NOTIFICATIONS: false
 
     /**
      * How many columns the tile view can expand to. The respected range is

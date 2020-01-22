@@ -76,7 +76,13 @@ var config = {
     // Enabling this will run the lib-jitsi-meet no audio detection module which
     // will notify the user if the current selected microphone has no audio
     // input and will suggest another valid device if one is present.
-    // enableNoAudioDetection: false
+    enableNoAudioDetection: true,
+
+    // Enabling this will run the lib-jitsi-meet noise detection module which will
+    // notify the user if there is noise, other than voice, coming from the current
+    // selected microphone. The purpose it to let the user know that the input could
+    // be potentially unpleasant for other meeting participants.
+    enableNoisyMicDetection: true,
 
     // Start the conference in audio only mode (no video is being received nor
     // sent).
@@ -329,6 +335,8 @@ var config = {
 
         // The STUN servers that will be used in the peer to peer connections
         stunServers: [
+
+            // { urls: 'stun:jitsi-meet.example.com:443' },
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' }
