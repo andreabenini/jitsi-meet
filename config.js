@@ -30,6 +30,9 @@ var config = {
     // BOSH URL. FIXME: use XEP-0156 to discover it.
     bosh: '//jitsi-meet.example.com/http-bind',
 
+    // Websocket URL
+    // websocket: 'wss://jitsi-meet.example.com/xmpp-websocket',
+
     // The name of client node advertised in XEP-0115 'c' stanza
     clientNode: 'http://jitsi.org/jitsimeet',
 
@@ -384,6 +387,20 @@ var config = {
         // region: "europe",
         // userRegion: "asia"
     }
+
+    // Information for the chrome extension banner
+    // chromeExtensionBanner: {
+    //     // The chrome extension to be installed address
+    //     url: 'https://chrome.google.com/webstore/detail/jitsi-meetings/kglhbbefdnlheedjiejgomgmfplipfeb',
+
+    //     // Extensions info which allows checking if they are installed or not
+    //     chromeExtensionsInfo: [
+    //         {
+    //             id: 'kglhbbefdnlheedjiejgomgmfplipfeb',
+    //             path: 'jitsi-logo-48x48.png'
+    //         }
+    //     ]
+    // }
 
     // Local Recording
     //
