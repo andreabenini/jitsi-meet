@@ -14,9 +14,6 @@ var config = {
         // Domain for authenticated users. Defaults to <domain>.
         // authdomain: 'jitsi-meet.example.com',
 
-        // Jirecon recording component domain.
-        // jirecon: 'jirecon.jitsi-meet.example.com',
-
         // Call control component (Jigasi).
         // call_control: 'callcontrol.jitsi-meet.example.com',
 
@@ -67,6 +64,11 @@ var config = {
         // adjusted to 2.5 Mbps. This takes a value between 0 and 1 which determines
         // the probability for this to be enabled.
         // capScreenshareBitrate: 1 // 0 to disable
+
+        // Enable callstats only for a percentage of users.
+        // This takes a value between 0 and 100 which determines the probability for
+        // the callstats to be enabled.
+        // callStatsThreshold: 5 // enable callstats for 5% of the users.
     },
 
     // Disables ICE/UDP by filtering out local and remote UDP candidates in
@@ -321,10 +323,6 @@ var config = {
     // is set in Jicofo and set to 2).
     // minParticipants: 2,
 
-    // Use the TURN servers discovered via XEP-0215 for the jitsi-videobridge
-    // connection
-    // useStunTurn: true,
-
     // Use TURN/UDP servers for the jitsi-videobridge connection (by default
     // we filter out TURN/UDP because it is usually not needed since the
     // bridge itself is reachable via UDP)
@@ -335,6 +333,7 @@ var config = {
     // 'datachannel'), undefined (treat it as 'datachannel') and false (don't
     // open any channel).
     // openBridgeChannel: true,
+    openBridgeChannel: 'websocket',
 
 
     // UI
@@ -439,9 +438,6 @@ var config = {
         // connection.
         enabled: true,
 
-        // Use XEP-0215 to fetch STUN and TURN servers.
-        // useStunTurn: true,
-
         // The STUN servers that will be used in the peer to peer connections
         stunServers: [
 
@@ -509,6 +505,9 @@ var config = {
         //      "https://example.com/my-custom-analytics.js"
         // ],
     },
+
+    // Logs that should go be passed through the 'log' event if a handler is defined for it
+    // apiLogLevels: ['warn', 'log', 'error', 'info', 'debug'],
 
     // Information about the jitsi-meet instance we are connecting to, including
     // the user region as seen by the server.
@@ -632,8 +631,6 @@ var config = {
     // List of undocumented settings used in jitsi-meet
     /**
      _immediateReloadThreshold
-     autoRecord
-     autoRecordToken
      debug
      debugAudioLevels
      deploymentInfo

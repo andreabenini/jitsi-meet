@@ -52,7 +52,7 @@ function onLocalFlipXChanged(val) {
  */
 function getAllThumbnails() {
     return [
-        localVideoThumbnail,
+        ...localVideoThumbnail ? [ localVideoThumbnail ] : [],
         ...Object.values(remoteVideos)
     ];
 }
@@ -489,7 +489,7 @@ const VideoLayout = {
     onVideoTypeChanged(id, newVideoType) {
         const remoteVideo = remoteVideos[id];
 
-        if (!remoteVideo || remoteVideo.videoType === newVideoType) {
+        if (!remoteVideo) {
             return;
         }
 
