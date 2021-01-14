@@ -28,11 +28,13 @@ const ALWAYS_ON_TOP_FILENAMES = [
  */
 const commands = {
     avatarUrl: 'avatar-url',
+    cancelPrivateChat: 'cancel-private-chat',
     displayName: 'display-name',
     e2eeKey: 'e2ee-key',
     email: 'email',
     toggleLobby: 'toggle-lobby',
     hangup: 'video-hangup',
+    intiatePrivateChat: 'initiate-private-chat',
     muteEveryone: 'mute-everyone',
     password: 'password',
     pinParticipant: 'pin-participant',
@@ -62,6 +64,7 @@ const events = {
     'audio-availability-changed': 'audioAvailabilityChanged',
     'audio-mute-status-changed': 'audioMuteStatusChanged',
     'camera-error': 'cameraError',
+    'content-sharing-participants-changed': 'contentSharingParticipantsChanged',
     'device-list-changed': 'deviceListChanged',
     'display-name-change': 'displayNameChange',
     'email-change': 'emailChange',
@@ -79,6 +82,7 @@ const events = {
     'participant-role-changed': 'participantRoleChanged',
     'password-required': 'passwordRequired',
     'proxy-connection-event': 'proxyConnectionEvent',
+    'raise-hand-updated': 'raiseHandUpdated',
     'video-ready-to-close': 'readyToClose',
     'video-conference-joined': 'videoConferenceJoined',
     'video-conference-left': 'videoConferenceLeft',
@@ -720,6 +724,17 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
      */
     getAvailableDevices() {
         return getAvailableDevices(this._transport);
+    }
+
+    /**
+     * Gets a list of the currently sharing participant id's.
+     *
+     * @returns {Promise} - Resolves with the list of participant id's currently sharing.
+     */
+    getContentSharingParticipants() {
+        return this._transport.sendRequest({
+            name: 'get-content-sharing-participants'
+        });
     }
 
     /**
