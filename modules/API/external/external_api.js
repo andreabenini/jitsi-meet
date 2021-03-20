@@ -35,7 +35,9 @@ const commands = {
     toggleLobby: 'toggle-lobby',
     hangup: 'video-hangup',
     intiatePrivateChat: 'initiate-private-chat',
+    kickParticipant: 'kick-participant',
     muteEveryone: 'mute-everyone',
+    overwriteConfig: 'overwrite-config',
     password: 'password',
     pinParticipant: 'pin-participant',
     resizeLargeVideo: 'resize-large-video',
@@ -195,7 +197,7 @@ function parseArguments(args) {
  * @param {any} value - The value to be parsed.
  * @returns {string|undefined} The parsed value that can be used for setting
  * sizes through the style property. If invalid value is passed the method
- * retuns undefined.
+ * returns undefined.
  */
 function parseSizeParam(value) {
     let parsedValue;
@@ -319,7 +321,7 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
         const frameName = `jitsiConferenceFrame${id}`;
 
         this._frame = document.createElement('iframe');
-        this._frame.allow = 'camera; microphone; display-capture; autoplay;';
+        this._frame.allow = 'camera; microphone; display-capture; autoplay; clipboard-write';
         this._frame.src = this._url;
         this._frame.name = frameName;
         this._frame.id = frameName;

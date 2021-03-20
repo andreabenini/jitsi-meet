@@ -13,7 +13,7 @@ import { connect } from '../../base/redux';
 import { AbstractAudioMuteButton } from '../../base/toolbox/components';
 import type { AbstractButtonProps } from '../../base/toolbox/components';
 import { isLocalTrackMuted } from '../../base/tracks';
-import { muteLocal } from '../../remote-video-menu/actions';
+import { muteLocal } from '../../video-menu/actions';
 
 declare var APP: Object;
 
@@ -125,7 +125,7 @@ class AudioMuteButton extends AbstractAudioMuteButton<Props, *> {
      * @returns {void}
      */
     _setAudioMuted(audioMuted: boolean) {
-        this.props.dispatch(muteLocal(audioMuted));
+        this.props.dispatch(muteLocal(audioMuted, MEDIA_TYPE.AUDIO));
     }
 
     /**
