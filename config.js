@@ -101,6 +101,10 @@ var config = {
     // about the call.
     // enableSaveLogs: false,
 
+    // Enabling this will hide the "Show More" link in the GSM popover that can be
+    // used to display more statistics about the connection (IP, Port, protocol, etc).
+    // disableShowMoreStats: true,
+
     // Enabling this will run the lib-jitsi-meet noise detection module which will
     // notify the user if there is noise, other than voice, coming from the current
     // selected microphone. The purpose it to let the user know that the input could
@@ -860,8 +864,8 @@ var config = {
     //     'transcribing.failedToStart' // shown when transcribing fails to start
     // ],
 
-    // Automatically hides the filmstrip when screen width is under a certain threshold
-    autohideFilmstrip: true,
+    // Prevent the filmstrip from autohiding when screen width is under a certain threshold
+    // disableFilmstripAutohiding: false,
 
     // Allow all above example options to include a trailing comma and
     // prevent fear when commenting out the last value.
