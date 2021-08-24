@@ -50,6 +50,7 @@ export default [
      */
     'callHandle',
     'callStatsConfIDNamespace',
+    'callStatsConfigParams',
     'callStatsID',
     'callStatsSecret',
 
@@ -91,6 +92,7 @@ export default [
     'disableJoinLeaveSounds',
     'disableLocalVideoFlip',
     'disableNS',
+    'disablePolls',
     'disableProfile',
     'disableRemoteControl',
     'disableRemoteMute',
@@ -109,6 +111,7 @@ export default [
     'e2eping',
     'enableDisplayNameInStats',
     'enableEmailInStats',
+    'enableEncodedTransformSupport',
     'enableIceRestart',
     'enableInsecureRoomNameWarning',
     'enableLayerSuspension',
