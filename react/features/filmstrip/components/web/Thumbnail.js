@@ -14,6 +14,7 @@ import {
     pinParticipant
 } from '../../../base/participants';
 import { connect } from '../../../base/redux';
+import { ASPECT_RATIO_NARROW } from '../../../base/responsive-ui/constants';
 import { isTestModeEnabled } from '../../../base/testing';
 import {
     getLocalAudioTrack,
@@ -143,6 +144,11 @@ export type Props = {|
      * Whether we are currently running in a mobile browser.
      */
     _isMobile: boolean,
+
+    /**
+     * Whether we are currently running in a mobile browser in portrait orientation.
+     */
+    _isMobilePortrait: boolean,
 
     /**
      * Indicates whether the participant is screen sharing.
@@ -765,6 +771,7 @@ class Thumbnail extends Component<Props, State> {
             _defaultLocalDisplayName,
             _disableLocalVideoFlip,
             _isMobile,
+            _isMobilePortrait,
             _isScreenSharing,
             _localFlipX,
             _disableProfile,
@@ -774,10 +781,14 @@ class Thumbnail extends Component<Props, State> {
         const { id } = _participant || {};
         const { audioLevel } = this.state;
         const styles = this._getStyles();
-        const containerClassName = this._getContainerClassName();
+        let containerClassName = this._getContainerClassName();
         const videoTrackClassName
             = !_disableLocalVideoFlip && _videoTrack && !_isScreenSharing && _localFlipX ? 'flipVideoX' : '';
 
+        if (_isMobilePortrait) {
+            styles.thumbnail.height = styles.thumbnail.width;
+            containerClassName = `${containerClassName} self-view-mobile-portrait`;
+        }
 
         return (
             <span
@@ -1043,6 +1054,7 @@ function _mapStateToProps(state, ownProps): Object {
         ? getLocalAudioTrack(tracks) : getTrackByMediaTypeAndParticipant(tracks, MEDIA_TYPE.AUDIO, participantID);
     const _currentLayout = getCurrentLayout(state);
     let size = {};
+    let _isMobilePortrait = false;
     const {
         startSilent,
         disableLocalVideoFlip,
@@ -1078,9 +1090,12 @@ function _mapStateToProps(state, ownProps): Object {
             _height: height
         };
 
+        _isMobilePortrait = _isMobile && state['features/base/responsive-ui'].aspectRatio === ASPECT_RATIO_NARROW;
+
         break;
     }
     case LAYOUTS.TILE_VIEW: {
+
         const { width, height } = state['features/filmstrip'].tileViewDimensions.thumbnailSize;
 
         size = {
@@ -1093,8 +1108,10 @@ function _mapStateToProps(state, ownProps): Object {
 
     return {
         _audioTrack,
-        _connectionIndicatorAutoHideEnabled: interfaceConfig.CONNECTION_INDICATOR_AUTO_HIDE_ENABLED,
-        _connectionIndicatorDisabled: _isMobile || interfaceConfig.CONNECTION_INDICATOR_DISABLED,
+        _connectionIndicatorAutoHideEnabled:
+        Boolean(state['features/base/config'].connectionIndicators?.autoHide ?? true),
+        _connectionIndicatorDisabled: _isMobile
+            || Boolean(state['features/base/config'].connectionIndicators?.disabled),
         _currentLayout,
         _defaultLocalDisplayName: interfaceConfig.DEFAULT_LOCAL_DISPLAY_NAME,
         _disableLocalVideoFlip: Boolean(disableLocalVideoFlip),
@@ -1104,6 +1121,7 @@ function _mapStateToProps(state, ownProps): Object {
         _isCurrentlyOnLargeVideo: state['features/large-video']?.participantId === id,
         _isDominantSpeakerDisabled: interfaceConfig.DISABLE_DOMINANT_SPEAKER_INDICATOR,
         _isMobile,
+        _isMobilePortrait,
         _isScreenSharing: _videoTrack?.videoType === 'desktop',
         _isTestModeEnabled: isTestModeEnabled(state),
         _isVideoPlayable: id && isVideoPlayable(state, id),
