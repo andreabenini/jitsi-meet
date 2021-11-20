@@ -31,7 +31,6 @@ import ParticipantActionEllipsis from './ParticipantActionEllipsis';
 import ParticipantItem from './ParticipantItem';
 import ParticipantQuickAction from './ParticipantQuickAction';
 
-
 type Props = {
 
     /**
@@ -62,7 +61,7 @@ type Props = {
     /**
      * True if the participant is the local participant.
      */
-    _local: Boolean,
+    _local: boolean,
 
     /**
      * Whether or not the local participant is moderator.
@@ -113,7 +112,7 @@ type Props = {
     askUnmuteText: string,
 
     /**
-     * Is this item highlighted
+     * Is this item highlighted.
      */
     isHighlighted: boolean,
 
@@ -128,12 +127,12 @@ type Props = {
     muteParticipantButtonText: string,
 
     /**
-     * Callback for the activation of this item's context menu
+     * Callback for the activation of this item's context menu.
      */
     onContextMenu: Function,
 
     /**
-     * Callback for the mouse leaving this item
+     * Callback for the mouse leaving this item.
      */
     onLeave: Function,
 

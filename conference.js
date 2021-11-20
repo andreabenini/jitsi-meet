@@ -1,8 +1,8 @@
 /* global APP, JitsiMeetJS, config, interfaceConfig */
 
 import { jitsiLocalStorage } from '@jitsi/js-utils';
+import Logger from '@jitsi/logger';
 import EventEmitter from 'events';
-import Logger from 'jitsi-meet-logger';
 
 import { openConnection } from './connection';
 import { ENDPOINT_TEXT_MESSAGE_NAME } from './modules/API/constants';
@@ -29,6 +29,7 @@ import { shouldShowModeratedNotification } from './react/features/av-moderation/
 import {
     AVATAR_URL_COMMAND,
     EMAIL_COMMAND,
+    _conferenceWillJoin,
     authStatusChanged,
     commonUserJoinedHandling,
     commonUserLeftHandling,
@@ -47,7 +48,7 @@ import {
     onStartMutedPolicyChanged,
     p2pStatusChanged,
     sendLocalParticipant,
-    _conferenceWillJoin
+    nonParticipantMessageReceived
 } from './react/features/base/conference';
 import { getReplaceParticipant } from './react/features/base/config/functions';
 import {
@@ -760,7 +761,7 @@ export default {
         // XXX The API will take care of disconnecting from the XMPP
         // server (and, thus, leaving the room) on unload.
         return new Promise((resolve, reject) => {
-            (new ConferenceConnector(resolve, reject)).connect();
+            new ConferenceConnector(resolve, reject).connect();
         });
     },
 
@@ -1015,6 +1016,14 @@ export default {
      * dialogs in case of media permissions error.
      */
     muteVideo(mute, showUI = true) {
+        if (this.videoSwitchInProgress) {
+            // Turning the camera on while the screen sharing mode is being turned off is causing issues around
+            // the presenter mode handling. It should be okay for the user to click the button again once that's done.
+            console.warn('muteVideo - unable to perform operations while video switch is in progress');
+
+            return;
+        }
+
         if (!mute
                 && isUserInteractionRequiredForUnmute(APP.store.getState())) {
             logger.error('Unmuting video requires user interaction');
@@ -1352,11 +1361,49 @@ export default {
         }
     },
 
-    _createRoom(localTracks) {
+    /**
+     * Used by the Breakout Rooms feature to join a breakout room or go back to the main room.
+     */
+    async joinRoom(roomName, isBreakoutRoom = false) {
+        this.roomName = roomName;
+
+        const { tryCreateLocalTracks, errors } = this.createInitialLocalTracks();
+        const localTracks = await tryCreateLocalTracks;
+
+        this._displayErrorsForCreateInitialLocalTracks(errors);
+        localTracks.forEach(track => {
+            if ((track.isAudioTrack() && this.isLocalAudioMuted())
+                || (track.isVideoTrack() && this.isLocalVideoMuted())) {
+                track.mute();
+            }
+        });
+        this._createRoom(localTracks, isBreakoutRoom);
+
+        return new Promise((resolve, reject) => {
+            new ConferenceConnector(resolve, reject).connect();
+        });
+    },
+
+    _createRoom(localTracks, isBreakoutRoom = false) {
+        const extraOptions = {};
+
+        if (isBreakoutRoom) {
+            // We must be in a room already.
+            if (!room?.xmpp?.breakoutRoomsComponentAddress) {
+                throw new Error('Breakout Rooms not enabled');
+            }
+
+            // TODO: re-evaluate this. -saghul
+            extraOptions.customDomain = room.xmpp.breakoutRoomsComponentAddress;
+        }
+
         room
             = connection.initJitsiConference(
                 APP.conference.roomName,
-                this._getConferenceOptions());
+                {
+                    ...this._getConferenceOptions(),
+                    ...extraOptions
+                });
 
         // Filter out the tracks that are muted (except on Safari).
         const tracks = browser.isWebKitBased() ? localTracks : localTracks.filter(track => !track.isMuted());
@@ -1551,7 +1598,7 @@ export default {
             APP.store.dispatch(toggleScreenshotCaptureSummary(false));
         }
         const tracks = APP.store.getState()['features/base/tracks'];
-        const timestamp = getLocalVideoTrack(tracks)?.timestamp ?? 0;
+        const duration = getLocalVideoTrack(tracks)?.jitsiTrack.getDuration() ?? 0;
 
         // It can happen that presenter GUM is in progress while screensharing is being turned off. Here it needs to
         // wait for that GUM to be resolved in order to prevent leaking the presenter track(this.localPresenterVideo
@@ -1614,7 +1661,7 @@ export default {
             () => {
                 this.videoSwitchInProgress = false;
                 sendAnalytics(createScreenSharingEvent('stopped',
-                    timestamp === 0 ? null : (Date.now() / 1000) - timestamp));
+                    duration === 0 ? null : duration));
                 logger.info('Screen sharing stopped.');
             },
             error => {
@@ -1644,7 +1691,7 @@ export default {
     async toggleScreenSharing(toggle = !this._untoggleScreenSharing, options = {}, ignoreDidHaveVideo) {
         logger.debug(`toggleScreenSharing: ${toggle}`);
         if (this.videoSwitchInProgress) {
-            return Promise.reject('Switch in progress.');
+            return Promise.reject(`toggleScreenSharing: ${toggle} aborted - video switch in progress.`);
         }
         if (!JitsiMeetJS.isDesktopSharingEnabled()) {
             return Promise.reject('Cannot toggle screen sharing: not supported.');
@@ -2213,6 +2260,10 @@ export default {
                     }
                 }
             });
+
+        room.on(
+            JitsiConferenceEvents.NON_PARTICIPANT_MESSAGE_RECEIVED,
+            (...args) => APP.store.dispatch(nonParticipantMessageReceived(...args)));
 
         room.on(
             JitsiConferenceEvents.LOCK_STATE_CHANGED,
@@ -2897,6 +2948,17 @@ export default {
     },
 
     /**
+     * Leaves the room.
+     *
+     * @returns {Promise}
+     */
+    leaveRoom() {
+        if (room && room.isJoined()) {
+            return room.leave();
+        }
+    },
+
+    /**
      * Leaves the room and calls JitsiConnection.disconnect.
      *
      * @returns {Promise}
@@ -2988,6 +3050,15 @@ export default {
      */
     sendEndpointMessage(to, payload) {
         room.sendEndpointMessage(to, payload);
+    },
+
+    /**
+     * Sends a facial expression as a string and its duration as a number
+     * @param {object} payload - Object containing the {string} facialExpression
+     * and {number} duration
+     */
+    sendFacialExpression(payload) {
+        room.sendFacialExpression(payload);
     },
 
     /**
