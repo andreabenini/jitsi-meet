@@ -99,7 +99,7 @@ export function getMoreTabProps(stateful: Object | Function) {
         languages: LANGUAGES,
         showLanguageSettings: configuredTabs.includes('language'),
         showPrejoinPage: !state['features/base/settings'].userSelectedSkipPrejoin,
-        showPrejoinSettings: state['features/base/config'].prejoinPageEnabled
+        showPrejoinSettings: state['features/base/config'].prejoinConfig?.enabled
     };
 }
 
@@ -120,6 +120,7 @@ export function getModeratorTabProps(stateful: Object | Function) {
         startVideoMutedPolicy,
         startReactionsMuted
     } = state['features/base/conference'];
+    const { disableReactionsModeration } = state['features/base/config'];
     const followMeActive = isFollowMeActive(state);
     const configuredTabs = interfaceConfig.SETTINGS_SECTIONS || [];
 
@@ -131,6 +132,7 @@ export function getModeratorTabProps(stateful: Object | Function) {
     // The settings sections to display.
     return {
         showModeratorSettings,
+        disableReactionsModeration: Boolean(disableReactionsModeration),
         followMeActive: Boolean(conference && followMeActive),
         followMeEnabled: Boolean(conference && followMeEnabled),
         startReactionsMuted: Boolean(conference && startReactionsMuted),
@@ -155,14 +157,18 @@ export function getProfileTabProps(stateful: Object | Function) {
         authLogin,
         conference
     } = state['features/base/conference'];
+    const { hideEmailInSettings } = state['features/base/config'];
     const localParticipant = getLocalParticipant(state);
+    const { disableSelfView } = state['features/base/settings'];
 
     return {
         authEnabled: Boolean(conference && authEnabled),
         authLogin,
         displayName: localParticipant.name,
+        disableSelfView: Boolean(disableSelfView),
         email: localParticipant.email,
-        readOnlyName: isNameReadOnly(state)
+        readOnlyName: isNameReadOnly(state),
+        hideEmailInSettings
     };
 }
 
