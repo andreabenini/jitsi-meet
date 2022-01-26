@@ -236,7 +236,11 @@ var config = {
     //     max: 5
     // },
 
-    // Try to start calls with screen-sharing instead of camera video.
+    // This option has been deprecated since it is no longer supported as per the w3c spec.
+    // https://w3c.github.io/mediacapture-screen-share/#dom-mediadevices-getdisplaymedia. If the user has not
+    // interacted with the webpage before the getDisplayMedia call, the promise will be rejected by the browser. This
+    // has already been implemented in Firefox and Safari and will be implemented in Chrome soon.
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=1198918
     // startScreenSharing: false,
 
     // Recording
@@ -1045,7 +1049,8 @@ var config = {
     // If true, tile view will not be enabled automatically when the participants count threshold is reached.
     // disableTileView: true,
 
-    // If true, the tiles will be displayed contained within the available space rather than enlarged to cover it.
+    // If true, the tiles will be displayed contained within the available space rather than enlarged to cover it,
+    // with a 16:9 aspect ratio (old behaviour).
     // disableTileEnlargement: true,
 
     // Controls the visibility and behavior of the top header conference info labels.
