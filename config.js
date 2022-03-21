@@ -603,7 +603,9 @@ var config = {
     //    'fullscreen',
     //    'hangup',
     //    'help',
+    //    'highlight',
     //    'invite',
+    //    'linktosalesforce',
     //    'livestreaming',
     //    'microphone',
     //    'mute-everyone',
@@ -635,7 +637,9 @@ var config = {
     //     timeout: 4000,
     //     // Moved from interfaceConfig.TOOLBAR_ALWAYS_VISIBLE
     //     // Whether toolbar should be always visible or should hide after x miliseconds.
-    //     alwaysVisible: false
+    //     alwaysVisible: false,
+    //     // Indicates whether the toolbar should still autohide when chat is open
+    //     autoHideWhileChatIsOpen: false
     // },
 
     // Toolbar buttons which have their click/tap event exposed through the API on
@@ -995,10 +999,14 @@ var config = {
 
     // Options related to the remote participant menu.
     // remoteVideoMenu: {
+    //     // Whether the remote video context menu to be rendered or not.
+    //     disabled: true,
     //     // If set to true the 'Kick out' button will be disabled.
     //     disableKick: true,
     //     // If set to true the 'Grant moderator' button will be disabled.
-    //     disableGrantModerator: true
+    //     disableGrantModerator: true,
+    //     // If set to true the 'Send private message' button will be disabled.
+    //     disablePrivateChat: true
     // },
 
     // Endpoint that enables support for salesforce integration with in-meeting resource linking
@@ -1116,7 +1124,8 @@ var config = {
     //         'e2ee',
     //         'transcribing',
     //         'video-quality',
-    //         'insecure-room'
+    //         'insecure-room',
+    //         'highlight-moment'
     //     ]
     // },
 
@@ -1272,6 +1281,7 @@ var config = {
     //     'notify.raisedHand', // shown when a partcipant used raise hand,
     //     'notify.startSilentTitle', // shown when user joined with no audio
     //     'notify.unmute', // shown to moderator when user raises hand during AV moderation
+    //     'notify.hostAskedUnmute', // shown to participant when host asks them to unmute
     //     'prejoin.errorDialOut',
     //     'prejoin.errorDialOutDisconnected',
     //     'prejoin.errorDialOutFailed',
@@ -1294,7 +1304,14 @@ var config = {
     //     // Disables user resizable filmstrip. Also, allows configuration of the filmstrip
     //     // (width, tiles aspect ratios) through the interfaceConfig options.
     //     disableResizable: false,
-    // }
+    // },
+
+    // Tile view related config options.
+    // tileView: {
+    //     // The optimal number of tiles that are going to be shown in tile view. Depending on the screen size it may
+    //     // not be possible to show the exact number of participants specified here.
+    //     numberOfVisibleTiles: 25
+    // },
 
 
     // Specifies whether the chat emoticons are disabled or not

@@ -65,6 +65,7 @@ export const colorMap = {
     uiBackground: 'surface01',
 
     // Container background
+    ui00: 'surface00',
     ui01: 'surface02',
     ui02: 'surface03',
     ui03: 'surface04',
@@ -372,6 +373,13 @@ export const typography = {
     bodyLongRegular: {
         fontSize: 14,
         lineHeight: 24,
+        fontWeight: font.weightRegular,
+        letterSpacing: 0
+    },
+
+    bodyLongRegularLarge: {
+        fontSize: 16,
+        lineHeight: 26,
         fontWeight: font.weightRegular,
         letterSpacing: 0
     },
