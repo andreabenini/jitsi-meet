@@ -37,6 +37,7 @@ import {
     commonUserLeftHandling,
     conferenceFailed,
     conferenceJoined,
+    conferenceJoinInProgress,
     conferenceLeft,
     conferenceSubjectChanged,
     conferenceTimestampChanged,
@@ -53,7 +54,11 @@ import {
     sendLocalParticipant,
     nonParticipantMessageReceived
 } from './react/features/base/conference';
-import { getReplaceParticipant, getMultipleVideoSupportFeatureFlag } from './react/features/base/config/functions';
+import {
+    getReplaceParticipant,
+    getMultipleVideoSupportFeatureFlag,
+    getSourceNameSignalingFeatureFlag
+} from './react/features/base/config/functions';
 import {
     checkAndNotifyForNewDevice,
     getAvailableDevices,
@@ -65,7 +70,6 @@ import {
 } from './react/features/base/devices';
 import {
     browser,
-    isFatalJitsiConnectionError,
     JitsiConferenceErrors,
     JitsiConferenceEvents,
     JitsiConnectionErrors,
@@ -76,6 +80,7 @@ import {
     JitsiTrackErrors,
     JitsiTrackEvents
 } from './react/features/base/lib-jitsi-meet';
+import { isFatalJitsiConnectionError } from './react/features/base/lib-jitsi-meet/functions';
 import {
     getStartWithAudioMuted,
     getStartWithVideoMuted,
@@ -92,6 +97,7 @@ import {
     dominantSpeakerChanged,
     getLocalParticipant,
     getNormalizedDisplayName,
+    getScreenshareParticipantByOwnerId,
     localParticipantAudioLevelChanged,
     localParticipantConnectionStatusChanged,
     localParticipantRoleChanged,
@@ -101,6 +107,7 @@ import {
     participantPresenceChanged,
     participantRoleChanged,
     participantUpdated,
+    screenshareParticipantDisplayNameChanged,
     updateRemoteParticipantFeatures
 } from './react/features/base/participants';
 import {
@@ -142,8 +149,7 @@ import {
     initPrejoin,
     isPrejoinPageVisible,
     makePrecallTest,
-    setJoiningInProgress,
-    setPrejoinPageVisibility
+    setJoiningInProgress
 } from './react/features/prejoin';
 import { disableReceiver, stopReceiver } from './react/features/remote-control';
 import { setScreenAudioShareState, isScreenAudioShared } from './react/features/screen-share/';
@@ -1633,7 +1639,8 @@ export default {
         // In case there was no local audio when screen sharing was started the fact that we set the audio stream to
         // null will take care of the desktop audio stream cleanup.
         } else if (this._desktopAudioStream) {
-            await this.useAudioStream(null);
+            await room.replaceTrack(this._desktopAudioStream, null);
+            this._desktopAudioStream.dispose();
             this._desktopAudioStream = undefined;
         }
 
@@ -1976,9 +1983,9 @@ export default {
                     } else {
                         // If no local stream is present ( i.e. no input audio devices) we use the screen share audio
                         // stream as we would use a regular stream.
-                        logger.debug(`_switchToScreenSharing is using ${this._desktopAudioStream} for useAudioStream`);
-                        await this.useAudioStream(this._desktopAudioStream);
-
+                        logger.debug(`_switchToScreenSharing is using ${this._desktopAudioStream} for replacing it as`
+                        + ' the only audio track on the conference');
+                        await room.replaceTrack(null, this._desktopAudioStream);
                     }
                     APP.store.dispatch(setScreenAudioShareState(true));
                 }
@@ -2067,9 +2074,9 @@ export default {
         room.on(JitsiConferenceEvents.CONFERENCE_JOINED, () => {
             this._onConferenceJoined();
         });
-        room.on(JitsiConferenceEvents.CONFERENCE_JOIN_IN_PROGRESS, () => {
-            APP.store.dispatch(setPrejoinPageVisibility(false));
-        });
+        room.on(
+            JitsiConferenceEvents.CONFERENCE_JOIN_IN_PROGRESS,
+            () => APP.store.dispatch(conferenceJoinInProgress(room)));
 
         room.on(
             JitsiConferenceEvents.CONFERENCE_LEFT,
@@ -2257,6 +2264,17 @@ export default {
                     id,
                     name: formattedDisplayName
                 }));
+
+                if (getSourceNameSignalingFeatureFlag(state)) {
+                    const screenshareParticipantId = getScreenshareParticipantByOwnerId(state, id)?.id;
+
+                    if (screenshareParticipantId) {
+                        APP.store.dispatch(
+                            screenshareParticipantDisplayNameChanged(screenshareParticipantId, formattedDisplayName)
+                        );
+                    }
+                }
+
                 APP.API.notifyDisplayNameChanged(id, {
                     displayName: formattedDisplayName,
                     formattedDisplayName:
@@ -3113,15 +3131,6 @@ export default {
      */
     sendEndpointMessage(to, payload) {
         room.sendEndpointMessage(to, payload);
-    },
-
-    /**
-     * Sends a facial expression as a string and its duration as a number
-     * @param {object} payload - Object containing the {string} facialExpression
-     * and {number} duration
-     */
-    sendFacialExpression(payload) {
-        room.sendFacialExpression(payload);
     },
 
     /**
