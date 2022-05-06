@@ -3,12 +3,21 @@
 import { ReducerRegistry } from '../base/redux';
 
 import {
-    FAKE_SCREEN_SHARE_REMOTE_PARTICIPANTS_UPDATED,
     SCREEN_SHARE_REMOTE_PARTICIPANTS_UPDATED,
-    SET_TILE_VIEW
+    SET_CAR_MODE,
+    SET_TILE_VIEW,
+    VIRTUAL_SCREENSHARE_REMOTE_PARTICIPANTS_UPDATED
 } from './actionTypes';
 
 const DEFAULT_STATE = {
+    /**
+     * Whether we are in carmode.
+     *
+     * @public
+     * @type {boolean}
+     */
+    carMode: false,
+
     remoteScreenShares: [],
 
     /**
@@ -28,13 +37,18 @@ const STORE_NAME = 'features/video-layout';
 
 ReducerRegistry.register(STORE_NAME, (state = DEFAULT_STATE, action) => {
     switch (action.type) {
-    case FAKE_SCREEN_SHARE_REMOTE_PARTICIPANTS_UPDATED:
-    case SCREEN_SHARE_REMOTE_PARTICIPANTS_UPDATED: {
+    case SCREEN_SHARE_REMOTE_PARTICIPANTS_UPDATED:
+    case VIRTUAL_SCREENSHARE_REMOTE_PARTICIPANTS_UPDATED:
         return {
             ...state,
             remoteScreenShares: action.participantIds
         };
-    }
+
+    case SET_CAR_MODE:
+        return {
+            ...state,
+            carMode: action.enabled
+        };
 
     case SET_TILE_VIEW:
         return {

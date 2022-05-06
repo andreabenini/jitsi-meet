@@ -1,10 +1,10 @@
 // @flow
 
 import { getSourceNameSignalingFeatureFlag } from '../base/config';
-import { getFakeScreenShareParticipantOwnerId } from '../base/participants';
+import { getVirtualScreenshareParticipantOwnerId } from '../base/participants';
 
 import { setRemoteParticipants } from './actions';
-import { isReorderingEnabled } from './functions';
+import { isFilmstripScrollVisible } from './functions';
 
 /**
  * Computes the reorderd list of the remote participants.
@@ -18,9 +18,9 @@ export function updateRemoteParticipants(store: Object, participantId: ?number) 
     const state = store.getState();
     let reorderedParticipants = [];
 
-    const { sortedRemoteFakeScreenShareParticipants } = state['features/base/participants'];
+    const { sortedRemoteVirtualScreenshareParticipants } = state['features/base/participants'];
 
-    if (!isReorderingEnabled(state) && !sortedRemoteFakeScreenShareParticipants.size) {
+    if (!isReorderingEnabled(state) && !sortedRemoteVirtualScreenshareParticipants.size) {
         if (participantId) {
             const { remoteParticipants } = state['features/filmstrip'];
 
@@ -39,14 +39,14 @@ export function updateRemoteParticipants(store: Object, participantId: ?number) 
     } = state['features/base/participants'];
     const remoteParticipants = new Map(sortedRemoteParticipants);
     const screenShares = new Map(sortedRemoteScreenshares);
-    const screenShareParticipants = sortedRemoteFakeScreenShareParticipants
-        ? [ ...sortedRemoteFakeScreenShareParticipants.keys() ] : [];
+    const screenShareParticipants = sortedRemoteVirtualScreenshareParticipants
+        ? [ ...sortedRemoteVirtualScreenshareParticipants.keys() ] : [];
     const sharedVideos = fakeParticipants ? Array.from(fakeParticipants.keys()) : [];
     const speakers = new Map(speakersList);
 
     if (getSourceNameSignalingFeatureFlag(state)) {
         for (const screenshare of screenShareParticipants) {
-            const ownerId = getFakeScreenShareParticipantOwnerId(screenshare);
+            const ownerId = getVirtualScreenshareParticipantOwnerId(screenshare);
 
             remoteParticipants.delete(ownerId);
             remoteParticipants.delete(screenshare);
@@ -72,7 +72,7 @@ export function updateRemoteParticipants(store: Object, participantId: ?number) 
     if (getSourceNameSignalingFeatureFlag(state)) {
         // Always update the order of the thumnails.
         const participantsWithScreenShare = screenShareParticipants.reduce((acc, screenshare) => {
-            const ownerId = getFakeScreenShareParticipantOwnerId(screenshare);
+            const ownerId = getVirtualScreenshareParticipantOwnerId(screenshare);
 
             acc.push(ownerId);
             acc.push(screenshare);
@@ -117,4 +117,18 @@ export function updateRemoteParticipantsOnLeave(store: Object, participantId: ?s
 
     reorderedParticipants.delete(participantId)
         && store.dispatch(setRemoteParticipants(Array.from(reorderedParticipants)));
+}
+
+/**
+ * Returns true if thumbnail reordering is enabled and false otherwise.
+ * Note: The function will return false if all participants are displayed on the screen.
+ *
+ * @param {Object} state - The redux state.
+ * @returns {boolean} - True if thumbnail reordering is enabled and false otherwise.
+ */
+export function isReorderingEnabled(state) {
+    const { testing = {} } = state['features/base/config'];
+    const enableThumbnailReordering = testing.enableThumbnailReordering ?? true;
+
+    return enableThumbnailReordering && isFilmstripScrollVisible(state);
 }

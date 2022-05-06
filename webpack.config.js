@@ -349,16 +349,6 @@ module.exports = (_env, argv) => {
         }),
         Object.assign({}, config, {
             entry: {
-                'flacEncodeWorker': './react/features/local-recording/recording/flac/flacEncodeWorker.js'
-            },
-            plugins: [
-                ...config.plugins,
-                ...getBundleAnalyzerPlugin(analyzeBundle, 'flacEncodeWorker')
-            ],
-            performance: getPerformanceHints(perfHintOptions, 5 * 1024)
-        }),
-        Object.assign({}, config, {
-            entry: {
                 'analytics-ga': './react/features/analytics/handlers/GoogleAnalyticsHandler.js'
             },
             plugins: [
@@ -394,13 +384,13 @@ module.exports = (_env, argv) => {
         }),
         Object.assign({}, config, {
             entry: {
-                'face-landmarks-worker': './react/features/face-landmarks/faceLandmarksWorker.js'
+                'face-landmarks-worker': './react/features/face-landmarks/faceLandmarksWorker.ts'
             },
             plugins: [
                 ...config.plugins,
                 ...getBundleAnalyzerPlugin(analyzeBundle, 'face-landmarks-worker')
             ],
-            performance: getPerformanceHints(perfHintOptions, 1024 * 1024 * 1.5)
+            performance: getPerformanceHints(perfHintOptions, 1024 * 1024 * 2)
         })
     ];
 };

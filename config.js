@@ -1,6 +1,11 @@
 
 /* eslint-disable no-unused-vars, no-var */
 
+/*
+ * NOTE: If you add a new option please remember to document it here:
+ * https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-configuration
+ */
+
 var config = {
     // Connection
     //
@@ -68,6 +73,11 @@ var config = {
         // desktopSharingFrameRate.max now determines whether simulcast will be enabled
         // or disabled for the screenshare.
         // capScreenshareBitrate: 1 // 0 to disable - deprecated.
+
+        // Whether to use fake constraints (height: 99999, width: 99999) when calling getDisplayMedia on
+        // Chromium based browsers. This is intended as a workaround for
+        // https://bugs.chromium.org/p/chromium/issues/detail?id=1056311
+        // setScreenSharingResolutionConstraints: true
 
         // Enable callstats only for a percentage of users.
         // This takes a value between 0 and 100 which determines the probability for
@@ -1093,8 +1103,18 @@ var config = {
     // breakoutRooms: {
     //     // Hides the add breakout room button. This replaces `hideAddRoomButton`.
     //     hideAddRoomButton: false,
+    //     // Hides the auto assign participants button.
+    //     hideAutoAssignButton: false,
+    //     // Hides the participants pane footer menu.
+    //     hideFooterMenu: false,
     //     // Hides the join breakout room button.
-    //     hideJoinRoomButton: false
+    //     hideJoinRoomButton: false,
+    //     // Hides the moderator settings tab.
+    //     hideModeratorSettingsTab: false,
+    //     // Hides the more actions button.
+    //     hideMoreActionsButton: false,
+    //     // Hides the mute all button.
+    //     hideMuteAllButton: false
     // },
 
     // When true the user cannot add more images to be used as virtual background.
@@ -1123,7 +1143,7 @@ var config = {
     // If a label's id is not in any of the 2 arrays, it will not be visible at all on the header.
     // conferenceInfo: {
     //     // those labels will not be hidden in tandem with the toolbox.
-    //     alwaysVisible: ['recording', 'local-recording', 'raised-hands-count'],
+    //     alwaysVisible: ['recording', 'raised-hands-count'],
     //     // those labels will be auto-hidden in tandem with the toolbox buttons.
     //     autoHide: [
     //         'subject',
@@ -1167,14 +1187,24 @@ var config = {
     // will open an etherpad document.
     // etherpad_base: 'https://your-etherpad-installati.on/p/',
 
+    // To enable information about dial-in access to meetings you need to provide
+    // dialInNumbersUrl and dialInConfCodeUrl.
+    // dialInNumbersUrl returns a json array of numbers that can be used for dial-in.
+    // {"countryCode":"US","tollFree":false,"formattedNumber":"+1 123-456-7890"}
+    // dialInConfCodeUrl is the conference mapper converting a meeting id to a PIN used for dial-in
+    // or the other way around (more info in resources/cloud-api.swagger)
+    //
+    // For JaaS customers the default values are:
+    // dialInNumbersUrl: 'https://conference-mapper.jitsi.net/v1/access/dids',
+    // dialInConfCodeUrl: 'https://conference-mapper.jitsi.net/v1/access',
+    //
+
     // List of undocumented settings used in jitsi-meet
     /**
      _immediateReloadThreshold
      debug
      debugAudioLevels
      deploymentInfo
-     dialInConfCodeUrl
-     dialInNumbersUrl
      dialOutAuthUrl
      dialOutCodesUrl
      disableRemoteControl

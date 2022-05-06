@@ -18,7 +18,8 @@ import {
     SET_VERTICAL_VIEW_DIMENSIONS,
     SET_VISIBLE_REMOTE_PARTICIPANTS,
     SET_VOLUME,
-    SET_MAX_STAGE_PARTICIPANTS
+    SET_MAX_STAGE_PARTICIPANTS,
+    CLEAR_STAGE_PARTICIPANTS
 } from './actionTypes';
 
 const DEFAULT_STATE = {
@@ -58,7 +59,7 @@ const DEFAULT_STATE = {
      * @public
      * @type {Number}
      */
-    maxStageParticipants: 4,
+    maxStageParticipants: 1,
 
     /**
      * The custom audio volume levels per participant.
@@ -203,12 +204,15 @@ ReducerRegistry.register(
                 }
             };
         case SET_VISIBLE_REMOTE_PARTICIPANTS: {
+            const { endIndex, startIndex } = action;
+            const { remoteParticipants } = state;
+            const visibleRemoteParticipants = new Set(remoteParticipants.slice(startIndex, endIndex + 1));
+
             return {
                 ...state,
-                visibleParticipantsStartIndex: action.startIndex,
-                visibleParticipantsEndIndex: action.endIndex,
-                visibleRemoteParticipants:
-                    new Set(state.remoteParticipants.slice(action.startIndex, action.endIndex + 1))
+                visibleParticipantsStartIndex: startIndex,
+                visibleParticipantsEndIndex: endIndex,
+                visibleRemoteParticipants
             };
         }
         case PARTICIPANT_LEFT: {
@@ -271,6 +275,12 @@ ReducerRegistry.register(
             return {
                 ...state,
                 maxStageParticipants: action.maxParticipants
+            };
+        }
+        case CLEAR_STAGE_PARTICIPANTS: {
+            return {
+                ...state,
+                activeParticipants: []
             };
         }
         }

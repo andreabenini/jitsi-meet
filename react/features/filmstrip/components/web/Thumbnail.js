@@ -7,8 +7,9 @@ import React, { Component } from 'react';
 
 import { createScreenSharingIssueEvent, sendAnalytics } from '../../../analytics';
 import { Avatar } from '../../../base/avatar';
-import { getSourceNameSignalingFeatureFlag } from '../../../base/config';
+import { getMultipleVideoSupportFeatureFlag, getSourceNameSignalingFeatureFlag } from '../../../base/config';
 import { isMobileBrowser } from '../../../base/environment/utils';
+import { JitsiTrackEvents } from '../../../base/lib-jitsi-meet';
 import { MEDIA_TYPE, VideoTrack } from '../../../base/media';
 import {
     getLocalParticipant,
@@ -23,8 +24,9 @@ import {
     getLocalAudioTrack,
     getLocalVideoTrack,
     getTrackByMediaTypeAndParticipant,
-    getFakeScreenshareParticipantTrack,
-    updateLastTrackVideoMediaEvent
+    getVirtualScreenshareParticipantTrack,
+    updateLastTrackVideoMediaEvent,
+    trackStreamingStatusChanged
 } from '../../../base/tracks';
 import { getVideoObjectPosition } from '../../../face-landmarks/functions';
 import { hideGif, showGif } from '../../../gifs/actions';
@@ -36,22 +38,24 @@ import {
     DISPLAY_MODE_TO_CLASS_NAME,
     DISPLAY_VIDEO,
     SHOW_TOOLBAR_CONTEXT_MENU_AFTER,
+    THUMBNAIL_TYPE,
     VIDEO_TEST_EVENTS
 } from '../../constants';
 import {
     computeDisplayModeFromInput,
     getActiveParticipantsIds,
     getDisplayModeInput,
+    getThumbnailTypeFromLayout,
     isVideoPlayable,
-    showGridInVerticalView,
-    isStageFilmstripEnabled,
-    shouldDisplayStageFilmstrip
+    isStageFilmstripAvailable,
+    showGridInVerticalView
 } from '../../functions';
 
-import FakeScreenShareParticipant from './FakeScreenShareParticipant';
 import ThumbnailAudioIndicator from './ThumbnailAudioIndicator';
 import ThumbnailBottomIndicators from './ThumbnailBottomIndicators';
 import ThumbnailTopIndicators from './ThumbnailTopIndicators';
+import VirtualScreenshareParticipant from './VirtualScreenshareParticipant';
+
 
 declare var interfaceConfig: Object;
 
@@ -90,11 +94,6 @@ export type Props = {|
      * The audio track related to the participant.
      */
     _audioTrack: ?Object,
-
-    /**
-     * The current layout of the filmstrip.
-     */
-    _currentLayout: string,
 
     /**
      * Indicates whether the local video flip feature is disabled or not.
@@ -138,10 +137,10 @@ export type Props = {|
     _isCurrentlyOnLargeVideo: boolean,
 
     /**
-     * Indicates whether the participant is a fake screen share participant. This prop is behind the
+     * Indicates whether the participant is a virtual screen share participant. This prop is behind the
      * sourceNameSignaling feature flag.
      */
-    _isFakeScreenShareParticipant: boolean,
+    _isVirtualScreenshareParticipant: boolean,
 
     /**
      * Whether we are currently running in a mobile browser.
@@ -189,9 +188,9 @@ export type Props = {|
     _raisedHand: boolean,
 
     /**
-     * Whether or not the stage filmstrip is disabled.
+     * Whether or not the current layout is stage filmstrip layout.
      */
-    _stageFilmstripDisabled: boolean,
+    _stageFilmstripLayout: boolean,
 
     /**
      * Whether or not the participants are displayed on stage.
@@ -199,6 +198,11 @@ export type Props = {|
      * whether or not the display the participant video in the vertical filmstrip).
      */
     _stageParticipantsVisible: boolean,
+
+    /**
+     * The type of thumbnail to display.
+     */
+    _thumbnailType: string,
 
     /**
      * The video object position for the participant.
@@ -243,7 +247,18 @@ export type Props = {|
     /**
      * Styles that will be set to the Thumbnail's main span element.
      */
-    style?: ?Object
+    style?: ?Object,
+
+     /**
+     * The width of the thumbnail. Used for expanding the width of the thumbnails on last row in case
+     * there is empty space.
+     */
+    width?: number,
+
+    /**
+     * Whether source name signaling is enabled.
+     */
+    _sourceNameSignalingEnabled: boolean
 |};
 
 const defaultStyles = theme => {
@@ -403,6 +418,7 @@ class Thumbnail extends Component<Props, State> {
         this._hidePopover = this._hidePopover.bind(this);
         this._onGifMouseEnter = this._onGifMouseEnter.bind(this);
         this._onGifMouseLeave = this._onGifMouseLeave.bind(this);
+        this.handleTrackStreamingStatusChanged = this.handleTrackStreamingStatusChanged.bind(this);
     }
 
     /**
@@ -413,6 +429,38 @@ class Thumbnail extends Component<Props, State> {
      */
     componentDidMount() {
         this._onDisplayModeChanged();
+
+
+        // Listen to track streaming status changed event to keep it updated.
+        // TODO: after converting this component to a react function component,
+        // use a custom hook to update local track streaming status.
+        const { _videoTrack, dispatch, _sourceNameSignalingEnabled } = this.props;
+
+        if (_sourceNameSignalingEnabled && _videoTrack && !_videoTrack.local) {
+            _videoTrack.jitsiTrack.on(JitsiTrackEvents.TRACK_STREAMING_STATUS_CHANGED,
+                this.handleTrackStreamingStatusChanged);
+            dispatch(trackStreamingStatusChanged(_videoTrack.jitsiTrack,
+                _videoTrack.jitsiTrack.getTrackStreamingStatus()));
+        }
+    }
+
+    /**
+     * Remove listeners for track streaming status update.
+     *
+     * @inheritdoc
+     * @returns {void}
+     */
+    componentWillUnmount() {
+        // TODO: after converting this component to a react function component,
+        // use a custom hook to update local track streaming status.
+        const { _videoTrack, dispatch, _sourceNameSignalingEnabled } = this.props;
+
+        if (_sourceNameSignalingEnabled && _videoTrack && !_videoTrack.local) {
+            _videoTrack.jitsiTrack.off(JitsiTrackEvents.TRACK_STREAMING_STATUS_CHANGED,
+                this.handleTrackStreamingStatusChanged);
+            dispatch(trackStreamingStatusChanged(_videoTrack.jitsiTrack,
+                _videoTrack.jitsiTrack.getTrackStreamingStatus()));
+        }
     }
 
     /**
@@ -426,6 +474,38 @@ class Thumbnail extends Component<Props, State> {
         if (prevState.displayMode !== this.state.displayMode) {
             this._onDisplayModeChanged();
         }
+
+        // TODO: after converting this component to a react function component,
+        // use a custom hook to update local track streaming status.
+        const { _videoTrack, dispatch, _sourceNameSignalingEnabled } = this.props;
+
+        if (_sourceNameSignalingEnabled
+            && prevProps._videoTrack?.jitsiTrack?.getSourceName() !== _videoTrack?.jitsiTrack?.getSourceName()) {
+            if (prevProps._videoTrack && !prevProps._videoTrack.local) {
+                prevProps._videoTrack.jitsiTrack.off(JitsiTrackEvents.TRACK_STREAMING_STATUS_CHANGED,
+                    this.handleTrackStreamingStatusChanged);
+                dispatch(trackStreamingStatusChanged(prevProps._videoTrack.jitsiTrack,
+                    prevProps._videoTrack.jitsiTrack.getTrackStreamingStatus()));
+            }
+            if (_videoTrack && !_videoTrack.local) {
+                _videoTrack.jitsiTrack.on(JitsiTrackEvents.TRACK_STREAMING_STATUS_CHANGED,
+                    this.handleTrackStreamingStatusChanged);
+                dispatch(trackStreamingStatusChanged(_videoTrack.jitsiTrack,
+                    _videoTrack.jitsiTrack.getTrackStreamingStatus()));
+            }
+        }
+    }
+
+    /**
+     * Handle track streaming status change event by
+     * by dispatching an action to update track streaming status for the given track in app state.
+     *
+     * @param {JitsiTrack} jitsiTrack - The track with streaming status updated.
+     * @param {JitsiTrackStreamingStatus} streamingStatus - The updated track streaming status.
+     * @returns {void}
+     */
+    handleTrackStreamingStatusChanged(jitsiTrack, streamingStatus) {
+        this.props.dispatch(trackStreamingStatusChanged(jitsiTrack, streamingStatus));
     }
 
     /**
@@ -447,15 +527,15 @@ class Thumbnail extends Component<Props, State> {
      */
     _maybeSendScreenSharingIssueEvents(input) {
         const {
-            _currentLayout,
             _isAudioOnly,
-            _isScreenSharing
+            _isScreenSharing,
+            _thumbnailType
         } = this.props;
         const { displayMode } = this.state;
-        const tileViewActive = _currentLayout === LAYOUTS.TILE_VIEW;
+        const isTileType = _thumbnailType === THUMBNAIL_TYPE.TILE;
 
         if (!(DISPLAY_VIDEO === displayMode)
-            && tileViewActive
+            && isTileType
             && _isScreenSharing
             && !_isAudioOnly) {
             sendAnalytics(createScreenSharingIssueEvent({
@@ -530,9 +610,9 @@ class Thumbnail extends Component<Props, State> {
      * @returns {void}
      */
     _hidePopover() {
-        const { _currentLayout } = this.props;
+        const { _thumbnailType } = this.props;
 
-        if (_currentLayout === LAYOUTS.VERTICAL_FILMSTRIP_VIEW) {
+        if (_thumbnailType === THUMBNAIL_TYPE.VERTICAL) {
             this.setState({
                 isHovered: false
             });
@@ -550,13 +630,13 @@ class Thumbnail extends Component<Props, State> {
     _getStyles(): Object {
         const { canPlayEventReceived } = this.state;
         const {
-            _currentLayout,
             _disableTileEnlargement,
             _height,
-            _isFakeScreenShareParticipant,
+            _isVirtualScreenshareParticipant,
             _isHidden,
             _isScreenSharing,
             _participant,
+            _thumbnailType,
             _videoObjectPosition,
             _videoTrack,
             _width,
@@ -564,7 +644,7 @@ class Thumbnail extends Component<Props, State> {
             style
         } = this.props;
 
-        const tileViewActive = _currentLayout === LAYOUTS.TILE_VIEW;
+        const isTileType = _thumbnailType === THUMBNAIL_TYPE.TILE;
         const jitsiVideoTrack = _videoTrack?.jitsiTrack;
         const track = jitsiVideoTrack?.track;
         const isPortraitVideo = ((track && track.getSettings()?.aspectRatio) || 1) < 1;
@@ -587,11 +667,11 @@ class Thumbnail extends Component<Props, State> {
         }
 
         let videoStyles = null;
-        const doNotStretchVideo = (isPortraitVideo && tileViewActive)
+        const doNotStretchVideo = (isPortraitVideo && isTileType)
             || _disableTileEnlargement
             || _isScreenSharing;
 
-        if (canPlayEventReceived || _participant.local || _isFakeScreenShareParticipant) {
+        if (canPlayEventReceived || _participant.local || _isVirtualScreenshareParticipant) {
             videoStyles = {
                 objectFit: doNotStretchVideo ? 'contain' : 'cover'
             };
@@ -636,13 +716,13 @@ class Thumbnail extends Component<Props, State> {
      * @returns {void}
      */
     _onClick() {
-        const { _participant, dispatch, _stageFilmstripDisabled } = this.props;
+        const { _participant, dispatch, _stageFilmstripLayout } = this.props;
         const { id, pinned } = _participant;
 
-        if (_stageFilmstripDisabled) {
-            dispatch(pinParticipant(pinned ? null : id));
-        } else {
+        if (_stageFilmstripLayout) {
             dispatch(togglePinStageParticipant(id));
+        } else {
+            dispatch(pinParticipant(pinned ? null : id));
         }
     }
 
@@ -790,8 +870,8 @@ class Thumbnail extends Component<Props, State> {
         const {
             _isDominantSpeakerDisabled,
             _participant,
-            _currentLayout,
             _raisedHand,
+            _thumbnailType,
             classes
         } = this.props;
 
@@ -804,7 +884,7 @@ class Thumbnail extends Component<Props, State> {
         if (!_isDominantSpeakerDisabled && _participant?.dominantSpeaker) {
             className += ` ${classes.activeSpeaker} dominant-speaker`;
         }
-        if (_currentLayout !== LAYOUTS.TILE_VIEW && _participant?.pinned) {
+        if (_thumbnailType !== THUMBNAIL_TYPE.TILE && _participant?.pinned) {
             className += ' videoContainerFocused';
         }
 
@@ -902,16 +982,16 @@ class Thumbnail extends Component<Props, State> {
     _renderParticipant(local = false) {
         const {
             _audioTrack,
-            _currentLayout,
             _disableLocalVideoFlip,
+            _gifSrc,
             _isMobile,
             _isMobilePortrait,
             _isScreenSharing,
             _isTestModeEnabled,
             _localFlipX,
             _participant,
+            _thumbnailType,
             _videoTrack,
-            _gifSrc,
             classes,
             stageFilmstrip
         } = this.props;
@@ -975,28 +1055,28 @@ class Thumbnail extends Component<Props, State> {
                 <div
                     className = { clsx(classes.indicatorsContainer,
                         classes.indicatorsTopContainer,
-                        _currentLayout === LAYOUTS.TILE_VIEW && 'tile-view-mode'
+                        _thumbnailType === THUMBNAIL_TYPE.TILE && 'tile-view-mode'
                     ) }>
                     <ThumbnailTopIndicators
-                        currentLayout = { _currentLayout }
                         hidePopover = { this._hidePopover }
                         indicatorsClassName = { classes.indicatorsBackground }
                         isHovered = { isHovered }
                         local = { local }
                         participantId = { id }
                         popoverVisible = { popoverVisible }
-                        showPopover = { this._showPopover } />
+                        showPopover = { this._showPopover }
+                        thumbnailType = { _thumbnailType } />
                 </div>
                 <div
                     className = { clsx(classes.indicatorsContainer,
                         classes.indicatorsBottomContainer,
-                        _currentLayout === LAYOUTS.TILE_VIEW && 'tile-view-mode'
+                        _thumbnailType === THUMBNAIL_TYPE.TILE && 'tile-view-mode'
                     ) }>
                     <ThumbnailBottomIndicators
                         className = { classes.indicatorsBackground }
-                        currentLayout = { _currentLayout }
                         local = { local }
-                        participantId = { id } />
+                        participantId = { id }
+                        thumbnailType = { _thumbnailType } />
                 </div>
                 {!_gifSrc && this._renderAvatar(styles.avatar) }
                 { !local && (
@@ -1033,7 +1113,7 @@ class Thumbnail extends Component<Props, State> {
      * @returns {ReactElement}
      */
     render() {
-        const { _participant, _isFakeScreenShareParticipant } = this.props;
+        const { _participant, _isVirtualScreenshareParticipant } = this.props;
 
         if (!_participant) {
             return null;
@@ -1049,12 +1129,12 @@ class Thumbnail extends Component<Props, State> {
             return this._renderFakeParticipant();
         }
 
-        if (_isFakeScreenShareParticipant) {
+        if (_isVirtualScreenshareParticipant) {
             const { isHovered } = this.state;
-            const { _videoTrack, _isMobile, classes } = this.props;
+            const { _videoTrack, _isMobile, classes, _thumbnailType } = this.props;
 
             return (
-                <FakeScreenShareParticipant
+                <VirtualScreenshareParticipant
                     classes = { classes }
                     containerClassName = { this._getContainerClassName() }
                     isHovered = { isHovered }
@@ -1068,6 +1148,7 @@ class Thumbnail extends Component<Props, State> {
                     onTouchStart = { this._onTouchStart }
                     participantId = { _participant.id }
                     styles = { this._getStyles() }
+                    thumbnailType = { _thumbnailType }
                     videoTrack = { _videoTrack } />
             );
         }
@@ -1095,15 +1176,15 @@ function _mapStateToProps(state, ownProps): Object {
 
     let _videoTrack;
 
-    if (sourceNameSignalingEnabled && participant?.isFakeScreenShareParticipant) {
-        _videoTrack = getFakeScreenshareParticipantTrack(tracks, id);
+    if (sourceNameSignalingEnabled && participant?.isVirtualScreenshareParticipant) {
+        _videoTrack = getVirtualScreenshareParticipantTrack(tracks, id);
     } else {
         _videoTrack = isLocal
             ? getLocalVideoTrack(tracks) : getTrackByMediaTypeAndParticipant(tracks, MEDIA_TYPE.VIDEO, participantID);
     }
     const _audioTrack = isLocal
         ? getLocalAudioTrack(tracks) : getTrackByMediaTypeAndParticipant(tracks, MEDIA_TYPE.AUDIO, participantID);
-    const _currentLayout = stageFilmstrip ? LAYOUTS.TILE_VIEW : getCurrentLayout(state);
+    const _currentLayout = getCurrentLayout(state);
     let size = {};
     let _isMobilePortrait = false;
     const {
@@ -1116,10 +1197,11 @@ function _mapStateToProps(state, ownProps): Object {
     const { localFlipX } = state['features/base/settings'];
     const _isMobile = isMobileBrowser();
     const activeParticipants = getActiveParticipantsIds(state);
+    const tileType = getThumbnailTypeFromLayout(_currentLayout, stageFilmstrip);
 
-    switch (_currentLayout) {
-    case LAYOUTS.VERTICAL_FILMSTRIP_VIEW:
-    case LAYOUTS.HORIZONTAL_FILMSTRIP_VIEW: {
+    switch (tileType) {
+    case THUMBNAIL_TYPE.VERTICAL:
+    case THUMBNAIL_TYPE.HORIZONTAL: {
         const {
             horizontalViewDimensions = {
                 local: {},
@@ -1133,7 +1215,7 @@ function _mapStateToProps(state, ownProps): Object {
         } = state['features/filmstrip'];
         const _verticalViewGrid = showGridInVerticalView(state);
         const { local, remote }
-            = _currentLayout === LAYOUTS.VERTICAL_FILMSTRIP_VIEW
+            = tileType === THUMBNAIL_TYPE.VERTICAL
                 ? verticalViewDimensions : horizontalViewDimensions;
         const { width, height } = (isLocal ? local : remote) ?? {};
 
@@ -1155,7 +1237,7 @@ function _mapStateToProps(state, ownProps): Object {
 
         break;
     }
-    case LAYOUTS.TILE_VIEW: {
+    case THUMBNAIL_TYPE.TILE: {
         const { thumbnailSize } = state['features/filmstrip'].tileViewDimensions;
         const {
             stageFilmstripDimensions = {
@@ -1180,6 +1262,10 @@ function _mapStateToProps(state, ownProps): Object {
     }
     }
 
+    if (ownProps.width) {
+        size._width = ownProps.width;
+    }
+
     const { gifUrl: gifSrc } = getGifForParticipant(state, id);
     const mode = getGifDisplayMode(state);
     const participantId = isLocal ? getLocalParticipant(state).id : participantID;
@@ -1195,21 +1281,24 @@ function _mapStateToProps(state, ownProps): Object {
         _isAudioOnly: Boolean(state['features/base/audio-only'].enabled),
         _isCurrentlyOnLargeVideo: state['features/large-video']?.participantId === id,
         _isDominantSpeakerDisabled: interfaceConfig.DISABLE_DOMINANT_SPEAKER_INDICATOR,
-        _isFakeScreenShareParticipant: sourceNameSignalingEnabled && participant?.isFakeScreenShareParticipant,
         _isMobile,
         _isMobilePortrait,
         _isScreenSharing: _videoTrack?.videoType === 'desktop',
         _isTestModeEnabled: isTestModeEnabled(state),
         _isVideoPlayable: id && isVideoPlayable(state, id),
+        _isVirtualScreenshareParticipant: sourceNameSignalingEnabled && participant?.isVirtualScreenshareParticipant,
         _localFlipX: Boolean(localFlipX),
+        _multipleVideoSupport: getMultipleVideoSupportFeatureFlag(state),
         _participant: participant,
         _raisedHand: hasRaisedHand(participant),
-        _stageFilmstripDisabled: !isStageFilmstripEnabled(state),
-        _stageParticipantsVisible: shouldDisplayStageFilmstrip(state, 1),
+        _stageFilmstripLayout: isStageFilmstripAvailable(state),
+        _stageParticipantsVisible: _currentLayout === LAYOUTS.STAGE_FILMSTRIP_VIEW,
+        _thumbnailType: tileType,
         _videoObjectPosition: getVideoObjectPosition(state, participant?.id),
         _videoTrack,
         ...size,
-        _gifSrc: mode === 'chat' ? null : gifSrc
+        _gifSrc: mode === 'chat' ? null : gifSrc,
+        _sourceNameSignalingEnabled: sourceNameSignalingEnabled
     };
 }
 
