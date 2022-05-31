@@ -559,6 +559,10 @@ var config = {
     //     // When 'true', it shows an intermediate page before joining, where the user can configure their devices.
     //     // This replaces `prejoinPageEnabled`.
     //     enabled: true,
+    //     // Hides the participant name editing field in the prejoin screen.
+    //     // If requireDisplayName is also set as true, a name should still be provided through
+    //     // either the jwt or the userInfo from the iframe api init object in order for this to have an effect.
+    //     hideDisplayName: false,
     //     // List of buttons to hide from the extra join options dropdown.
     //     hideExtraJoinButtons: ['no-audio', 'by-phone']
     // },
@@ -618,6 +622,7 @@ var config = {
     //    'chat',
     //    'closedcaptions',
     //    'desktop',
+    //    'dock-iframe'
     //    'download',
     //    'embedmeeting',
     //    'etherpad',
@@ -631,8 +636,6 @@ var config = {
     //    'linktosalesforce',
     //    'livestreaming',
     //    'microphone',
-    //    'mute-everyone',
-    //    'mute-video-everyone',
     //    'participants-pane',
     //    'profile',
     //    'raisehand',
@@ -646,6 +649,7 @@ var config = {
     //    'stats',
     //    'tileview',
     //    'toggle-camera',
+    //    'undock-iframe',
     //    'videoquality',
     //    '__end'
     // ],
@@ -1011,7 +1015,8 @@ var config = {
     // Disables all invite functions from the app (share, invite, dial out...etc)
     // disableInviteFunctions: true,
 
-    // Disables storing the room name to the recents list
+    // Disables storing the room name to the recents list. When in an iframe this is ignored and
+    // the room is never stored in the recents list.
     // doNotStoreRoom: true,
 
     // Deployment specific URLs.
@@ -1108,22 +1113,24 @@ var config = {
     */
     // dynamicBrandingUrl: '',
 
-    // Options related to the breakout rooms feature.
-    // breakoutRooms: {
-    //     // Hides the add breakout room button. This replaces `hideAddRoomButton`.
-    //     hideAddRoomButton: false,
-    //     // Hides the auto assign participants button.
-    //     hideAutoAssignButton: false,
-    //     // Hides the participants pane footer menu.
-    //     hideFooterMenu: false,
-    //     // Hides the join breakout room button.
-    //     hideJoinRoomButton: false,
+    // Options related to the participants pane.
+    // participantsPane: {
     //     // Hides the moderator settings tab.
     //     hideModeratorSettingsTab: false,
     //     // Hides the more actions button.
     //     hideMoreActionsButton: false,
     //     // Hides the mute all button.
     //     hideMuteAllButton: false
+    // },
+
+    // Options related to the breakout rooms feature.
+    // breakoutRooms: {
+    //     // Hides the add breakout room button. This replaces `hideAddRoomButton`.
+    //     hideAddRoomButton: false,
+    //     // Hides the auto assign participants button.
+    //     hideAutoAssignButton: false,
+    //     // Hides the join breakout room button.
+    //     hideJoinRoomButton: false
     // },
 
     // When true the user cannot add more images to be used as virtual background.
@@ -1343,6 +1350,9 @@ var config = {
     //     'toolbar.talkWhileMutedPopup', // shown when user tries to speak while muted
     //     'transcribing.failedToStart' // shown when transcribing fails to start
     // ],
+
+    // List of notifications to be disabled. Works in tandem with the above setting.
+    // disabledNotifications: [],
 
     // Prevent the filmstrip from autohiding when screen width is under a certain threshold
     // disableFilmstripAutohiding: false,
