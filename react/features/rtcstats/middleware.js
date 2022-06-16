@@ -3,7 +3,8 @@
 import { jitsiLocalStorage } from '@jitsi/js-utils';
 
 import { getAmplitudeIdentity } from '../analytics';
-import { CONFERENCE_UNIQUE_ID_SET, E2E_RTT_CHANGED, getConferenceOptions, getRoomName } from '../base/conference';
+import { CONFERENCE_UNIQUE_ID_SET, E2E_RTT_CHANGED, CONFERENCE_TIMESTAMP_CHANGED, getConferenceOptions, getRoomName }
+    from '../base/conference';
 import { LIB_WILL_INIT } from '../base/lib-jitsi-meet/actionTypes';
 import { DOMINANT_SPEAKER_CHANGED, getLocalParticipant } from '../base/participants';
 import { MiddlewareRegistry } from '../base/redux';
@@ -24,7 +25,7 @@ import logger from './logger';
 MiddlewareRegistry.register(store => next => action => {
     const state = store.getState();
     const config = state['features/base/config'];
-    const { analytics } = config;
+    const { analytics, faceLandmarks } = config;
 
     switch (action.type) {
     case LIB_WILL_INIT: {
@@ -150,7 +151,7 @@ MiddlewareRegistry.register(store => next => action => {
         break;
     }
     case ADD_FACE_EXPRESSION: {
-        if (canSendRtcstatsData(state)) {
+        if (canSendRtcstatsData(state) && faceLandmarks && faceLandmarks.enableRTCStats) {
             const { duration, faceExpression, timestamp } = action;
 
             RTCStats.sendFaceExpressionData({
@@ -158,6 +159,14 @@ MiddlewareRegistry.register(store => next => action => {
                 faceLandmarks: faceExpression,
                 timestamp
             });
+        }
+        break;
+    }
+    case CONFERENCE_TIMESTAMP_CHANGED: {
+        if (canSendRtcstatsData(state)) {
+            const conferenceTimestamp = action.conferenceTimestamp;
+
+            RTCStats.sendConferenceTimestamp(conferenceTimestamp);
         }
         break;
     }

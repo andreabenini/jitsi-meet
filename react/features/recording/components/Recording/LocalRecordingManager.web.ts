@@ -7,6 +7,7 @@ import { getRoomName } from '../../../base/conference';
 import { MEDIA_TYPE } from '../../../base/media';
 // @ts-ignore
 import { getTrackState } from '../../../base/tracks';
+import { inIframe } from '../../../base/util/iframeUtils';
 // @ts-ignore
 import { stopLocalVideoRecording } from '../../actions.any';
 
@@ -145,7 +146,7 @@ const LocalRecordingManager: ILocalRecordingManager = {
     async startLocalRecording(store) {
         const { dispatch, getState } = store;
         // @ts-ignore
-        const supportsCaptureHandle = Boolean(navigator.mediaDevices.setCaptureHandleConfig);
+        const supportsCaptureHandle = Boolean(navigator.mediaDevices.setCaptureHandleConfig) && !inIframe();
         const tabId = uuidV4();
 
         if (supportsCaptureHandle) {
@@ -160,7 +161,7 @@ const LocalRecordingManager: ILocalRecordingManager = {
         // @ts-ignore
         const gdmStream = await navigator.mediaDevices.getDisplayMedia({
             // @ts-ignore
-            video: { displaySurface: 'browser', frameRate: { min: 30 } },
+            video: { displaySurface: 'browser', frameRate: 30 },
             audio: {
                 autoGainControl: false,
                 channelCount: 2,
