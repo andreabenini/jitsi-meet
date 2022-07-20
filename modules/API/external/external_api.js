@@ -126,6 +126,7 @@ const events = {
     'participant-kicked-out': 'participantKickedOut',
     'participant-left': 'participantLeft',
     'participant-role-changed': 'participantRoleChanged',
+    'participants-pane-toggled': 'participantsPaneToggled',
     'password-required': 'passwordRequired',
     'proxy-connection-event': 'proxyConnectionEvent',
     'raise-hand-updated': 'raiseHandUpdated',
@@ -999,7 +1000,7 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
     }
 
     /**
-     * Returns wether meeting is started silent.
+     * Returns whether meeting is started silent.
      *
      * @returns {Promise} - Resolves with start silent status.
      */
@@ -1241,9 +1242,9 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
      * @param { boolean } options.shouldShare - Whether the recording should be shared with the participants or not.
      * Only applies to certain jitsi meet deploys.
      * @param { string } options.rtmpStreamKey - The RTMP stream key.
-     * @param { string } options.rtmpBroadcastID - The RTMP broacast ID.
+     * @param { string } options.rtmpBroadcastID - The RTMP broadcast ID.
      * @param { string } options.youtubeStreamKey - The youtube stream key.
-     * @param { string } options.youtubeBroadcastID - The youtube broacast ID.
+     * @param { string } options.youtubeBroadcastID - The youtube broadcast ID.
      * @returns {void}
      */
     startRecording(options) {
