@@ -40,7 +40,35 @@ import { IInviteState } from '../invite/reducer';
 import { IJaaSState } from '../jaas/reducer';
 import { ILargeVideoState } from '../large-video/reducer';
 import { ILobbyState } from '../lobby/reducer';
+import { IMobileAudioModeState } from '../mobile/audio-mode/reducer';
+import { IBackgroundState } from '../mobile/background/reducer';
+import { IMobileExternalApiState } from '../mobile/external-api/reducer';
+import { IFullScreenState } from '../mobile/full-screen/reducer';
+import { IMobileWatchOSState } from '../mobile/watchos/reducer';
+import { INoAudioSignalState } from '../no-audio-signal/reducer';
+import { INoiseDetectionState } from '../noise-detection/reducer';
 import { INoiseSuppressionState } from '../noise-suppression/reducer';
+import { INotificationsState } from '../notifications/reducer';
+import { IOverlayState } from '../overlay/reducer';
+import { IPollsState } from '../polls/reducer';
+import { IPowerMonitorState } from '../power-monitor/reducer';
+import { IPrejoinState } from '../prejoin/reducer';
+import { IReactionsState } from '../reactions/reducer';
+import { IRecentListState } from '../recent-list/reducer';
+import { IRecordingState } from '../recording/reducer';
+import { IRemoteControlState } from '../remote-control/reducer';
+import { IScreenShareState } from '../screen-share/reducer';
+import { IScreenshotCaptureState } from '../screenshot-capture/reducer';
+import { ISharedVideoState } from '../shared-video/reducer';
+import { ISpeakerStatsState } from '../speaker-stats/reducer';
+import { ISubtitlesState } from '../subtitles/reducer';
+import { ITalkWhileMutedState } from '../talk-while-muted/reducer';
+import { IToolboxState } from '../toolbox/reducer';
+import { ITranscribingState } from '../transcribing/reducer';
+import { IVideoLayoutState } from '../video-layout/reducer';
+import { IVideoQualityPersistedState, IVideoQualityState } from '../video-quality/reducer';
+import { IVideoSipGW } from '../videosipgw/reducer';
+import { IVirtualBackground } from '../virtual-background/reducer';
 
 export interface IStore {
     dispatch: Function,
@@ -51,6 +79,7 @@ export interface IState {
     'features/analytics': IAnalyticsState,
     'features/authentication': IAuthenticationState,
     'features/av-moderation': IAVModerationState,
+    'features/background': IBackgroundState,
     'features/base/app': IAppState,
     'features/base/audio-only': IAudioOnlyState,
     'features/base/conference': IConferenceState,
@@ -85,12 +114,42 @@ export interface IState {
     'features/feedback': IFeedbackState,
     'features/filmstrip': IFilmstripState,
     'features/follow-me': IFollowMeState,
+    'features/full-screen': IFullScreenState,
     'features/gifs': IGifsState,
     'features/google-api': IGoogleApiState,
     'features/invite': IInviteState,
     'features/jaas': IJaaSState,
     'features/large-video': ILargeVideoState,
     'features/lobby': ILobbyState,
+    'features/mobile/audio-mode': IMobileAudioModeState,
+    'features/mobile/external-api': IMobileExternalApiState,
+    'features/mobile/watchos': IMobileWatchOSState,
+    'features/no-audio-signal': INoAudioSignalState,
+    'features/noise-detection': INoiseDetectionState,
     'features/noise-suppression': INoiseSuppressionState,
-    'features/testing': ITestingState
+    'features/notifications': INotificationsState,
+    'features/overlay': IOverlayState,
+    'features/participants-pane': IParticipantsState,
+    'features/polls': IPollsState,
+    'features/power-monitor': IPowerMonitorState,
+    'features/prejoin': IPrejoinState,
+    'features/reactions': IReactionsState,
+    'features/recent-list': IRecentListState,
+    'features/recording': IRecordingState,
+    'features/remote-control': IRemoteControlState,
+    'features/screen-share': IScreenShareState,
+    'features/screenshot-capture': IScreenshotCaptureState,
+    'features/settings': ISettingsState,
+    'features/shared-video': ISharedVideoState,
+    'features/speaker-stats': ISpeakerStatsState,
+    'features/subtitles': ISubtitlesState,
+    'features/talk-while-muted': ITalkWhileMutedState,
+    'features/testing': ITestingState,
+    'features/toolbox': IToolboxState,
+    'features/transcribing': ITranscribingState,
+    'features/video-layout': IVideoLayoutState,
+    'features/video-quality': IVideoQualityState,
+    'features/video-quality-persistent-storage': IVideoQualityPersistedState,
+    'features/videosipgw': IVideoSipGW,
+    'features/virtual-background': IVirtualBackground
 }

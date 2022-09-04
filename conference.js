@@ -52,7 +52,8 @@ import {
     onStartMutedPolicyChanged,
     p2pStatusChanged,
     sendLocalParticipant,
-    nonParticipantMessageReceived
+    nonParticipantMessageReceived,
+    CONFERENCE_LEAVE_REASONS
 } from './react/features/base/conference';
 import {
     getReplaceParticipant,
@@ -159,6 +160,7 @@ import { AudioMixerEffect } from './react/features/stream-effects/audio-mixer/Au
 import { createPresenterEffect } from './react/features/stream-effects/presenter';
 import { createRnnoiseProcessor } from './react/features/stream-effects/rnnoise';
 import { endpointMessageReceived } from './react/features/subtitles';
+import { handleToggleVideoMuted } from './react/features/toolbox/actions.any';
 import { muteLocal } from './react/features/video-menu/actions.any';
 import UIEvents from './service/UI/UIEvents';
 
@@ -381,7 +383,7 @@ class ConferenceConnector {
             // FIXME the conference should be stopped by the library and not by
             // the app. Both the errors above are unrecoverable from the library
             // perspective.
-            room.leave().then(() => connection.disconnect());
+            room.leave(CONFERENCE_LEAVE_REASONS.UNRECOVERABLE_ERROR).then(() => connection.disconnect());
             break;
 
         case JitsiConferenceErrors.CONFERENCE_MAX_USERS:
@@ -464,7 +466,7 @@ function _connectionFailedHandler(error) {
             _connectionFailedHandler);
         if (room) {
             APP.store.dispatch(conferenceWillLeave(room));
-            room.leave();
+            room.leave(CONFERENCE_LEAVE_REASONS.UNRECOVERABLE_ERROR);
         }
     }
 }
@@ -1151,9 +1153,13 @@ export default {
      * Simulates toolbar button click for video mute. Used by shortcuts and API.
      * @param {boolean} [showUI] when set to false will not display any error
      * dialogs in case of media permissions error.
+     * @param {boolean} ensureTrack - True if we want to ensure that a new track is
+     * created if missing.
      */
-    toggleVideoMuted(showUI = true) {
-        this.muteVideo(!this.isLocalVideoMuted(), showUI);
+    toggleVideoMuted(showUI = true, ensureTrack = false) {
+        const mute = !this.isLocalVideoMuted();
+
+        APP.store.dispatch(handleToggleVideoMuted(mute, showUI, ensureTrack));
     },
 
     /**
@@ -2420,8 +2426,8 @@ export default {
         APP.UI.addListener(UIEvents.AUDIO_MUTED, muted => {
             this.muteAudio(muted);
         });
-        APP.UI.addListener(UIEvents.VIDEO_MUTED, muted => {
-            this.muteVideo(muted);
+        APP.UI.addListener(UIEvents.VIDEO_MUTED, (muted, showUI = false) => {
+            this.muteVideo(muted, showUI);
         });
 
         room.addCommandListener(this.commands.defaults.ETHERPAD,
@@ -2651,29 +2657,8 @@ export default {
             }
         );
 
-        APP.UI.addListener(UIEvents.TOGGLE_AUDIO_ONLY, audioOnly => {
-
-            // FIXME On web video track is stored both in redux and in
-            // 'localVideo' field, video is attempted to be unmuted twice when
-            // turning off the audio only mode. This will crash the app with
-            // 'unmute operation is already in progress'.
-            // Because there's no logic in redux about creating new track in
-            // case unmute when not track exists the things have to go through
-            // muteVideo logic in such case.
-            const tracks = APP.store.getState()['features/base/tracks'];
-            const isTrackInRedux
-                = Boolean(tracks.find(track => track.jitsiTrack && track.jitsiTrack.getType() === MEDIA_TYPE.VIDEO));
-
-            if (isTrackInRedux && !this.isSharingScreen) {
-                this.muteVideo(audioOnly);
-            }
-
-            // Immediately update the UI by having remote videos and the large
-            // video update themselves instead of waiting for some other event
-            // to cause the update, usually PARTICIPANT_CONN_STATUS_CHANGED.
-            // There is no guarantee another event will trigger the update
-            // immediately and in all situations, for example because a remote
-            // participant is having connection trouble so no status changes.
+        APP.UI.addListener(UIEvents.TOGGLE_AUDIO_ONLY, () => {
+            // Immediately update the UI by having remote videos and the large video update themselves.
             const displayedUserId = APP.UI.getLargeVideoID();
 
             if (displayedUserId) {
@@ -3080,13 +3065,14 @@ export default {
      * Leaves the room.
      *
      * @param {boolean} doDisconnect - Whether leaving the room should also terminate the connection.
+     * @param {string} reason - reason for leaving the room.
      * @returns {Promise}
      */
-    async leaveRoom(doDisconnect = true) {
+    async leaveRoom(doDisconnect = true, reason = '') {
         APP.store.dispatch(conferenceWillLeave(room));
 
         if (room && room.isJoined()) {
-            return room.leave().finally(() => {
+            return room.leave(reason).finally(() => {
                 if (doDisconnect) {
                     return disconnect();
                 }

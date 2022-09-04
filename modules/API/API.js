@@ -41,9 +41,11 @@ import {
     isLocalParticipantModerator,
     hasRaisedHand,
     grantModerator,
-    overwriteParticipantsNames
+    overwriteParticipantsNames,
+    LOCAL_PARTICIPANT_DEFAULT_ID
 } from '../../react/features/base/participants';
 import { updateSettings } from '../../react/features/base/settings';
+import { getDisplayName } from '../../react/features/base/settings/functions.web';
 import { isToggleCameraEnabled, toggleCamera } from '../../react/features/base/tracks';
 import {
     autoAssignToBreakoutRooms,
@@ -63,6 +65,7 @@ import { openChat } from '../../react/features/chat/actions.web';
 import {
     processExternalDeviceRequest
 } from '../../react/features/device-selection/functions';
+import { appendSuffix } from '../../react/features/display-name';
 import { isEnabled as isDropboxEnabled } from '../../react/features/dropbox';
 import { setMediaEncryptionKey, toggleE2EE } from '../../react/features/e2ee/actions';
 import { setVolume } from '../../react/features/filmstrip';
@@ -299,7 +302,7 @@ function initCommands() {
         'toggle-video': () => {
             sendAnalytics(createApiEvent('toggle-video'));
             logger.log('Video toggle: API command received');
-            APP.conference.toggleVideoMuted(false /* no UI */);
+            APP.conference.toggleVideoMuted(false /* no UI */, true /* ensure track */);
         },
         'toggle-film-strip': () => {
             sendAnalytics(createApiEvent('film.strip.toggled'));
@@ -1452,6 +1455,39 @@ class API {
     }
 
     /**
+     * Notify external application (if API is enabled) that the prejoin video
+     * visibility had changed.
+     *
+     * @param {boolean} isVisible - Whether the prejoin video is visible.
+     * @returns {void}
+     */
+    notifyPrejoinVideoVisibilityChanged(isVisible: boolean) {
+        this._sendEvent({
+            name: 'on-prejoin-video-changed',
+            isVisible
+        });
+    }
+
+    /**
+     * Notify external application (if API is enabled) that the prejoin
+     * screen was loaded.
+     *
+     * @returns {void}
+     */
+    notifyPrejoinLoaded() {
+        const state = APP.store.getState();
+        const { defaultLocalDisplayName } = state['features/base/config'];
+        const displayName = getDisplayName(state);
+
+        this._sendEvent({
+            name: 'prejoin-screen-loaded',
+            id: LOCAL_PARTICIPANT_DEFAULT_ID,
+            displayName,
+            formattedDisplayName: appendSuffix(displayName, defaultLocalDisplayName)
+        });
+    }
+
+    /**
      * Notify external application of an unexpected camera-related error having
      * occurred.
      *
@@ -1767,6 +1803,24 @@ class API {
         this._sendEvent({
             name: 'participants-pane-toggled',
             open
+        });
+    }
+
+    /**
+     * Notify the external application that the audio or video is being shared by a participant.
+     *
+     * @param {string} mediaType - Whether the content which is being shared is audio or video.
+     * @param {string} value - Whether the sharing is playing, pause or stop (on audio there is only playing and stop).
+     * @param {string} participantId - Participant id of the participant which started or ended
+     *  the video or audio sharing.
+     * @returns {void}
+     */
+    notifyAudioOrVideoSharingToggled(mediaType, value, participantId) {
+        this._sendEvent({
+            name: 'audio-or-video-sharing-toggled',
+            mediaType,
+            value,
+            participantId
         });
     }
 

@@ -78,7 +78,6 @@
     },
     "carmode": {
         "actions": {
-            "leaveMeeting": " Leave meeting",
             "selectSoundDevice": "Select sound device"
         },
         "labels": {
@@ -97,6 +96,7 @@
         "messageAccessibleTitleMe": "me says:",
         "messageTo": "Private message to {{recipient}}",
         "messagebox": "Type a message",
+        "newMessages": "new messages",
         "nickname": {
             "popover": "Choose a nickname",
             "title": "Enter a nickname to use chat",
@@ -299,7 +299,7 @@
         "micNotSendingData": "Go to your computer's settings to unmute your mic and adjust its level",
         "micNotSendingDataTitle": "Your mic is muted by your system settings",
         "micPermissionDeniedError": "You have not granted permission to use your microphone. You can still join the conference but others won't hear you. Use the camera button in the address bar to fix this.",
-        "micTimeoutError": "Could not start audio source. Timeout occured!",
+        "micTimeoutError": "Could not start audio source. Timeout occurred!",
         "micUnknownError": "Cannot use microphone for an unknown reason.",
         "moderationAudioLabel": "Allow attendees to unmute themselves",
         "moderationVideoLabel": "Allow attendees to start their video",
@@ -1063,6 +1063,7 @@
             "document": "Toggle shared document",
             "download": "Download our apps",
             "embedMeeting": "Embed meeting",
+            "endConference": "End meeting for all",
             "expand": "Expand",
             "feedback": "Leave feedback",
             "fullScreen": "Toggle full screen",
@@ -1073,6 +1074,7 @@
             "invite": "Invite people",
             "kick": "Kick participant",
             "laugh": "Laugh",
+            "leaveConference": "Leave meeting",
             "like": "Thumbs Up",
             "linkToSalesforce": "Link to Salesforce",
             "lobbyButton": "Enable/disable lobby mode",
@@ -1135,6 +1137,7 @@
         "download": "Download our apps",
         "e2ee": "End-to-End Encryption",
         "embedMeeting": "Embed meeting",
+        "endConference": "End meeting for all",
         "enterFullScreen": "View full screen",
         "enterTileView": "Enter tile view",
         "exitFullScreen": "Exit full screen",
@@ -1147,6 +1150,7 @@
         "joinBreakoutRoom": "Join breakout room",
         "laugh": "Laugh",
         "leaveBreakoutRoom": "Leave breakout room",
+        "leaveConference": "Leave meeting",
         "like": "Thumbs Up",
         "linkToSalesforce": "Link to Salesforce",
         "lobbyButtonDisable": "Disable lobby mode",
@@ -1190,7 +1194,7 @@
         "silence": "Silence",
         "speakerStats": "Speaker stats",
         "startScreenSharing": "Start screen sharing",
-        "startSubtitles": "Start subtitles",
+        "startSubtitles": "Subtitles • {{language}}",
         "stopAudioSharing": "Stop audio sharing",
         "stopScreenSharing": "Stop screen sharing",
         "stopSharedVideo": "Stop video",
@@ -1213,6 +1217,8 @@
         "pending": "Preparing to transcribe the meeting...",
         "start": "Start showing subtitles",
         "stop": "Stop showing subtitles",
+        "subtitles": "Subtitles",
+        "subtitlesOff": "Off",
         "tr": "TR"
     },
     "userMedia": {
