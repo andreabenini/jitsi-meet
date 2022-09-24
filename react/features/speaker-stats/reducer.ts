@@ -24,14 +24,15 @@ const INITIAL_STATE = {
 };
 
 export interface ISpeakerStatsState {
-    criteria: string|null;
+    criteria: string | null;
     isOpen: boolean;
     pendingReorder: boolean;
     showFaceExpressions: boolean;
     stats: Object;
 }
 
-ReducerRegistry.register('features/speaker-stats', (state: ISpeakerStatsState = INITIAL_STATE, action) => {
+ReducerRegistry.register<ISpeakerStatsState>('features/speaker-stats',
+(state = INITIAL_STATE, action): ISpeakerStatsState => {
     switch (action.type) {
     case INIT_SEARCH:
         return _updateCriteria(state, action);
@@ -61,7 +62,7 @@ ReducerRegistry.register('features/speaker-stats', (state: ISpeakerStatsState = 
  * @private
  * @returns {Object} The new state after the reduction of the specified action.
  */
-function _updateCriteria(state: ISpeakerStatsState, { criteria }: { criteria: string|null }) {
+function _updateCriteria(state: ISpeakerStatsState, { criteria }: { criteria: string | null; }) {
     return _.assign(
         {},
         state,
@@ -83,7 +84,7 @@ function _updateCriteria(state: ISpeakerStatsState, { criteria }: { criteria: st
  * @private
  * @returns {Object} - The new state after the reduction of the specified action.
  */
-function _updateStats(state: ISpeakerStatsState, { stats }: { stats: any }) {
+function _updateStats(state: ISpeakerStatsState, { stats }: { stats: any; }) {
     const finalStats = state.pendingReorder ? stats : state.stats;
 
     if (!state.pendingReorder) {

@@ -1,44 +1,39 @@
 /* eslint-disable lines-around-comment */
 import InlineDialog from '@atlaskit/inline-dialog';
 import React, { Component } from 'react';
+import { WithTranslation } from 'react-i18next';
 
-// @ts-ignore
-import { createToolbarEvent, sendAnalytics } from '../../../analytics';
-// @ts-ignore
-import { translate } from '../../../base/i18n';
+import { createToolbarEvent } from '../../../analytics/AnalyticsEvents';
+import { sendAnalytics } from '../../../analytics/functions';
+import { translate } from '../../../base/i18n/functions';
 
 import HangupToggleButton from './HangupToggleButton';
 
 /**
  * The type of the React {@code Component} props of {@link HangupMenuButton}.
  */
-type Props = {
+interface Props extends WithTranslation {
 
     /**
      * ID of the menu that is controlled by this button.
      */
-    ariaControls: String,
+    ariaControls: String;
 
     /**
      * A child React Element to display within {@code InlineDialog}.
      */
-    children: React.ReactNode,
+    children: React.ReactNode;
 
     /**
      * Whether or not the HangupMenu popover should display.
      */
-    isOpen: boolean,
+    isOpen: boolean;
 
     /**
      * Callback to change the visibility of the hangup menu.
      */
-    onVisibilityChange: Function,
-
-    /**
-     * Invoked to obtain translated strings.
-     */
-    t: Function,
-};
+    onVisibilityChange: Function;
+}
 
 /**
  * A React {@code Component} for opening or closing the {@code HangupMenu}.

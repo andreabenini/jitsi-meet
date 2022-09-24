@@ -51,22 +51,6 @@ export default class JitsiMeetLogStorage {
     }
 
     /**
-     * Checks whether callstats logs storage is enabled.
-     *
-     * @returns {boolean} <tt>true</tt> when this storage can store logs to
-     * callstats, <tt>false</tt> otherwise.
-     */
-    canStoreLogsCallstats() {
-        const { callstatsStoreLogs } = this.getState()['features/base/config'];
-
-        // The behavior prior to adding this configuration parameter, is to send logs to callstats (if callstats is
-        // enabled). So, in order to maintain backwards compatibility I set the default of this option to be true, i.e.
-        // if the config.callstatsStoreLogs is not set, the JS console logs will be sent to callstats (if callstats is
-        // enabled)
-        return callstatsStoreLogs || callstatsStoreLogs === undefined;
-    }
-
-    /**
      * Checks whether rtcstats logs storage is enabled.
      *
      * @returns {boolean} <tt>true</tt> when this storage can store logs to
@@ -90,11 +74,11 @@ export default class JitsiMeetLogStorage {
      * representing log lines or aggregated lines objects.
      * @returns {void}
      */
-    storeLogs(logEntries: Array<string|any>) {
+    storeLogs(logEntries: Array<string | any>) {
 
-        if (this.canStoreLogsCallstats()) {
-            this.storeLogsCallstats(logEntries);
-        }
+        // XXX the config.callStatsApplicationLogsDisabled controls whether or not the logs will be sent to callstats.
+        // this is done in LJM
+        this.storeLogsCallstats(logEntries);
 
         if (this.canStoreLogsRtcstats()) {
             RTCStats.sendLogs(logEntries);
@@ -107,7 +91,7 @@ export default class JitsiMeetLogStorage {
      * @param {Array<string|any>} logEntries - The log entries to send to the rtcstats server.
      * @returns {void}
      */
-    storeLogsCallstats(logEntries: Array<string|any>) {
+    storeLogsCallstats(logEntries: Array<string | any>) {
         const conference = getCurrentConference(this.getState());
 
         if (!conference || !conference.isCallstatsEnabled()) {

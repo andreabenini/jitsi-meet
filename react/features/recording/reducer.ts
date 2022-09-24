@@ -30,7 +30,7 @@ interface SessionData {
 export interface IRecordingState {
     disableHighlightMeetingMoment: boolean;
     pendingNotificationUids: {
-        [key: string]: number|undefined;
+        [key: string]: number | undefined;
     };
     selectedRecordingService: string;
     sessionDatas: Array<SessionData>;
@@ -45,8 +45,8 @@ const STORE_NAME = 'features/recording';
 /**
  * Reduces the Redux actions of the feature features/recording.
  */
-ReducerRegistry.register(STORE_NAME,
-    (state: IRecordingState = DEFAULT_STATE, action) => {
+ReducerRegistry.register<IRecordingState>(STORE_NAME,
+    (state = DEFAULT_STATE, action): IRecordingState => {
         switch (action.type) {
 
         case CLEAR_RECORDING_SESSIONS:

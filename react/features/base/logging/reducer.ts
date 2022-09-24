@@ -60,14 +60,18 @@ export interface ILoggingState {
         disableLogCollector?: boolean;
         loggers: {
             [key: string]: LogLevel;
-        }
+        };
     };
-    logCollector?: Object;
+    logCollector?: {
+        flush: () => void;
+        start: () => void;
+        stop: () => void;
+    };
 }
 
-ReducerRegistry.register(
+ReducerRegistry.register<ILoggingState>(
     'features/base/logging',
-    (state: ILoggingState = DEFAULT_STATE, action) => {
+    (state = DEFAULT_STATE, action): ILoggingState => {
         switch (action.type) {
         case SET_LOGGING_CONFIG:
             return _setLoggingConfig(state, action);

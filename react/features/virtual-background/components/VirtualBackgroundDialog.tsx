@@ -4,11 +4,11 @@ import Spinner from '@atlaskit/spinner';
 import Bourne from '@hapi/bourne';
 // @ts-ignore
 import { jitsiLocalStorage } from '@jitsi/js-utils/jitsi-local-storage';
-import { makeStyles } from '@material-ui/styles';
-import clsx from 'clsx';
+import { Theme } from '@mui/material';
 import React, { useState, useEffect, useCallback } from 'react';
 import { WithTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
+import { makeStyles } from 'tss-react/mui';
 
 import { IState } from '../../app/types';
 // @ts-ignore
@@ -17,7 +17,7 @@ import { getMultipleVideoSendingSupportFeatureFlag } from '../../base/config';
 import { Dialog, hideDialog, openDialog } from '../../base/dialog';
 import { translate } from '../../base/i18n/functions';
 import Icon from '../../base/icons/components/Icon';
-import { IconCloseSmall, IconShareDesktop } from '../../base/icons/svg/index';
+import { IconCloseSmall, IconShareDesktop } from '../../base/icons/svg';
 import { browser, JitsiTrackErrors } from '../../base/lib-jitsi-meet';
 // @ts-ignore
 import { createLocalTrack } from '../../base/lib-jitsi-meet/functions';
@@ -30,7 +30,8 @@ import { Tooltip } from '../../base/tooltip';
 // @ts-ignore
 import { getLocalVideoTrack } from '../../base/tracks';
 // @ts-ignore
-import { NOTIFICATION_TIMEOUT_TYPE, showErrorNotification } from '../../notifications';
+import { showErrorNotification } from '../../notifications';
+import { NOTIFICATION_TIMEOUT_TYPE } from '../../notifications/constants';
 // @ts-ignore
 import { toggleBackgroundEffect, virtualBackgroundTrackChanged } from '../actions';
 import { IMAGES, BACKGROUNDS_LIMIT, VIRTUAL_BACKGROUND_TYPE, type Image } from '../constants';
@@ -48,42 +49,42 @@ interface Props extends WithTranslation {
     /**
      * The list of Images to choose from.
      */
-    _images: Array<Image>,
+    _images: Array<Image>;
 
     /**
      * Returns the jitsi track that will have backgraund effect applied.
      */
-    _jitsiTrack: Object,
+    _jitsiTrack: Object;
 
     /**
      * The current local flip x status.
      */
-    _localFlipX: boolean,
+    _localFlipX: boolean;
 
     /**
     * Whether or not multi-stream send support is enabled.
     */
-    _multiStreamModeEnabled: boolean,
+    _multiStreamModeEnabled: boolean;
 
     /**
      * Returns the selected thumbnail identifier.
      */
-    _selectedThumbnail: string,
+    _selectedThumbnail: string;
 
     /**
      * If the upload button should be displayed or not.
      */
-    _showUploadButton: boolean,
+    _showUploadButton: boolean;
 
     /**
      * Returns the selected virtual background object.
      */
-    _virtualBackground: any,
+    _virtualBackground: any;
 
     /**
      * The redux {@code dispatch} function.
      */
-    dispatch: Function,
+    dispatch: Function;
 
     /**
      * The initial options copied in the state for the {@code VirtualBackground} component.
@@ -91,7 +92,7 @@ interface Props extends WithTranslation {
      * NOTE: currently used only for electron in order to open the dialog in the correct state after desktop sharing
      * selection.
      */
-    initialOptions: Object
+    initialOptions: Object;
 }
 
 const onError = (event: any) => {
@@ -107,7 +108,7 @@ const onError = (event: any) => {
  * @private
  * @returns {{Props}}
  */
-function _mapStateToProps(state: any): Object {
+function _mapStateToProps(state: IState): Object {
     const { localFlipX } = state['features/base/settings'];
     const dynamicBrandingImages = state['features/dynamic-branding'].virtualBackgrounds;
     const hasBrandingImages = Boolean(dynamicBrandingImages.length);
@@ -125,7 +126,7 @@ function _mapStateToProps(state: any): Object {
 
 const VirtualBackgroundDialog = translate(connect(_mapStateToProps)(VirtualBackground));
 
-const useStyles = makeStyles((theme: any) => {
+const useStyles = makeStyles()((theme: Theme) => {
     return {
         container: {
             display: 'flex',
@@ -151,7 +152,7 @@ const useStyles = makeStyles((theme: any) => {
                 border: '2px solid #99bbf3'
             },
             '& .background-option': {
-                marginTop: `${theme.spacing(2)}px`,
+                marginTop: theme.spacing(2),
                 borderRadius: `${theme.shape.borderRadius}px`,
                 height: '60px',
                 width: '107px',
@@ -294,7 +295,7 @@ function VirtualBackground({
     initialOptions,
     t
 }: Props) {
-    const classes = useStyles();
+    const { classes, cx } = useStyles();
     const [ previewIsLoaded, setPreviewIsLoaded ] = useState(false);
     const [ options, setOptions ] = useState<any>({ ...initialOptions });
     const localImages = jitsiLocalStorage.getItem('virtualBackgrounds');
@@ -574,7 +575,7 @@ function VirtualBackground({
                         showLabel = { previewIsLoaded }
                         storedImages = { storedImages } />}
                     <div
-                        className = { clsx(classes.dialog, { [classes.dialogMarginTop]: previewIsLoaded }) }
+                        className = { cx(classes.dialog, { [classes.dialogMarginTop]: previewIsLoaded }) }
                         role = 'radiogroup'
                         tabIndex = { -1 }>
                         <Tooltip
@@ -583,7 +584,7 @@ function VirtualBackground({
                             <div
                                 aria-checked = { _selectedThumbnail === 'none' }
                                 aria-label = { t('virtualBackground.removeBackground') }
-                                className = { clsx('background-option', 'virtual-background-none', {
+                                className = { cx('background-option', 'virtual-background-none', {
                                     'none-selected': _selectedThumbnail === 'none'
                                 }) }
                                 onClick = { removeBackground }
@@ -599,7 +600,7 @@ function VirtualBackground({
                             <div
                                 aria-checked = { _selectedThumbnail === 'slight-blur' }
                                 aria-label = { t('virtualBackground.slightBlur') }
-                                className = { clsx('background-option', 'slight-blur', {
+                                className = { cx('background-option', 'slight-blur', {
                                     'slight-blur-selected': _selectedThumbnail === 'slight-blur'
                                 }) }
                                 onClick = { enableSlideBlur }
@@ -615,7 +616,7 @@ function VirtualBackground({
                             <div
                                 aria-checked = { _selectedThumbnail === 'blur' }
                                 aria-label = { t('virtualBackground.blur') }
-                                className = { clsx('background-option', 'blur', {
+                                className = { cx('background-option', 'blur', {
                                     'blur-selected': _selectedThumbnail === 'blur'
                                 }) }
                                 onClick = { enableBlur }
@@ -632,7 +633,7 @@ function VirtualBackground({
                                 <div
                                     aria-checked = { _selectedThumbnail === 'desktop-share' }
                                     aria-label = { t('virtualBackground.desktopShare') }
-                                    className = { clsx('background-option', 'desktop-share', {
+                                    className = { cx('background-option', 'desktop-share', {
                                         'desktop-share-selected': _selectedThumbnail === 'desktop-share'
                                     }) }
                                     onClick = { shareDesktop }
@@ -674,7 +675,7 @@ function VirtualBackground({
                                 <img
                                     alt = { t('virtualBackground.uploadedImage', { index: index + 1 }) }
                                     aria-checked = { _selectedThumbnail === image.id }
-                                    className = { clsx('background-option', {
+                                    className = { cx('background-option', {
                                         'thumbnail-selected': _selectedThumbnail === image.id,
                                         'thumbnail': _selectedThumbnail !== image.id
                                     }) }

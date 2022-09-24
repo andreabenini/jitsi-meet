@@ -14,6 +14,7 @@ import { getMaxColumnCount } from '../video-layout';
 import {
     ADD_STAGE_PARTICIPANT,
     REMOVE_STAGE_PARTICIPANT,
+    RESIZE_FILMSTRIP,
     SET_STAGE_PARTICIPANTS,
     SET_FILMSTRIP_WIDTH,
     SET_HORIZONTAL_VIEW_DIMENSIONS,
@@ -23,7 +24,6 @@ import {
     SET_USER_IS_RESIZING,
     SET_VERTICAL_VIEW_DIMENSIONS,
     SET_VOLUME,
-    SET_MAX_STAGE_PARTICIPANTS,
     TOGGLE_PIN_STAGE_PARTICIPANT,
     CLEAR_STAGE_PARTICIPANTS,
     SET_SCREENSHARING_TILE_DIMENSIONS,
@@ -61,6 +61,23 @@ import {
 import { isStageFilmstripAvailable } from './functions.web';
 
 export * from './actions.any';
+
+/**
+ * Resize the filmstrip.
+ *
+ * @param {number} width - Width value for filmstrip.
+ *
+ * @returns {{
+ *  type: RESIZE_FILMSTRIP,
+ *  width: number,
+ * }}
+ */
+export function resizeFilmStrip(width) {
+    return {
+        type: RESIZE_FILMSTRIP,
+        width
+    };
+}
 
 /**
  * Sets the dimensions of the tile view grid.
@@ -493,19 +510,6 @@ export function setStageParticipants(queue) {
     return {
         type: SET_STAGE_PARTICIPANTS,
         queue
-    };
-}
-
-/**
- * Sets the max number of participants to be displayed on stage.
- *
- * @param {number} maxParticipants - Max number of participants.
- * @returns {Object}
- */
-export function setMaxStageParticipants(maxParticipants) {
-    return {
-        type: SET_MAX_STAGE_PARTICIPANTS,
-        maxParticipants
     };
 }
 

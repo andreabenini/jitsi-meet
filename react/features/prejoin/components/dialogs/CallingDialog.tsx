@@ -1,13 +1,15 @@
 /* eslint-disable lines-around-comment */
-import { makeStyles } from '@material-ui/styles';
+
+import { Theme } from '@mui/material';
 import React from 'react';
 import { WithTranslation } from 'react-i18next';
+import { makeStyles } from 'tss-react/mui';
 
 // @ts-ignore
 import { Avatar } from '../../../base/avatar';
 import { translate } from '../../../base/i18n/functions';
 import Icon from '../../../base/icons/components/Icon';
-import { IconClose } from '../../../base/icons/svg/index';
+import { IconClose } from '../../../base/icons/svg';
 // @ts-ignore
 import Label from '../Label';
 
@@ -16,25 +18,25 @@ interface Props extends WithTranslation {
     /**
      * The phone number that is being called.
      */
-    number: string,
+    number: string;
 
     /**
      * Closes the dialog.
      */
-    onClose: Function,
+    onClose: Function;
 
     /**
      * Handler used on hangup click.
      */
-    onHangup: Function,
+    onHangup: Function;
 
     /**
      * The status of the call.
      */
-    status: string
+    status: string;
 }
 
-const useStyles = makeStyles((theme: any) => {
+const useStyles = makeStyles()((theme: Theme) => {
     return {
         callingDialog: {
             padding: theme.spacing(3),
@@ -46,13 +48,13 @@ const useStyles = makeStyles((theme: any) => {
 
             '& .prejoin-dialog-calling-label': {
                 fontSize: '15px',
-                margin: `${theme.spacing(2)}px 0 ${theme.spacing(3)}px 0`
+                margin: `${theme.spacing(2)} 0 ${theme.spacing(3)} 0`
             },
 
             '& .prejoin-dialog-calling-number': {
                 fontSize: '19px',
                 lineHeight: '28px',
-                margin: `${theme.spacing(3)}px 0`
+                margin: `${theme.spacing(3)} 0`
             }
         }
     };
@@ -66,7 +68,7 @@ const useStyles = makeStyles((theme: any) => {
  */
 function CallingDialog(props: Props) {
     const { number, onClose, status, t } = props;
-    const classes = useStyles();
+    const { classes } = useStyles();
 
     return (
         <div className = { classes.callingDialog }>

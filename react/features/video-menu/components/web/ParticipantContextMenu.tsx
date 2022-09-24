@@ -1,24 +1,24 @@
 /* eslint-disable lines-around-comment */
-import { makeStyles } from '@material-ui/styles';
+
+import { Theme } from '@mui/material';
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
+import { makeStyles } from 'tss-react/mui';
 
 import { IState } from '../../../app/types';
 // @ts-ignore
 import { isSupported as isAvModerationSupported } from '../../../av-moderation/functions';
 // @ts-ignore
 import { Avatar } from '../../../base/avatar';
-// @ts-ignore
 import ContextMenu from '../../../base/components/context-menu/ContextMenu';
-// @ts-ignore
 import ContextMenuItemGroup from '../../../base/components/context-menu/ContextMenuItemGroup';
 import { isIosMobileBrowser, isMobileBrowser } from '../../../base/environment/utils';
-import { IconShareVideo } from '../../../base/icons/svg/index';
+import { IconShareVideo } from '../../../base/icons/svg';
 import { MEDIA_TYPE } from '../../../base/media/constants';
 import { PARTICIPANT_ROLE } from '../../../base/participants/constants';
 import { getLocalParticipant } from '../../../base/participants/functions';
-import { Participant } from '../../../base/participants/reducer';
+import { Participant } from '../../../base/participants/types';
 // @ts-ignore
 import { isParticipantAudioMuted } from '../../../base/tracks';
 // @ts-ignore
@@ -27,7 +27,6 @@ import { getBreakoutRooms, getCurrentRoomId, isInBreakoutRoom } from '../../../b
 import { setVolume } from '../../../filmstrip/actions.web';
 // @ts-ignore
 import { isStageFilmstripAvailable } from '../../../filmstrip/functions.web';
-// @ts-ignore
 import { isForceMuted } from '../../../participants-pane/functions';
 // @ts-ignore
 import { requestRemoteControl, stopController } from '../../../remote-control';
@@ -62,12 +61,12 @@ type Props = {
     /**
      * Class name for the context menu.
      */
-    className?: string,
+    className?: string;
 
     /**
      * Closes a drawer if open.
      */
-    closeDrawer?: () => void,
+    closeDrawer?: () => void;
 
     /**
      * The participant for which the drawer is open.
@@ -76,50 +75,50 @@ type Props = {
     drawerParticipant?: {
         displayName: string;
         participantID: string;
-    },
+    };
 
     /**
      * Shared video local participant owner.
      */
-    localVideoOwner?: boolean,
+    localVideoOwner?: boolean;
 
     /**
      * Target elements against which positioning calculations are made.
      */
-    offsetTarget?: HTMLElement,
+    offsetTarget?: HTMLElement;
 
     /**
      * Callback for the mouse entering the component.
      */
-    onEnter?: (e?: React.MouseEvent) => void,
+    onEnter?: (e?: React.MouseEvent) => void;
 
     /**
      * Callback for the mouse leaving the component.
      */
-    onLeave?: (e?: React.MouseEvent) => void,
+    onLeave?: (e?: React.MouseEvent) => void;
 
     /**
      * Callback for making a selection in the menu.
      */
-    onSelect: (value?: boolean | React.MouseEvent) => void,
+    onSelect: (value?: boolean | React.MouseEvent) => void;
 
     /**
      * Participant reference.
      */
-    participant: Participant,
+    participant: Participant;
 
     /**
      * The current state of the participant's remote control session.
      */
-    remoteControlState?: number,
+    remoteControlState?: number;
 
     /**
      * Whether or not the menu is displayed in the thumbnail remote video menu.
      */
-    thumbnailMenu?: boolean
-}
+    thumbnailMenu?: boolean;
+};
 
-const useStyles = makeStyles((theme: any) => {
+const useStyles = makeStyles()((theme: Theme) => {
     return {
         text: {
             color: theme.palette.text02,
@@ -148,20 +147,20 @@ const ParticipantContextMenu = ({
 }: Props) => {
     const dispatch = useDispatch();
     const { t } = useTranslation();
-    const styles = useStyles();
+    const { classes: styles } = useStyles();
 
     const localParticipant = useSelector(getLocalParticipant);
     const _isModerator = Boolean(localParticipant?.role === PARTICIPANT_ROLE.MODERATOR);
-    const _isAudioForceMuted = useSelector(state =>
+    const _isAudioForceMuted = useSelector<IState>(state =>
         isForceMuted(participant, MEDIA_TYPE.AUDIO, state));
-    const _isVideoForceMuted = useSelector(state =>
+    const _isVideoForceMuted = useSelector<IState>(state =>
         isForceMuted(participant, MEDIA_TYPE.VIDEO, state));
     const _isAudioMuted = useSelector(state => isParticipantAudioMuted(participant, state));
     const _overflowDrawer: boolean = useSelector(showOverflowDrawer);
     const { remoteVideoMenu = {}, disableRemoteMute, startSilent }
         = useSelector((state: IState) => state['features/base/config']);
     const { disableKick, disableGrantModerator, disablePrivateChat } = remoteVideoMenu;
-    const { participantsVolume } = useSelector((state: any) => state['features/filmstrip']);
+    const { participantsVolume } = useSelector((state: IState) => state['features/filmstrip']);
     const _volume = (participant?.local ?? true ? undefined
         : participant?.id ? participantsVolume[participant?.id] : undefined) ?? 1;
     const isBreakoutRoom = useSelector(isInBreakoutRoom);
@@ -169,7 +168,7 @@ const ParticipantContextMenu = ({
     const stageFilmstrip = useSelector(isStageFilmstripAvailable);
 
     const _currentRoomId = useSelector(getCurrentRoomId);
-    const _rooms: Array<{id: string}> = Object.values(useSelector(getBreakoutRooms));
+    const _rooms: Array<{ id: string; }> = Object.values(useSelector(getBreakoutRooms));
 
     const _onVolumeChange = useCallback(value => {
         dispatch(setVolume(participant.id, value));

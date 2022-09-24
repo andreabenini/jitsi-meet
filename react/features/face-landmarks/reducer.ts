@@ -4,10 +4,9 @@ import {
     ADD_FACE_EXPRESSION,
     ADD_TO_FACE_EXPRESSIONS_BUFFER,
     CLEAR_FACE_EXPRESSIONS_BUFFER,
-    START_FACE_LANDMARKS_DETECTION,
-    STOP_FACE_LANDMARKS_DETECTION,
     UPDATE_FACE_COORDINATES
 } from './actionTypes';
+import { FaceBox } from './types';
 
 const defaultState = {
     faceBoxes: {},
@@ -25,11 +24,7 @@ const defaultState = {
 };
 
 export interface IFaceLandmarksState {
-    faceBoxes: {
-        left?: number;
-        right?: number;
-        width?: number;
-    };
+    faceBoxes: { [key: string]: FaceBox; };
     faceExpressions: {
         angry: number;
         disgusted: number;
@@ -46,7 +41,8 @@ export interface IFaceLandmarksState {
     recognitionActive: boolean;
 }
 
-ReducerRegistry.register('features/face-landmarks', (state: IFaceLandmarksState = defaultState, action) => {
+ReducerRegistry.register<IFaceLandmarksState>('features/face-landmarks',
+(state = defaultState, action): IFaceLandmarksState => {
     switch (action.type) {
     case ADD_FACE_EXPRESSION: {
         return {
@@ -68,18 +64,6 @@ ReducerRegistry.register('features/face-landmarks', (state: IFaceLandmarksState 
         return {
             ...state,
             faceExpressionsBuffer: []
-        };
-    }
-    case START_FACE_LANDMARKS_DETECTION: {
-        return {
-            ...state,
-            recognitionActive: true
-        };
-    }
-    case STOP_FACE_LANDMARKS_DETECTION: {
-        return {
-            ...state,
-            recognitionActive: false
         };
     }
     case UPDATE_FACE_COORDINATES: {

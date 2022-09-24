@@ -55,7 +55,7 @@ import {
     removeBreakoutRoom,
     sendParticipantToRoom
 } from '../../react/features/breakout-rooms/actions';
-import { getBreakoutRooms } from '../../react/features/breakout-rooms/functions';
+import { getBreakoutRooms, getRoomsInfo } from '../../react/features/breakout-rooms/functions';
 import {
     sendMessage,
     setPrivateMessageRecipient,
@@ -68,7 +68,7 @@ import {
 import { appendSuffix } from '../../react/features/display-name';
 import { isEnabled as isDropboxEnabled } from '../../react/features/dropbox';
 import { setMediaEncryptionKey, toggleE2EE } from '../../react/features/e2ee/actions';
-import { setVolume } from '../../react/features/filmstrip';
+import { resizeFilmStrip, setVolume } from '../../react/features/filmstrip/actions.web';
 import { invite } from '../../react/features/invite';
 import {
     selectParticipantInLargeVideo
@@ -90,8 +90,9 @@ import {
     open as openParticipantsPane
 } from '../../react/features/participants-pane/actions';
 import { getParticipantsPaneOpen, isForceMuted } from '../../react/features/participants-pane/functions';
+import { startLocalVideoRecording, stopLocalVideoRecording } from '../../react/features/recording';
 import { RECORDING_TYPES } from '../../react/features/recording/constants';
-import { getActiveSession } from '../../react/features/recording/functions';
+import { getActiveSession, supportsLocalRecording } from '../../react/features/recording/functions';
 import { isScreenAudioSupported } from '../../react/features/screen-share';
 import { startScreenShareFlow, startAudioScreenShareFlow } from '../../react/features/screen-share/actions';
 import { toggleScreenshotCaptureSummary } from '../../react/features/screenshot-capture';
@@ -307,6 +308,16 @@ function initCommands() {
         'toggle-film-strip': () => {
             sendAnalytics(createApiEvent('film.strip.toggled'));
             APP.UI.toggleFilmstrip();
+        },
+
+        /*
+         * @param {Object} options - Additional details of how to perform
+         * the action.
+         * @param {number} options.width - width value for film strip.
+         */
+        'resize-film-strip': (options = {}) => {
+            sendAnalytics(createApiEvent('film.strip.resize'));
+            APP.store.dispatch(resizeFilmStrip(options.width));
         },
         'toggle-camera': () => {
             if (!isToggleCameraEnabled(APP.store.getState())) {
@@ -534,10 +545,12 @@ function initCommands() {
          * For youtube streams, `youtubeStreamKey` must be passed on. `youtubeBroadcastID` is optional.
          * For dropbox recording, recording `mode` should be `file` and a dropbox oauth2 token must be provided.
          * For file recording, recording `mode` should be `file` and optionally `shouldShare` could be passed on.
+         * For local recording, recording `mode` should be `local` and optionally `onlySelf` could be passed on.
          * No other params should be passed.
          *
-         * @param { string } arg.mode - Recording mode, either `file` or `stream`.
+         * @param { string } arg.mode - Recording mode, either `local`, `file` or `stream`.
          * @param { string } arg.dropboxToken - Dropbox oauth2 token.
+         * @param { boolean } arg.onlySelf - Whether to only record the local streams.
          * @param { string } arg.rtmpStreamKey - The RTMP stream key.
          * @param { string } arg.rtmpBroadcastID - The RTMP broadcast ID.
          * @param { boolean } arg.shouldShare - Whether the recording should be shared with the participants or not.
@@ -549,6 +562,7 @@ function initCommands() {
         'start-recording': ({
             mode,
             dropboxToken,
+            onlySelf,
             shouldShare,
             rtmpStreamKey,
             rtmpBroadcastID,
@@ -576,7 +590,26 @@ function initCommands() {
                 return;
             }
 
+            if (mode === 'local') {
+                const { localRecording } = state['features/base/config'];
+
+                if (!localRecording?.disable && supportsLocalRecording()) {
+                    APP.store.dispatch(startLocalVideoRecording(onlySelf));
+                } else {
+                    logger.error('Failed starting recording: local recording is either disabled or not supported');
+                }
+
+                return;
+            }
+
             let recordingConfig;
+            const { recordingService } = state['features/base/config'];
+
+            if (!recordingService.enabled && !dropboxToken) {
+                logger.error('Failed starting recording: the recording service is not enabled');
+
+                return;
+            }
 
             if (mode === JitsiRecordingConstants.mode.FILE) {
                 if (dropboxToken) {
@@ -622,7 +655,7 @@ function initCommands() {
         /**
          * Stops a recording or streaming in progress.
          *
-         * @param {string} mode - `file` or `stream`.
+         * @param {string} mode - `local`, `file` or `stream`.
          * @returns {void}
          */
         'stop-recording': mode => {
@@ -631,6 +664,12 @@ function initCommands() {
 
             if (!conference) {
                 logger.error('Conference is not defined');
+
+                return;
+            }
+
+            if (mode === 'local') {
+                APP.store.dispatch(stopLocalVideoRecording());
 
                 return;
             }
@@ -844,6 +883,10 @@ function initCommands() {
         }
         case 'list-breakout-rooms': {
             callback(getBreakoutRooms(APP.store.getState()));
+            break;
+        }
+        case 'rooms-info': {
+            callback(getRoomsInfo(APP.store.getState()));
             break;
         }
         default:
@@ -1783,7 +1826,7 @@ class API {
     /**
      * Notify external application that the breakout rooms changed.
      *
-     * @param {Array} rooms - Array of breakout rooms.
+     * @param {Array} rooms - Array containing the breakout rooms and main room.
      * @returns {void}
      */
     notifyBreakoutRoomsUpdated(rooms) {

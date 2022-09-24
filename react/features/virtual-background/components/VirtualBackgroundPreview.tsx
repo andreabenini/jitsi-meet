@@ -1,6 +1,7 @@
 /* eslint-disable lines-around-comment */
 import Spinner from '@atlaskit/spinner';
-import { withStyles } from '@material-ui/core/styles';
+import { Theme } from '@mui/material';
+import { withStyles } from '@mui/styles';
 import React, { PureComponent } from 'react';
 import { WithTranslation } from 'react-i18next';
 
@@ -18,9 +19,8 @@ import { getCurrentCameraDeviceId } from '../../base/settings';
 // @ts-ignore
 import { createLocalTracksF } from '../../base/tracks/functions';
 // @ts-ignore
-import { NOTIFICATION_TIMEOUT_TYPE } from '../../notifications';
-// @ts-ignore
 import { showWarningNotification } from '../../notifications/actions';
+import { NOTIFICATION_TIMEOUT_TYPE } from '../../notifications/constants';
 // @ts-ignore
 import { toggleBackgroundEffect } from '../actions';
 import { VIRTUAL_BACKGROUND_TYPE } from '../constants';
@@ -39,27 +39,27 @@ export type Props = WithTranslation & {
     /**
      * The deviceId of the camera device currently being used.
      */
-    _currentCameraDeviceId: string,
+    _currentCameraDeviceId: string;
 
     /**
      * An object containing the CSS classes.
      */
-    classes: any,
+    classes: any;
 
     /**
      * The redux {@code dispatch} function.
      */
-    dispatch: Function,
+    dispatch: Function;
 
     /**
      * Dialog callback that indicates if the background preview was loaded.
      */
-    loadedPreview: Function,
+    loadedPreview: Function;
 
     /**
      * Represents the virtual background set options.
      */
-    options: any
+    options: any;
 };
 
 /**
@@ -70,17 +70,17 @@ type State = {
     /**
      * Activate the selected device camera only.
      */
-    jitsiTrack: Object|null,
+    jitsiTrack: Object | null;
 
     /**
      * Loader activated on setting virtual background.
      */
-    loading: boolean,
+    loading: boolean;
 
     /**
      * Flag that indicates if the local track was loaded.
      */
-    localTrackLoaded: boolean
+    localTrackLoaded: boolean;
 };
 
 /**
@@ -90,7 +90,7 @@ type State = {
  *
  * @returns {Object}
  */
-const styles = (theme: any) => {
+const styles = (theme: Theme) => {
     return {
         virtualBackgroundPreview: {
             '& .video-preview': {
@@ -101,7 +101,7 @@ const styles = (theme: any) => {
                 marginLeft: '-10px',
                 height: '250px',
                 width: '570px',
-                marginBottom: `${theme.spacing(2)}px`,
+                marginBottom: theme.spacing(2),
                 zIndex: 2,
 
                 '@media (max-width: 632px)': {
@@ -113,7 +113,7 @@ const styles = (theme: any) => {
                 borderRadius: '6px',
                 backgroundColor: 'transparent',
                 height: '250px',
-                marginBottom: `${theme.spacing(2)}px`,
+                marginBottom: theme.spacing(2),
                 width: '572px',
                 position: 'fixed',
                 zIndex: 2,

@@ -2,6 +2,7 @@
 import React, { PureComponent } from 'react';
 import { WithTranslation } from 'react-i18next';
 
+import { IState } from '../../../app/types';
 import { translate } from '../../../base/i18n/functions';
 import { isLocalParticipantModerator } from '../../../base/participants/functions';
 import { connect } from '../../../base/redux/functions';
@@ -16,17 +17,17 @@ interface Props extends WithTranslation {
     /**
      * True if lobby is currently enabled in the conference.
      */
-    _lobbyEnabled: boolean,
+    _lobbyEnabled: boolean;
 
     /**
      * True if the section should be visible.
      */
-    _visible: boolean,
+    _visible: boolean;
 
     /**
      * The Redux Dispatch function.
      */
-    dispatch: Function
+    dispatch: Function;
 }
 
 type State = {
@@ -34,8 +35,8 @@ type State = {
     /**
      * True if the lobby switch is toggled on.
      */
-    lobbyEnabled: boolean
-}
+    lobbyEnabled: boolean;
+};
 
 /**
  * Implements a security feature section to control lobby mode.
@@ -129,7 +130,7 @@ class LobbySection extends PureComponent<Props, State> {
  * @param {Object} state - The Redux state.
  * @returns {Props}
  */
-function mapStateToProps(state: any): Partial<Props> {
+function mapStateToProps(state: IState): Partial<Props> {
     const { conference } = state['features/base/conference'];
     const { hideLobbyButton } = state['features/base/config'];
 

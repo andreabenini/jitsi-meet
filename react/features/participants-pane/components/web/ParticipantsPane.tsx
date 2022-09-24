@@ -1,5 +1,6 @@
 /* eslint-disable lines-around-comment */
-import { withStyles } from '@material-ui/core';
+import { Theme } from '@mui/material';
+import { withStyles } from '@mui/styles';
 import React, { Component } from 'react';
 import { WithTranslation } from 'react-i18next';
 
@@ -8,14 +9,13 @@ import participantsPaneTheme from '../../../base/components/themes/participantsP
 // @ts-ignore
 import { openDialog } from '../../../base/dialog';
 import { translate } from '../../../base/i18n/functions';
-import { IconClose, IconHorizontalPoints } from '../../../base/icons/svg/index';
+import { IconClose, IconHorizontalPoints } from '../../../base/icons/svg';
 // @ts-ignore
 import { isLocalParticipantModerator } from '../../../base/participants/functions';
 import { connect } from '../../../base/redux/functions';
 import Button from '../../../base/ui/components/web/Button';
 import ClickableIcon from '../../../base/ui/components/web/ClickableIcon';
 import { BUTTON_TYPES } from '../../../base/ui/constants';
-import { Theme } from '../../../base/ui/types';
 // @ts-ignore
 import { isAddBreakoutRoomButtonVisible } from '../../../breakout-rooms/functions';
 // @ts-ignore
@@ -29,16 +29,12 @@ import {
     isMuteAllVisible
     // @ts-ignore
 } from '../../functions';
-// @ts-ignore
 import { AddBreakoutRoomButton } from '../breakout-rooms/components/web/AddBreakoutRoomButton';
 // @ts-ignore
 import { RoomList } from '../breakout-rooms/components/web/RoomList';
 
-// @ts-ignore
 import { FooterContextMenu } from './FooterContextMenu';
-// @ts-ignore
 import LobbyParticipants from './LobbyParticipants';
-// @ts-ignore
 import MeetingParticipants from './MeetingParticipants';
 
 /**
@@ -49,47 +45,47 @@ interface Props extends WithTranslation {
     /**
      * Whether there is backend support for Breakout Rooms.
      */
-    _isBreakoutRoomsSupported: Boolean,
+    _isBreakoutRoomsSupported: Boolean;
 
     /**
      * Whether to display the context menu  as a drawer.
      */
-    _overflowDrawer: boolean,
+    _overflowDrawer: boolean;
 
     /**
      * Is the participants pane open.
      */
-    _paneOpen: boolean,
+    _paneOpen: boolean;
 
     /**
      * Should the add breakout room button be displayed?
      */
-    _showAddRoomButton: boolean,
+    _showAddRoomButton: boolean;
 
     /**
      * Whether to show the footer menu.
      */
-    _showFooter: boolean,
+    _showFooter: boolean;
 
     /**
      * Whether to show the more actions button.
      */
-    _showMoreActionsButton: boolean,
+    _showMoreActionsButton: boolean;
 
     /**
      * Whether to show the mute all button.
      */
-    _showMuteAllButton: boolean,
+    _showMuteAllButton: boolean;
 
     /**
      * An object containing the CSS classes.
      */
-    classes: any,
+    classes: any;
 
     /**
      * The Redux dispatch function.
      */
-    dispatch: Function
+    dispatch: Function;
 }
 
 /**
@@ -100,21 +96,21 @@ type State = {
     /**
      * Indicates if the footer context menu is open.
      */
-    contextOpen: boolean,
+    contextOpen: boolean;
 
     /**
      * Participants search string.
      */
-    searchString: string
+    searchString: string;
 };
 
 const styles = (theme: Theme) => {
     return {
         container: {
-            boxSizing: 'border-box',
+            boxSizing: 'border-box' as const,
             flex: 1,
-            overflowY: 'auto',
-            position: 'relative',
+            overflowY: 'auto' as const,
+            position: 'relative' as const,
             padding: `0 ${participantsPaneTheme.panePadding}px`,
 
             [`& > * + *:not(.${participantsPaneTheme.ignoredChildClassName})`]: {
@@ -135,7 +131,7 @@ const styles = (theme: Theme) => {
 
         header: {
             alignItems: 'center',
-            boxSizing: 'border-box',
+            boxSizing: 'border-box' as const,
             display: 'flex',
             height: `${participantsPaneTheme.headerSize}px`,
             padding: '0 20px',
@@ -157,15 +153,15 @@ const styles = (theme: Theme) => {
         footer: {
             display: 'flex',
             justifyContent: 'flex-end',
-            padding: `${theme.spacing(4)}px ${participantsPaneTheme.panePadding}px`,
+            padding: `${theme.spacing(4)} ${participantsPaneTheme.panePadding}px`,
 
             '& > *:not(:last-child)': {
-                marginRight: `${theme.spacing(3)}px`
+                marginRight: theme.spacing(3)
             }
         },
 
         footerMoreContainer: {
-            position: 'relative'
+            position: 'relative' as const
         }
     };
 };
@@ -381,5 +377,4 @@ function _mapStateToProps(state: IState) {
     };
 }
 
-// @ts-ignore
 export default translate(connect(_mapStateToProps)(withStyles(styles)(ParticipantsPane)));

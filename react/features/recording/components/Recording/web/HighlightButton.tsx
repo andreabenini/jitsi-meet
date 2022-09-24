@@ -1,5 +1,6 @@
 /* eslint-disable lines-around-comment */
-import { withStyles } from '@material-ui/core';
+import { Theme } from '@mui/material';
+import { withStyles } from '@mui/styles';
 import React from 'react';
 
 // @ts-ignore
@@ -8,8 +9,7 @@ import { StartRecordingDialog } from '../..';
 import { openDialog } from '../../../../base/dialog';
 import { translate } from '../../../../base/i18n/functions';
 import { IconHighlight } from '../../../../base/icons/svg';
-// @ts-ignore
-import { Label } from '../../../../base/label';
+import Label from '../../../../base/label/components/web/Label';
 import { connect } from '../../../../base/redux/functions';
 // @ts-ignore
 import { Tooltip } from '../../../../base/tooltip';
@@ -24,17 +24,17 @@ import AbstractHighlightButton, {
 } from '../AbstractHighlightButton';
 
 type Props = AbstractProps & {
-    _disabled: boolean,
+    _disabled: boolean;
 
     /**
      * The message to show within the label's tooltip.
      */
-    _tooltipKey: string,
+    _tooltipKey: string;
 
     /**
      * Flag controlling visibility of the component.
      */
-    _visible: boolean,
+    _visible: boolean;
 };
 
 /**
@@ -45,7 +45,7 @@ type State = {
     /**
      * Whether the notification which prompts for starting recording is open is not.
      */
-    isNotificationOpen: boolean
+    isNotificationOpen: boolean;
 };
 
 /**
@@ -55,7 +55,7 @@ type State = {
  *
  * @returns {Object}
  */
-const styles = (theme: any) => {
+const styles = (theme: Theme) => {
     return {
         container: {
             position: 'relative'
@@ -64,11 +64,11 @@ const styles = (theme: any) => {
             background: theme.palette.text02,
             margin: '0 4px 4px 4px'
         },
-        regular: {
+        regular: { // @ts-ignore
             background: theme.palette.field02,
             margin: '0 4px 4px 4px'
         },
-        highlightNotification: {
+        highlightNotification: { // @ts-ignore
             backgroundColor: theme.palette.field02,
             borderRadius: '6px',
             boxShadow: '0px 6px 20px rgba(0, 0, 0, 0.25)',
@@ -82,7 +82,7 @@ const styles = (theme: any) => {
             top: '32px',
             width: 320
         },
-        highlightNotificationButton: {
+        highlightNotificationButton: { // @ts-ignore
             color: theme.palette.field01Focus,
             cursor: 'pointer',
             fontWeight: '600',
@@ -154,8 +154,8 @@ export class HighlightButton extends AbstractHighlightButton<Props, State> {
     * @param {Event} e - The click event.
     * @returns {void}
     */
-    _onClick(e: React.MouseEvent) {
-        e.stopPropagation();
+    _onClick(e?: React.MouseEvent) {
+        e?.stopPropagation();
 
         // @ts-ignore
         const { _disabled } = this.props;

@@ -3,8 +3,8 @@ import React, { ComponentType, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 
-// @ts-ignore
-import { sendAnalytics, createPollEvent } from '../../analytics';
+import { createPollEvent } from '../../analytics/AnalyticsEvents';
+import { sendAnalytics } from '../../analytics/functions';
 import { IState } from '../../app/types';
 import { getLocalParticipant, getParticipantById } from '../../base/participants/functions';
 import { useBoundSelector } from '../../base/util/hooks';
@@ -17,7 +17,7 @@ import { Poll } from '../types';
  * The type of the React {@code Component} props of inheriting component.
  */
 type InputProps = {
-    pollId: string,
+    pollId: string;
 };
 
 /*
@@ -25,14 +25,14 @@ type InputProps = {
  * concrete implementations (web/native).
  **/
 export type AbstractProps = {
-    checkBoxStates: boolean[],
-    creatorName: string,
-    poll: Poll,
-    setCheckbox: Function,
-    skipAnswer: () => void,
-    skipChangeVote: () => void,
-    submitAnswer: () => void,
-    t: Function,
+    checkBoxStates: boolean[];
+    creatorName: string;
+    poll: Poll;
+    setCheckbox: Function;
+    skipAnswer: () => void;
+    skipChangeVote: () => void;
+    submitAnswer: () => void;
+    t: Function;
 };
 
 /**
@@ -48,9 +48,9 @@ const AbstractPollAnswer = (Component: ComponentType<AbstractProps>) => (props: 
 
     const conference: any = useSelector((state: IState) => state['features/base/conference'].conference);
 
-    const poll: Poll = useSelector((state: any) => state['features/polls'].polls[pollId]);
+    const poll: Poll = useSelector((state: IState) => state['features/polls'].polls[pollId]);
 
-    const { id: localId } = useSelector(getLocalParticipant);
+    const { id: localId } = useSelector(getLocalParticipant) ?? { id: '' };
 
     const [ checkBoxStates, setCheckBoxState ] = useState(() => {
         if (poll.lastVote !== null) {

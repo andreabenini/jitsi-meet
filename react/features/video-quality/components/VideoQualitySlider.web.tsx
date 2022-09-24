@@ -1,12 +1,14 @@
 /* eslint-disable lines-around-comment */
-import { withStyles } from '@material-ui/core/styles';
+import { Theme } from '@mui/material';
+import { withStyles } from '@mui/styles';
 import clsx from 'clsx';
 import React, { Component } from 'react';
 import { WithTranslation } from 'react-i18next';
 import type { Dispatch } from 'redux';
 
-// @ts-ignore
-import { createToolbarEvent, sendAnalytics } from '../../analytics';
+import { createToolbarEvent } from '../../analytics/AnalyticsEvents';
+import { sendAnalytics } from '../../analytics/functions';
+import { IState } from '../../app/types';
 // @ts-ignore
 import { setAudioOnly } from '../../base/audio-only';
 import { translate } from '../../base/i18n/functions';
@@ -16,7 +18,6 @@ import { connect } from '../../base/redux/functions';
 import { withPixelLineHeight } from '../../base/styles/functions.web';
 // @ts-ignore
 import { setPreferredVideoQuality } from '../actions';
-// @ts-ignore
 import { DEFAULT_LAST_N, VIDEO_QUALITY_LEVELS } from '../constants';
 // @ts-ignore
 import logger from '../logger';
@@ -54,33 +55,33 @@ interface Props extends WithTranslation {
     /**
      * Whether or not the conference is in audio only mode.
      */
-    _audioOnly: Boolean,
+    _audioOnly: Boolean;
 
     /**
      * The channelLastN value configured for the conference.
      */
-    _channelLastN: Number,
+    _channelLastN: Number;
 
     /**
      * Whether or not the conference is in peer to peer mode.
      */
-    _p2p: Boolean,
+    _p2p: Boolean;
 
     /**
      * The currently configured maximum quality resolution to be sent and
      * received from the remote participants.
      */
-    _sendrecvVideoQuality: Number,
+    _sendrecvVideoQuality: Number;
 
     /**
      * An object containing the CSS classes.
      */
-    classes: any,
+    classes: any;
 
     /**
      * Invoked to request toggling of audio only mode.
      */
-    dispatch: Dispatch<any>
+    dispatch: Dispatch<any>;
 }
 
 /**
@@ -90,7 +91,7 @@ interface Props extends WithTranslation {
  *
  * @returns {Object}
  */
-const styles = (theme: any) => {
+const styles = (theme: Theme) => {
     return {
         dialog: {
             color: theme.palette.text01
@@ -360,7 +361,7 @@ class VideoQualitySlider extends Component<Props> {
  * @private
  * @returns {Props}
  */
-function _mapStateToProps(state: any) {
+function _mapStateToProps(state: IState) {
     const { enabled: audioOnly } = state['features/base/audio-only'];
     const { p2p } = state['features/base/conference'];
     const { preferredVideoQuality } = state['features/video-quality'];

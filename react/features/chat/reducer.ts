@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { LocalParticipant, Participant } from '../base/participants/reducer';
+import { LocalParticipant, Participant } from '../base/participants/types';
 import ReducerRegistry from '../base/redux/ReducerRegistry';
 
 import {
@@ -49,13 +49,13 @@ export interface IChatState {
     lobbyMessageRecipient?: {
         id: string;
         name: string;
-    } | LocalParticipant,
+    } | LocalParticipant;
     messages: IMessage[];
     nbUnreadMessages: number;
     privateMessageRecipient?: Participant;
 }
 
-ReducerRegistry.register('features/chat', (state: IChatState = DEFAULT_STATE, action) => {
+ReducerRegistry.register<IChatState>('features/chat', (state = DEFAULT_STATE, action): IChatState => {
     switch (action.type) {
     case ADD_MESSAGE: {
         const newMessage: IMessage = {

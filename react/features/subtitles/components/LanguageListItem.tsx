@@ -1,23 +1,18 @@
-// @ts-ignore
-import { makeStyles } from '@material-ui/styles';
+import { Theme } from '@mui/material';
 import React, { useCallback } from 'react';
 import { WithTranslation } from 'react-i18next';
+import { makeStyles } from 'tss-react/mui';
 
-// @ts-ignore
-// eslint-disable-next-line import/order
-import { translate } from '../../base/i18n';
-
-// @ts-ignore
-import { Icon } from '../../base/icons/components';
-import { IconCheck } from '../../base/icons/svg/index';
-import { Theme } from '../../base/ui/types';
+import { translate } from '../../base/i18n/functions';
+import Icon from '../../base/icons/components/Icon';
+import { IconCheck } from '../../base/icons/svg';
 
 interface ILanguageListItemProps extends WithTranslation {
 
     /**
      * Whether or not the button should be full width.
      */
-    lang: string,
+    lang: string;
 
     /**
      * Click callback.
@@ -30,7 +25,7 @@ interface ILanguageListItemProps extends WithTranslation {
     selected?: boolean;
 }
 
-const useStyles = makeStyles((theme: Theme) => {
+const useStyles = makeStyles()((theme: Theme) => {
     return {
         itemContainer: {
             display: 'flex',
@@ -61,7 +56,7 @@ const LanguageListItem = ({
     selected,
     onLanguageSelected
 }: ILanguageListItemProps) => {
-    const styles = useStyles();
+    const { classes: styles } = useStyles();
     const onLanguageSelectedWrapper = useCallback(() => onLanguageSelected(lang), [ lang ]);
 
     return (

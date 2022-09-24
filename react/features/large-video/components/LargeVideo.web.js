@@ -3,10 +3,12 @@
 import React, { Component } from 'react';
 
 import VideoLayout from '../../../../modules/UI/videolayout/VideoLayout';
+import { getMultipleVideoSupportFeatureFlag } from '../../base/config';
+import { MEDIA_TYPE, VIDEO_TYPE } from '../../base/media';
 import { getLocalParticipant } from '../../base/participants';
 import { Watermarks } from '../../base/react';
 import { connect } from '../../base/redux';
-import { getVideoTrackByParticipant } from '../../base/tracks';
+import { getTrackByMediaTypeAndParticipant, getVirtualScreenshareParticipantTrack } from '../../base/tracks';
 import { setColorAlpha } from '../../base/util';
 import { StageParticipantNameLabel } from '../../display-name';
 import { FILMSTRIP_BREAKPOINT, isFilmstripResizable } from '../../filmstrip';
@@ -19,6 +21,8 @@ import { setSeeWhatIsBeingShared } from '../actions.web';
 
 import ScreenSharePlaceholder from './ScreenSharePlaceholder.web';
 
+// Hack to detect Spot.
+const SPOT_DISPLAY_NAME = 'Meeting Room';
 
 declare var interfaceConfig: Object;
 
@@ -38,6 +42,11 @@ type Props = {
      * The user selected background image url.
      */
     _customBackgroundImageUrl: string,
+
+    /**
+     * Whether the screen-sharing placeholder should be displayed or not.
+     */
+    _displayScreenSharingPlaceholder: boolean,
 
     /**
      * Prop that indicates whether the chat is open.
@@ -80,10 +89,10 @@ type Props = {
      */
      _largeVideoParticipantId: string,
 
-        /**
-     * Whether or not the screen sharing is on.
+    /**
+     * Whether or not the local screen share is on large-video.
      */
-        _isScreenSharing: boolean,
+    _isScreenSharing: boolean,
 
     /**
      * Whether or not the screen sharing is visible.
@@ -154,11 +163,10 @@ class LargeVideo extends Component<Props> {
      */
     render() {
         const {
+            _displayScreenSharingPlaceholder,
             _isChatOpen,
             _noAutoPlayVideo,
-            _showDominantSpeakerBadge,
-            _isScreenSharing,
-            _seeWhatIsBeingShared
+            _showDominantSpeakerBadge
         } = this.props;
         const style = this._getCustomStyles();
         const className = `videocontainer${_isChatOpen ? ' shift-right' : ''}`;
@@ -197,11 +205,11 @@ class LargeVideo extends Component<Props> {
                         onTouchEnd = { this._onDoubleTap }
                         ref = { this._wrapperRef }
                         role = 'figure' >
-                        {_isScreenSharing && !_seeWhatIsBeingShared ? <ScreenSharePlaceholder /> : <video
+                        { _displayScreenSharingPlaceholder ? <ScreenSharePlaceholder /> : <video
                             autoPlay = { !_noAutoPlayVideo }
                             id = 'largeVideo'
                             muted = { true }
-                            playsInline = { true } /* for Safari on iOS to work */ />}
+                            playsInline = { true } /* for Safari on iOS to work */ /> }
                     </div>
                 </div>
                 { interfaceConfig.DISABLE_TRANSCRIPTION_SUBTITLES
@@ -321,25 +329,35 @@ function _mapStateToProps(state) {
     const { backgroundColor, backgroundImageUrl } = state['features/dynamic-branding'];
     const { isOpen: isChatOpen } = state['features/chat'];
     const { width: verticalFilmstripWidth, visible } = state['features/filmstrip'];
-    const { hideDominantSpeakerBadge } = state['features/base/config'];
+    const { defaultLocalDisplayName, hideDominantSpeakerBadge } = state['features/base/config'];
+    const { seeWhatIsBeingShared } = state['features/large-video'];
 
     const tracks = state['features/base/tracks'];
     const localParticipantId = getLocalParticipant(state)?.id;
     const largeVideoParticipant = getLargeVideoParticipant(state);
-    const videoTrack = getVideoTrackByParticipant(tracks, largeVideoParticipant);
-    const localParticipantisSharingTheScreen = largeVideoParticipant?.id?.includes(localParticipantId);
-    const isScreenSharing = localParticipantisSharingTheScreen && videoTrack?.videoType === 'desktop';
+    let videoTrack;
+
+    if (getMultipleVideoSupportFeatureFlag(state) && largeVideoParticipant?.isVirtualScreenshareParticipant) {
+        videoTrack = getVirtualScreenshareParticipantTrack(tracks, largeVideoParticipant?.id);
+    } else {
+        videoTrack = getTrackByMediaTypeAndParticipant(tracks, MEDIA_TYPE.VIDEO, largeVideoParticipant?.id);
+    }
+    const isLocalScreenshareOnLargeVideo = largeVideoParticipant?.id?.includes(localParticipantId)
+        && videoTrack?.videoType === VIDEO_TYPE.DESKTOP;
+
+    const isOnSpot = defaultLocalDisplayName === SPOT_DISPLAY_NAME;
 
     return {
         _backgroundAlpha: state['features/base/config'].backgroundAlpha,
         _customBackgroundColor: backgroundColor,
         _customBackgroundImageUrl: backgroundImageUrl,
+        _displayScreenSharingPlaceholder: isLocalScreenshareOnLargeVideo && !seeWhatIsBeingShared && !isOnSpot,
         _isChatOpen: isChatOpen,
-        _isScreenSharing: isScreenSharing,
+        _isScreenSharing: isLocalScreenshareOnLargeVideo,
         _largeVideoParticipantId: largeVideoParticipant?.id,
         _noAutoPlayVideo: testingConfig?.noAutoPlayVideo,
         _resizableFilmstrip: isFilmstripResizable(state),
-        _seeWhatIsBeingShared: state['features/large-video'].seeWhatIsBeingShared,
+        _seeWhatIsBeingShared: seeWhatIsBeingShared,
         _showDominantSpeakerBadge: !hideDominantSpeakerBadge,
         _verticalFilmstripWidth: verticalFilmstripWidth.current,
         _verticalViewMaxWidth: getVerticalViewMaxWidth(state),

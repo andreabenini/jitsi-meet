@@ -22,6 +22,8 @@ if (subdomain.startsWith('<!--')) {
     subdomain = '';
 }
 
+var enableJaaS = false;
+
 var config = {
     // Connection
     //
@@ -112,7 +114,7 @@ var config = {
 
         // Signal that this client supports receiving multiple video streams. Without this flag jicofo will enable
         // multi-stream backward compatibility.
-        receiveMultipleVideoStreams: true,
+        // receiveMultipleVideoStreams: true,
     },
 
     // Disables moderator indicators.
@@ -822,7 +824,7 @@ var config = {
     // Application ID and Secret.
     // callStatsID: '',
     // callStatsSecret: '',
-    // callstatsStoreLogs: true,
+    // callStatsApplicationLogsDisabled: false,
 
     // The callstats initialize config params as described in the API:
     // https://docs.callstats.io/docs/javascript#callstatsinitialize-with-app-secret
@@ -1287,11 +1289,6 @@ var config = {
     // {"countryCode":"US","tollFree":false,"formattedNumber":"+1 123-456-7890"}
     // dialInConfCodeUrl is the conference mapper converting a meeting id to a PIN used for dial-in
     // or the other way around (more info in resources/cloud-api.swagger)
-    //
-    // For JaaS customers the default values are:
-    // dialInNumbersUrl: 'https://conference-mapper.jitsi.net/v1/access/dids',
-    // dialInConfCodeUrl: 'https://conference-mapper.jitsi.net/v1/access',
-    //
 
     // List of undocumented settings used in jitsi-meet
     /**
@@ -1444,6 +1441,10 @@ var config = {
     //     // (displaying multiple participants on stage besides the vertical filmstrip)
     //     disableStageFilmstrip: false,
 
+    //     // Default number of participants that can be displayed on stage.
+    //     // The user can change this in settings. Number must be between 1 and 6.
+    //     stageFilmstripParticipants: 1,
+
     //     // Disables the top panel (only shown when a user is sharing their screen).
     //     disableTopPanel: false,
 
@@ -1494,3 +1495,10 @@ var config = {
     // Application logo url
     // defaultLogoUrl: 'images/watermark.svg',
 };
+
+// Set the default values for JaaS customers
+if (enableJaaS) {
+    config.dialInNumbersUrl = 'https://conference-mapper.jitsi.net/v1/access/dids';
+    config.dialInConfCodeUrl = 'https://conference-mapper.jitsi.net/v1/access';
+    config.roomPasswordNumberOfDigits = 10; // skip re-adding it (do not remove comment)
+}

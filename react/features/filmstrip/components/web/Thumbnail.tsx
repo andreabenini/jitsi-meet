@@ -1,11 +1,14 @@
 /* eslint-disable lines-around-comment */
-import { withStyles } from '@material-ui/styles';
+import { Theme } from '@mui/material';
+import { withStyles } from '@mui/styles';
 import clsx from 'clsx';
 import debounce from 'lodash/debounce';
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
-// @ts-ignore
-import { createScreenSharingIssueEvent, sendAnalytics } from '../../../analytics';
+import { createScreenSharingIssueEvent } from '../../../analytics/AnalyticsEvents';
+import { sendAnalytics } from '../../../analytics/functions';
+import { IState } from '../../../app/types';
 // @ts-ignore
 import { Avatar } from '../../../base/avatar';
 // @ts-ignore
@@ -13,15 +16,15 @@ import { getMultipleVideoSupportFeatureFlag, getSourceNameSignalingFeatureFlag }
 import { isMobileBrowser } from '../../../base/environment/utils';
 import { JitsiTrackEvents } from '../../../base/lib-jitsi-meet';
 // @ts-ignore
-import { MEDIA_TYPE, VideoTrack } from '../../../base/media';
+import { VideoTrack } from '../../../base/media';
+import { MEDIA_TYPE } from '../../../base/media/constants';
 import { pinParticipant } from '../../../base/participants/actions';
 import {
     getLocalParticipant,
     getParticipantByIdOrUndefined,
     hasRaisedHand
 } from '../../../base/participants/functions';
-import { Participant } from '../../../base/participants/reducer';
-import { connect } from '../../../base/redux/functions';
+import { Participant } from '../../../base/participants/types';
 import { ASPECT_RATIO_NARROW } from '../../../base/responsive-ui/constants';
 // @ts-ignore
 import { isTestModeEnabled } from '../../../base/testing';
@@ -34,7 +37,6 @@ import {
     trackStreamingStatusChanged
     // @ts-ignore
 } from '../../../base/tracks';
-// @ts-ignore
 import { getVideoObjectPosition } from '../../../face-landmarks/functions';
 // @ts-ignore
 import { hideGif, showGif } from '../../../gifs/actions';
@@ -43,7 +45,8 @@ import { getGifDisplayMode, getGifForParticipant } from '../../../gifs/functions
 // @ts-ignore
 import { PresenceLabel } from '../../../presence-status';
 // @ts-ignore
-import { getCurrentLayout, LAYOUTS } from '../../../video-layout';
+import { getCurrentLayout } from '../../../video-layout';
+import { LAYOUTS } from '../../../video-layout/constants';
 // @ts-ignore
 import { togglePinStageParticipant } from '../../actions';
 import {
@@ -82,22 +85,22 @@ export type State = {
     /**
      * Indicates that the canplay event has been received.
      */
-    canPlayEventReceived: boolean,
+    canPlayEventReceived: boolean;
 
     /**
      * The current display mode of the thumbnail.
      */
-    displayMode: number,
+    displayMode: number;
 
     /**
      * Indicates whether the thumbnail is hovered or not.
      */
-    isHovered: boolean,
+    isHovered: boolean;
 
     /**
      * Whether popover is visible or not.
      */
-    popoverVisible: boolean
+    popoverVisible: boolean;
 };
 
 /**
@@ -108,187 +111,187 @@ export type Props = {
     /**
      * The audio track related to the participant.
      */
-    _audioTrack?: Object,
+    _audioTrack?: Object;
 
     /**
      * Indicates whether the local video flip feature is disabled or not.
      */
-    _disableLocalVideoFlip: boolean,
+    _disableLocalVideoFlip: boolean;
 
     /**
      * Indicates whether enlargement of tiles to fill the available space is disabled.
      */
-    _disableTileEnlargement: boolean,
+    _disableTileEnlargement: boolean;
 
     /**
      * URL of GIF sent by this participant, null if there's none.
      */
-    _gifSrc?: string,
+    _gifSrc?: string;
 
     /**
      * The height of the Thumbnail.
      */
-    _height: number,
+    _height: number;
 
     /**
      * Whether or not the participant is displayed on the stage filmstrip.
      * Used to hide the video from the vertical filmstrip.
      */
-    _isActiveParticipant: boolean,
+    _isActiveParticipant: boolean;
 
     /**
      * Indicates whether audio only mode is enabled.
      */
-    _isAudioOnly: boolean,
+    _isAudioOnly: boolean;
 
     /**
      * Indicates whether the participant associated with the thumbnail is displayed on the large video.
      */
-    _isCurrentlyOnLargeVideo: boolean,
+    _isCurrentlyOnLargeVideo: boolean;
 
     /**
      * Disable/enable the dominant speaker indicator.
      */
-    _isDominantSpeakerDisabled: boolean,
+    _isDominantSpeakerDisabled: boolean;
 
     /**
      * Indicates whether the thumbnail should be hidden or not.
      */
-    _isHidden: boolean,
+    _isHidden: boolean;
 
     /**
      * Whether we are currently running in a mobile browser.
      */
-    _isMobile: boolean,
+    _isMobile: boolean;
 
     /**
      * Whether we are currently running in a mobile browser in portrait orientation.
      */
-    _isMobilePortrait: boolean,
+    _isMobilePortrait: boolean;
 
     /**
      * Indicates whether the participant is screen sharing.
      */
-    _isScreenSharing: boolean,
+    _isScreenSharing: boolean;
 
     /**
      * Indicates whether testing mode is enabled.
      */
-    _isTestModeEnabled: boolean,
+    _isTestModeEnabled: boolean;
 
     /**
      * Indicates whether the video associated with the thumbnail is playable.
      */
-    _isVideoPlayable: boolean,
+    _isVideoPlayable: boolean;
 
     /**
      * Indicates whether the participant is a virtual screen share participant. This prop is behind the
      * sourceNameSignaling feature flag.
      */
-    _isVirtualScreenshareParticipant: boolean,
+    _isVirtualScreenshareParticipant: boolean;
 
     /**
      * The current local video flip setting.
      */
-    _localFlipX: boolean,
+    _localFlipX: boolean;
 
     /**
      * An object with information about the participant related to the thumbnail.
      */
-    _participant: Participant,
+    _participant: Participant;
 
     /**
      * Whether or not the participant has the hand raised.
      */
-    _raisedHand: boolean,
+    _raisedHand: boolean;
 
     /**
      * Whether source name signaling is enabled.
      */
-    _sourceNameSignalingEnabled: boolean,
+    _sourceNameSignalingEnabled: boolean;
 
     /**
      * Whether or not the current layout is stage filmstrip layout.
      */
-    _stageFilmstripLayout: boolean,
+    _stageFilmstripLayout: boolean;
 
     /**
      * Whether or not the participants are displayed on stage.
      * (and not screensharing or shared video; used to determine
      * whether or not the display the participant video in the vertical filmstrip).
      */
-    _stageParticipantsVisible: boolean,
+    _stageParticipantsVisible: boolean;
 
     /**
      * The type of thumbnail to display.
      */
-    _thumbnailType: string,
+    _thumbnailType: string;
 
     /**
      * The video object position for the participant.
      */
-    _videoObjectPosition: string,
+    _videoObjectPosition: string;
 
     /**
      * The video track that will be displayed in the thumbnail.
      */
-    _videoTrack?: any,
+    _videoTrack?: any;
 
     /**
      * The width of the thumbnail.
      */
-    _width: number,
+    _width: number;
 
     /**
      * An object containing CSS classes.
      */
-    classes: any,
+    classes: any;
 
     /**
      * The redux dispatch function.
      */
-    dispatch: Function,
+    dispatch: Function;
 
     /**
      * The type of filmstrip the tile is displayed in.
      */
-    filmstripType: string,
+    filmstripType: string;
 
     /**
      * The horizontal offset in px for the thumbnail. Used to center the thumbnails from the last row in tile view.
      */
-    horizontalOffset: number,
+    horizontalOffset: number;
 
     /**
      * The ID of the participant related to the thumbnail.
      */
-    participantID?: string,
+    participantID?: string;
 
     /**
      * Styles that will be set to the Thumbnail's main span element.
      */
-    style?: any,
+    style?: any;
 
     /**
      * The width of the thumbnail. Used for expanding the width of the thumbnails on last row in case
      * there is empty space.
      */
-    width?: number
+    width?: number;
 };
 
-const defaultStyles = (theme: any) => {
+const defaultStyles = (theme: Theme) => {
     return {
         indicatorsContainer: {
-            position: 'absolute',
-            padding: `${theme.spacing(1)}px`,
+            position: 'absolute' as const,
+            padding: theme.spacing(1),
             zIndex: 10,
             width: '100%',
-            boxSizing: 'border-box',
+            boxSizing: 'border-box' as const,
             display: 'flex',
             left: 0,
 
             '&.tile-view-mode': {
-                padding: `${theme.spacing(2)}px`
+                padding: theme.spacing(2)
             }
         },
 
@@ -323,7 +326,7 @@ const defaultStyles = (theme: any) => {
         },
 
         containerBackground: {
-            position: 'absolute',
+            position: 'absolute' as const,
             top: 0,
             left: 0,
             height: '100%',
@@ -333,7 +336,7 @@ const defaultStyles = (theme: any) => {
         },
 
         borderIndicator: {
-            position: 'absolute',
+            position: 'absolute' as const,
             width: '100%',
             height: '100%',
             zIndex: 9,
@@ -357,7 +360,7 @@ const defaultStyles = (theme: any) => {
         },
 
         gif: {
-            position: 'absolute',
+            position: 'absolute' as const,
             width: '100%',
             height: '100%',
             zIndex: 11,
@@ -656,12 +659,12 @@ class Thumbnail extends Component<Props, State> {
         const isTileType = _thumbnailType === THUMBNAIL_TYPE.TILE;
         const jitsiVideoTrack = _videoTrack?.jitsiTrack;
         const track = jitsiVideoTrack?.track;
-        const isPortraitVideo = ((track && track.getSettings()?.aspectRatio) || 1) < 1;
+        const isPortraitVideo = (track?.getSettings()?.aspectRatio || 1) < 1;
 
         let styles: {
-            avatar: Object,
-            thumbnail: any,
-            video: Object
+            avatar: Object;
+            thumbnail: any;
+            video: Object;
         } = {
             thumbnail: {},
             avatar: {},
@@ -991,7 +994,7 @@ class Thumbnail extends Component<Props, State> {
         const videoTrackClassName
             = !_disableLocalVideoFlip && _videoTrack && !_isScreenSharing && _localFlipX ? 'flipVideoX' : '';
         const jitsiVideoTrack = _videoTrack?.jitsiTrack;
-        const videoTrackId = jitsiVideoTrack && jitsiVideoTrack.getId();
+        const videoTrackId = jitsiVideoTrack?.getId();
         const videoEventListeners: any = {};
 
         if (local) {
@@ -1103,13 +1106,14 @@ class Thumbnail extends Component<Props, State> {
      * @returns {ReactElement}
      */
     render() {
-        const { _participant, _isVirtualScreenshareParticipant } = this.props;
+        const { _participant, _isTestModeEnabled, _isVirtualScreenshareParticipant } = this.props;
+        const videoEventListeners: any = {};
 
         if (!_participant) {
             return null;
         }
 
-        const { isFakeParticipant, local } = _participant;
+        const { isFakeParticipant, isLocalScreenShare, local } = _participant;
 
         if (local) {
             return this._renderParticipant(true);
@@ -1123,12 +1127,19 @@ class Thumbnail extends Component<Props, State> {
             const { isHovered } = this.state;
             const { _videoTrack, _isMobile, classes, _thumbnailType } = this.props;
 
+            if (_isTestModeEnabled) {
+                VIDEO_TEST_EVENTS.forEach(attribute => {
+                    videoEventListeners[attribute] = this._onTestingEvent;
+                });
+                videoEventListeners.onCanPlay = this._onCanPlay;
+            }
+
             return (
                 <VirtualScreenshareParticipant
                     classes = { classes }
                     containerClassName = { this._getContainerClassName() }
                     isHovered = { isHovered }
-                    isLocal = { local }
+                    isLocal = { isLocalScreenShare }
                     isMobile = { _isMobile }
                     onClick = { this._onClick }
                     onMouseEnter = { this._onMouseEnter }
@@ -1156,18 +1167,19 @@ class Thumbnail extends Component<Props, State> {
  * @private
  * @returns {Props}
  */
-function _mapStateToProps(state: any, ownProps: any): Object {
+function _mapStateToProps(state: IState, ownProps: any): Object {
     const { participantID, filmstripType = FILMSTRIP_TYPE.MAIN } = ownProps;
 
     const participant = getParticipantByIdOrUndefined(state, participantID);
     const id = participant?.id;
     const isLocal = participant?.local ?? true;
-    const tracks = state['features/base/tracks'];
+    const multipleVideoSupportEnabled = getMultipleVideoSupportFeatureFlag(state);
     const sourceNameSignalingEnabled = getSourceNameSignalingFeatureFlag(state);
+    const tracks = state['features/base/tracks'];
 
     let _videoTrack;
 
-    if (sourceNameSignalingEnabled && participant?.isVirtualScreenshareParticipant) {
+    if (multipleVideoSupportEnabled && participant?.isVirtualScreenshareParticipant) {
         _videoTrack = getVirtualScreenshareParticipantTrack(tracks, id);
     } else {
         _videoTrack = isLocal
@@ -1208,6 +1220,7 @@ function _mapStateToProps(state: any, ownProps: any): Object {
         const { local, remote }
             = tileType === THUMBNAIL_TYPE.VERTICAL
                 ? verticalViewDimensions : horizontalViewDimensions;
+        // @ts-ignore
         const { width, height } = (isLocal ? local : remote) ?? {};
 
         size = {
@@ -1216,6 +1229,7 @@ function _mapStateToProps(state: any, ownProps: any): Object {
         };
 
         if (_verticalViewGrid) {
+            // @ts-ignore
             const { width: _width, height: _height } = verticalViewDimensions.gridView.thumbnailSize;
 
             size = {
@@ -1229,6 +1243,7 @@ function _mapStateToProps(state: any, ownProps: any): Object {
         break;
     }
     case THUMBNAIL_TYPE.TILE: {
+        // @ts-ignore
         const { thumbnailSize } = state['features/filmstrip'].tileViewDimensions;
         const {
             stageFilmstripDimensions = {
@@ -1243,6 +1258,7 @@ function _mapStateToProps(state: any, ownProps: any): Object {
         };
 
         if (filmstripType === FILMSTRIP_TYPE.STAGE) {
+            // @ts-ignore
             const { width: _width, height: _height } = stageFilmstripDimensions.thumbnailSize;
 
             size = {
@@ -1250,6 +1266,7 @@ function _mapStateToProps(state: any, ownProps: any): Object {
                 _height
             };
         } else if (filmstripType === FILMSTRIP_TYPE.SCREENSHARE) {
+            // @ts-ignore
             const { width: _width, height: _height } = screenshareFilmstripDimensions.thumbnailSize;
 
             size = {
@@ -1267,7 +1284,7 @@ function _mapStateToProps(state: any, ownProps: any): Object {
 
     const { gifUrl: gifSrc } = getGifForParticipant(state, id);
     const mode = getGifDisplayMode(state);
-    const participantId = isLocal ? getLocalParticipant(state).id : participantID;
+    const participantId = isLocal ? getLocalParticipant(state)?.id : participantID;
 
     return {
         _audioTrack,
@@ -1285,21 +1302,20 @@ function _mapStateToProps(state: any, ownProps: any): Object {
         _isScreenSharing: _videoTrack?.videoType === 'desktop',
         _isTestModeEnabled: isTestModeEnabled(state),
         _isVideoPlayable: id && isVideoPlayable(state, id),
-        _isVirtualScreenshareParticipant: sourceNameSignalingEnabled && participant?.isVirtualScreenshareParticipant,
+        _isVirtualScreenshareParticipant: multipleVideoSupportEnabled && participant?.isVirtualScreenshareParticipant,
         _localFlipX: Boolean(localFlipX),
-        _multipleVideoSupport: getMultipleVideoSupportFeatureFlag(state),
+        _multipleVideoSupport: multipleVideoSupportEnabled,
         _participant: participant,
         _raisedHand: hasRaisedHand(participant),
+        _sourceNameSignalingEnabled: sourceNameSignalingEnabled,
         _stageFilmstripLayout: isStageFilmstripAvailable(state),
         _stageParticipantsVisible: _currentLayout === LAYOUTS.STAGE_FILMSTRIP_VIEW,
         _thumbnailType: tileType,
         _videoObjectPosition: getVideoObjectPosition(state, participant?.id),
         _videoTrack,
         ...size,
-        _gifSrc: mode === 'chat' ? null : gifSrc,
-        _sourceNameSignalingEnabled: sourceNameSignalingEnabled
+        _gifSrc: mode === 'chat' ? null : gifSrc
     };
 }
 
-// @ts-ignore
 export default connect(_mapStateToProps)(withStyles(defaultStyles)(Thumbnail));

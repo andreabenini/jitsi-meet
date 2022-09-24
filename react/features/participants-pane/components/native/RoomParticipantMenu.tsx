@@ -3,6 +3,7 @@ import React, { PureComponent } from 'react';
 import { WithTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
+import { IState } from '../../../app/types';
 // @ts-ignore
 import { Avatar } from '../../../base/avatar';
 // @ts-ignore
@@ -28,27 +29,27 @@ interface Props extends WithTranslation {
     /**
      * The list of all breakout rooms.
      */
-    _rooms: Array<any>,
+    _rooms: Array<any>;
 
     /**
      * The Redux dispatch function.
      */
-    dispatch: Function,
+    dispatch: Function;
 
     /**
      * The jid of the selected participant.
      */
-    participantJid: string,
+    participantJid: string;
 
     /**
      * The display name of the selected participant.
      */
-    participantName: string,
+    participantName: string;
 
     /**
      * The room the participant is in.
      */
-    room: any
+    room: any;
 }
 
 /**
@@ -139,7 +140,7 @@ class RoomParticipantMenu extends PureComponent<Props> {
  * @private
  * @returns {Props}
  */
-function _mapStateToProps(state: any) {
+function _mapStateToProps(state: IState) {
     return {
         _rooms: Object.values(getBreakoutRooms(state))
     };

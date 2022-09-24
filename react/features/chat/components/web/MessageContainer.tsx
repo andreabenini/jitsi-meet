@@ -3,7 +3,6 @@ import throttle from 'lodash/throttle';
 import React, { RefObject } from 'react';
 import { scrollIntoView } from 'seamless-scroll-polyfill';
 
-// @ts-ignore
 import { MESSAGE_TYPE_REMOTE } from '../../constants';
 import AbstractMessageContainer, { Props } from '../AbstractMessageContainer';
 
@@ -87,7 +86,7 @@ export default class MessageContainer extends AbstractMessageContainer<Props, St
     render() {
         const groupedMessages = this._getMessagesGroupedBySender();
         const messages = groupedMessages.map((group, index) => {
-            const messageType = group[0] && group[0].messageType;
+            const messageType = group[0]?.messageType;
 
             return (
                 <ChatMessageGroup

@@ -35,14 +35,14 @@ export interface IRemoteControlState {
         controller?: string;
         enabled: boolean;
         transport?: Object;
-    }
+    };
 }
 
 /**
  * Listen for actions that mutate the remote control state.
  */
-ReducerRegistry.register(
-    'features/remote-control', (state: IRemoteControlState = DEFAULT_STATE, action) => {
+ReducerRegistry.register<IRemoteControlState>(
+    'features/remote-control', (state = DEFAULT_STATE, action): IRemoteControlState => {
         switch (action.type) {
         case CAPTURE_EVENTS:
             return {

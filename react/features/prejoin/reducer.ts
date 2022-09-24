@@ -48,7 +48,11 @@ export interface IPrejoinState {
     isDisplayNameRequired: boolean;
     joiningInProgress?: boolean;
     name: string;
-    precallTestResults?: Object;
+    precallTestResults?: {
+        fractionalLoss: number;
+        mediaConnectivity: boolean;
+        throughput: number;
+    };
     rawError: string;
     showJoinByPhoneDialog: boolean;
     showPrejoin: boolean;
@@ -65,8 +69,8 @@ PersistenceRegistry.register('features/prejoin', {
 /**
  * Listen for actions that mutate the prejoin state.
  */
-ReducerRegistry.register(
-    'features/prejoin', (state: IPrejoinState = DEFAULT_STATE, action) => {
+ReducerRegistry.register<IPrejoinState>(
+    'features/prejoin', (state = DEFAULT_STATE, action): IPrejoinState => {
         switch (action.type) {
         case PREJOIN_JOINING_IN_PROGRESS:
             return {
@@ -159,9 +163,9 @@ ReducerRegistry.register(
  * @returns {Object}
  */
 function getStatusFromErrors(errors: {
-    audioAndVideoError?: {message: string},
-    audioOnlyError?: { message: string },
-    videoOnlyError?: Object }
+    audioAndVideoError?: { message: string; };
+    audioOnlyError?: { message: string; };
+    videoOnlyError?: Object; }
 ) {
     const { audioOnlyError, videoOnlyError, audioAndVideoError } = errors;
 

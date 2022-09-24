@@ -1,5 +1,6 @@
 /* eslint-disable lines-around-comment */
-import { withStyles } from '@material-ui/styles';
+import { Theme } from '@mui/material';
+import { withStyles } from '@mui/styles';
 import React, { Component } from 'react';
 
 import { IState } from '../../../app/types';
@@ -8,6 +9,7 @@ import { getAvailableDevices } from '../../../base/devices';
 // @ts-ignore
 import { DialogWithTabs, hideDialog } from '../../../base/dialog';
 import { connect } from '../../../base/redux/functions';
+import { withPixelLineHeight } from '../../../base/styles/functions.web';
 // @ts-ignore
 import { isCalendarEnabled } from '../../../calendar-sync';
 import {
@@ -23,7 +25,6 @@ import {
     submitSoundsTab
     // @ts-ignore
 } from '../../actions';
-// @ts-ignore
 import { SETTINGS_TABS } from '../../constants';
 import {
     getModeratorTabProps,
@@ -55,29 +56,29 @@ type Props = {
         name: string;
         onMount: () => void;
         submit: () => void;
-    }>,
+    }>;
 
     /**
      * An object containing the CSS classes.
      */
-    classes: Object,
+    classes: Object;
 
     /**
      * Which settings tab should be initially displayed. If not defined then
      * the first tab will be displayed.
      */
-    defaultTab: string,
+    defaultTab: string;
 
     /**
      * Invoked to save changed settings.
      */
-    dispatch: Function,
+    dispatch: Function;
 
     /**
      * Indicates whether the device selection dialog is displayed on the
      * welcome page or not.
      */
-    isDisplayedOnWelcomePage: boolean
+    isDisplayedOnWelcomePage: boolean;
 };
 
 /**
@@ -87,7 +88,7 @@ type Props = {
  *
  * @returns {Object}
  */
-const styles = (theme: any) => {
+const styles = (theme: Theme) => {
     return {
         settingsDialog: {
             display: 'flex',
@@ -98,7 +99,7 @@ const styles = (theme: any) => {
             },
 
             '& .auth-name': {
-                marginBottom: `${theme.spacing(1)}px`
+                marginBottom: theme.spacing(1)
             },
 
             '& .calendar-tab, & .device-selection': {
@@ -110,7 +111,15 @@ const styles = (theme: any) => {
                 fontSize: '12px',
                 fontWeight: 600,
                 lineHeight: 1.33,
-                padding: `20px 0px ${theme.spacing(1)}px 0px`
+                padding: `20px 0px ${theme.spacing(1)} 0px`
+            },
+
+            '& .checkbox-label': {
+                color: theme.palette.text01,
+                ...withPixelLineHeight(theme.typography.bodyShortRegular),
+                marginBottom: theme.spacing(2),
+                display: 'block',
+                marginTop: '20px'
             },
 
             '& input[type="checkbox"]:checked + svg': {
@@ -139,7 +148,7 @@ const styles = (theme: any) => {
             '& .profile-edit-field': {
                 flex: 0.5,
                 marginRight: '20px',
-                marginTop: `${theme.spacing(3)}px`
+                marginTop: theme.spacing(3)
             },
 
             '& .settings-sub-pane': {
@@ -158,9 +167,13 @@ const styles = (theme: any) => {
                 flex: 1
             },
 
+            '& .dropdown-menu': {
+                marginTop: '20px'
+            },
+
             '& .settings-checkbox': {
                 display: 'flex',
-                marginBottom: `${theme.spacing(2)}px`
+                marginBottom: theme.spacing(2)
             },
 
             '& .moderator-settings-wrapper': {

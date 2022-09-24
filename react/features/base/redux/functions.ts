@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import { connect as reduxConnect } from 'react-redux';
 
-import { IState, IStore } from '../../app/types';
+import { IState } from '../../app/types';
+import { IStateful } from '../app/types';
 
 /**
  * Sets specific properties of a specific state to specific values and prevents
@@ -35,7 +36,7 @@ export function assign<T extends Object>(target: T, source: Partial<T>): T {
  * @returns {Connector}
  */
 export function connect(
-        mapStateToProps?: any, mapDispatchToProps?: Function) {
+        mapStateToProps?: any, mapDispatchToProps?: Function | Object) {
     return reduxConnect(mapStateToProps, mapDispatchToProps);
 }
 
@@ -135,7 +136,7 @@ function _set<T extends Object>(
  * returned.
  * @returns {Object} The redux state.
  */
-export function toState(stateful: Function | IStore | IState) {
+export function toState(stateful: IStateful): IState {
     if (stateful) {
         if (typeof stateful === 'function') {
             return stateful();
@@ -149,5 +150,6 @@ export function toState(stateful: Function | IStore | IState) {
         }
     }
 
+    // @ts-ignore
     return stateful;
 }
