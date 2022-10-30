@@ -4,12 +4,10 @@ import { AnyAction } from 'redux';
 
 import { IStore } from '../../app/types';
 import { PREJOIN_INITIALIZED } from '../../prejoin/actionTypes';
-// @ts-ignore
 import { setPrejoinPageVisibility } from '../../prejoin/actions';
 import { APP_WILL_MOUNT } from '../app/actionTypes';
 import { setAudioOnly } from '../audio-only/actions';
 import { SET_LOCATION_URL } from '../connection/actionTypes'; // minimize imports to avoid circular imports
-// @ts-ignore
 import { getJwtName } from '../jwt/functions';
 import { participantUpdated } from '../participants/actions';
 import { getLocalParticipant } from '../participants/functions';
@@ -18,7 +16,6 @@ import { parseURLParams } from '../util/parseURLParams';
 
 import { SETTINGS_UPDATED } from './actionTypes';
 import { updateSettings } from './actions';
-// @ts-ignore
 import { handleCallIntegrationChange, handleCrashReportingChange } from './functions';
 import { ISettingsState } from './reducer';
 

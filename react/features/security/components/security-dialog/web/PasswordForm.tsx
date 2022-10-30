@@ -3,14 +3,12 @@ import { WithTranslation } from 'react-i18next';
 
 import { translate } from '../../../../base/i18n/functions';
 import Input from '../../../../base/ui/components/web/Input';
-// eslint-disable-next-line lines-around-comment
-// @ts-ignore
-import { LOCKED_LOCALLY } from '../../../../room-lock';
+import { LOCKED_LOCALLY } from '../../../../room-lock/constants';
 
 /**
  * The type of the React {@code Component} props of {@link PasswordForm}.
  */
-interface Props extends WithTranslation {
+interface IProps extends WithTranslation {
 
     /**
      * Whether or not to show the password editing field.
@@ -38,6 +36,11 @@ interface Props extends WithTranslation {
      * The number of digits to be used in the password.
      */
     passwordNumberOfDigits?: number;
+
+    /**
+     * Whether or not the password should be visible.
+     */
+    visible: boolean;
 }
 
 /**
@@ -56,13 +59,13 @@ type State = {
  *
  * @augments Component
  */
-class PasswordForm extends Component<Props, State> {
+class PasswordForm extends Component<IProps, State> {
     /**
      * Implements React's {@link Component#getDerivedStateFromProps()}.
      *
      * @inheritdoc
      */
-    static getDerivedStateFromProps(props: Props, state: State) {
+    static getDerivedStateFromProps(props: IProps, state: State) {
         return {
             enteredPassword: props.editEnabled ? state.enteredPassword : ''
         };
@@ -75,10 +78,10 @@ class PasswordForm extends Component<Props, State> {
     /**
      * Initializes a new {@code PasswordForm} instance.
      *
-     * @param {Props} props - The React {@code Component} props to initialize
+     * @param {IProps} props - The React {@code Component} props to initialize
      * the new {@code PasswordForm} instance with.
      */
-    constructor(props: Props) {
+    constructor(props: IProps) {
         super(props);
 
         // Bind event handlers so they are only bound once per instance.
@@ -117,7 +120,7 @@ class PasswordForm extends Component<Props, State> {
             <span className = 'info-password-field info-value'>
                 {locked === LOCKED_LOCALLY ? (
                     <div className = 'info-password-local'>
-                        {this.props.password}
+                        {this.props.visible ? this.props.password : '******' }
                     </div>
                 ) : (
                     <div className = 'info-password-remote'>
@@ -156,6 +159,7 @@ class PasswordForm extends Component<Props, State> {
                         onChange = { this._onEnteredPasswordChange }
                         onKeyPress = { this._onKeyPress }
                         placeholder = { placeHolderText }
+                        type = 'password'
                         value = { this.state.enteredPassword } />
                 </div>
             );

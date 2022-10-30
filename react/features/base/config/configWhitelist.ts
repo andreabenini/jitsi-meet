@@ -210,6 +210,7 @@ export default [
     'resolution',
     'salesforceUrl',
     'screenshotCapture',
+    'speakerStats',
     'startAudioMuted',
     'startAudioOnly',
     'startLastN',
@@ -230,5 +231,6 @@ export default [
     'useTurnUdp',
     'videoQuality',
     'webrtcIceTcpDisable',
-    'webrtcIceUdpDisable'
+    'webrtcIceUdpDisable',
+    'whiteboard.enabled'
 ].concat(extraConfigWhitelist);

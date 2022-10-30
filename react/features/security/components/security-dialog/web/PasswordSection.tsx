@@ -1,23 +1,24 @@
 /* eslint-disable react/jsx-no-bind */
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { WithTranslation } from 'react-i18next';
 
 import { translate } from '../../../../base/i18n/functions';
-import { copyText } from '../../../../base/util/helpers';
+import { copyText } from '../../../../base/util/copyText.web';
+import { LOCKED_LOCALLY } from '../../../../room-lock/constants';
 import { NOTIFY_CLICK_MODE } from '../../../../toolbox/constants';
 
 import PasswordForm from './PasswordForm';
-import { NotifyClick } from './SecurityDialog';
+import { INotifyClick } from './SecurityDialog';
 
 const DIGITS_ONLY = /^\d+$/;
 const KEY = 'add-passcode';
 
-interface Props extends WithTranslation {
+interface IProps extends WithTranslation {
 
     /**
      * Toolbar buttons which have their click exposed through the API.
      */
-    buttonsWithNotifyClick: Array<string | NotifyClick>;
+    buttonsWithNotifyClick: Array<string | INotifyClick>;
 
     /**
      * Whether or not the current user can modify the current password.
@@ -79,9 +80,10 @@ function PasswordSection({
     passwordNumberOfDigits,
     setPassword,
     setPasswordEditEnabled,
-    t }: Props) {
+    t }: IProps) {
 
     const formRef = useRef<HTMLDivElement>(null);
+    const [ passwordVisible, setPasswordVisible ] = useState(false);
 
     /**
      * Callback invoked to set a password on the current JitsiConference.
@@ -115,7 +117,7 @@ function PasswordSection({
 
         let notifyMode;
         const notify = buttonsWithNotifyClick.find(
-            (btn: string | NotifyClick) =>
+            (btn: string | INotifyClick) =>
                 (typeof btn === 'string' && btn === KEY)
                 || (typeof btn === 'object' && btn.key === KEY)
         );
@@ -230,6 +232,52 @@ function PasswordSection({
     }
 
     /**
+     * Callback invoked to show the current password.
+     *
+     * @returns {void}
+     */
+    function onPasswordShow() {
+        setPasswordVisible(true);
+    }
+
+    /**
+     * Callback invoked to show the current password.
+     *
+     * @param {Object} e - The key event to handle.
+     *
+     * @returns {void}
+     */
+    function onPasswordShowKeyPressHandler(e: React.KeyboardEvent) {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            setPasswordVisible(true);
+        }
+    }
+
+    /**
+     * Callback invoked to hide the current password.
+     *
+     * @returns {void}
+     */
+    function onPasswordHide() {
+        setPasswordVisible(false);
+    }
+
+    /**
+     * Callback invoked to hide the current password.
+     *
+     * @param {Object} e - The key event to handle.
+     *
+     * @returns {void}
+     */
+    function onPasswordHideKeyPressHandler(e: React.KeyboardEvent) {
+        if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            setPasswordVisible(false);
+        }
+    }
+
+    /**
      * Method that renders the password action(s) based on the current
      * locked-status of the conference.
      *
@@ -282,6 +330,17 @@ function PasswordSection({
                                 tabIndex = { 0 }>{ t('dialog.copy') }</a>
                         </> : null
                     }
+                    {locked === LOCKED_LOCALLY && (
+                        <a
+                            aria-label = { t(passwordVisible ? 'dialog.hide' : 'dialog.show') }
+                            onClick = { passwordVisible ? onPasswordHide : onPasswordShow }
+                            onKeyPress = { passwordVisible
+                                ? onPasswordHideKeyPressHandler
+                                : onPasswordShowKeyPressHandler
+                            }
+                            role = 'button'
+                            tabIndex = { 0 }>{t(passwordVisible ? 'dialog.hide' : 'dialog.show')}</a>
+                    )}
                 </>
             );
         }
@@ -311,7 +370,8 @@ function PasswordSection({
                         locked = { locked }
                         onSubmit = { onPasswordSubmit }
                         password = { password }
-                        passwordNumberOfDigits = { passwordNumberOfDigits } />
+                        passwordNumberOfDigits = { passwordNumberOfDigits }
+                        visible = { passwordVisible } />
                 </div>
                 <div className = 'security-dialog password-actions'>
                     { renderPasswordActions() }

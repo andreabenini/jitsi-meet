@@ -3,30 +3,28 @@ import React from 'react';
 import { WithTranslation } from 'react-i18next';
 import { makeStyles } from 'tss-react/mui';
 
-import { IState } from '../../../app/types';
+import { IReduxState } from '../../../app/types';
 import { translate } from '../../../base/i18n/functions';
 import Icon from '../../../base/icons/components/Icon';
 import { IconCheckSolid, IconExclamationTriangle } from '../../../base/icons/svg';
 import { connect } from '../../../base/redux/functions';
 import {
-    getDeviceStatusType,
-    getDeviceStatusText
-
-    // @ts-ignore
+    getDeviceStatusText,
+    getDeviceStatusType
 } from '../../functions';
 
-export interface Props extends WithTranslation {
+export interface IProps extends WithTranslation {
 
     /**
      * The text to be displayed in relation to the status of the audio/video devices.
      */
-    deviceStatusText: string;
+    deviceStatusText?: string;
 
     /**
      * The type of status for current devices, controlling the background color of the text.
      * Can be `ok` or `warning`.
      */
-    deviceStatusType: string;
+    deviceStatusType?: string;
 }
 
 const useStyles = makeStyles()((theme: Theme) => {
@@ -83,7 +81,7 @@ const iconMap = {
  *
  * @returns {ReactElement}
  */
-function DeviceStatus({ deviceStatusType, deviceStatusText, t }: Props) {
+function DeviceStatus({ deviceStatusType, deviceStatusText, t }: IProps) {
     const { classes, cx } = useStyles();
     const { src, className } = iconMap[deviceStatusType as keyof typeof iconMap];
     const hasError = deviceStatusType === 'warning';
@@ -99,7 +97,7 @@ function DeviceStatus({ deviceStatusType, deviceStatusText, t }: Props) {
                 size = { 16 }
                 src = { src } />
             <span role = 'heading'>
-                {hasError ? t('prejoin.errorNoPermissions') : t(deviceStatusText)}
+                {hasError ? t('prejoin.errorNoPermissions') : t(deviceStatusText ?? '')}
             </span>
         </div>
     );
@@ -111,7 +109,7 @@ function DeviceStatus({ deviceStatusType, deviceStatusText, t }: Props) {
  * @param {Object} state - The redux state.
  * @returns {{ deviceStatusText: string, deviceStatusText: string }}
  */
-function mapStateToProps(state: IState) {
+function mapStateToProps(state: IReduxState) {
     return {
         deviceStatusText: getDeviceStatusText(state),
         deviceStatusType: getDeviceStatusType(state)

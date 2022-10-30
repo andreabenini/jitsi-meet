@@ -16,12 +16,9 @@ import { useDispatch, useSelector } from 'react-redux';
 
 // @ts-ignore
 import { appNavigate } from '../../app/actions.native';
-import { IState } from '../../app/types';
-// @ts-ignore
+import { IReduxState } from '../../app/types';
 import { setAudioOnly } from '../../base/audio-only/actions';
-// @ts-ignore
 import { getConferenceName } from '../../base/conference/functions';
-// @ts-ignore
 import { connect } from '../../base/connection/actions.native';
 import { IconClose } from '../../base/icons/svg';
 // @ts-ignore
@@ -30,12 +27,11 @@ import { getLocalParticipant } from '../../base/participants/functions';
 // @ts-ignore
 import { getFieldValue } from '../../base/react';
 import { ASPECT_RATIO_NARROW } from '../../base/responsive-ui/constants';
-// @ts-ignore
-import { updateSettings } from '../../base/settings';
+import { updateSettings } from '../../base/settings/actions';
 import BaseTheme from '../../base/ui/components/BaseTheme.native';
 import Button from '../../base/ui/components/native/Button';
 import { BUTTON_TYPES } from '../../base/ui/constants';
-import { BrandingImageBackground } from '../../dynamic-branding';
+import { BrandingImageBackground } from '../../dynamic-branding/components/native';
 // @ts-ignore
 import { LargeVideo } from '../../large-video/components';
 // @ts-ignore
@@ -48,27 +44,28 @@ import { screen } from '../../mobile/navigation/routes';
 import AudioMuteButton from '../../toolbox/components/AudioMuteButton';
 // @ts-ignore
 import VideoMuteButton from '../../toolbox/components/VideoMuteButton';
-// @ts-ignore
 import { isDisplayNameRequired } from '../functions';
-import { PrejoinProps } from '../types';
+import { IPrejoinProps } from '../types';
 
 // @ts-ignore
 import styles from './styles';
 
 
-const Prejoin: React.FC<PrejoinProps> = ({ navigation }: PrejoinProps) => {
+const Prejoin: React.FC<IPrejoinProps> = ({ navigation }: IPrejoinProps) => {
     const dispatch = useDispatch();
     const isFocused = useIsFocused();
     const { t } = useTranslation();
     const aspectRatio = useSelector(
-        (state: IState) => state['features/base/responsive-ui']?.aspectRatio
+        (state: IReduxState) => state['features/base/responsive-ui']?.aspectRatio
     );
-    const localParticipant = useSelector((state: IState) => getLocalParticipant(state));
-    const isDisplayNameMandatory = useSelector((state: IState) => isDisplayNameRequired(state));
-    const roomName = useSelector((state: IState) => getConferenceName(state));
+    const localParticipant = useSelector((state: IReduxState) => getLocalParticipant(state));
+    const isDisplayNameMandatory = useSelector((state: IReduxState) => isDisplayNameRequired(state));
+    const roomName = useSelector((state: IReduxState) => getConferenceName(state));
     const participantName = localParticipant?.name;
     const [ displayName, setDisplayName ]
         = useState(participantName || '');
+    const [ isJoining, setIsJoining ]
+        = useState(false);
     const onChangeDisplayName = useCallback(event => {
         const fieldValue = getFieldValue(event);
 
@@ -79,6 +76,7 @@ const Prejoin: React.FC<PrejoinProps> = ({ navigation }: PrejoinProps) => {
     }, [ displayName ]);
 
     const onJoin = useCallback(() => {
+        setIsJoining(true);
         dispatch(connect());
         navigateRoot(screen.conference.root);
     }, [ dispatch ]);
@@ -111,7 +109,7 @@ const Prejoin: React.FC<PrejoinProps> = ({ navigation }: PrejoinProps) => {
     }, []);
 
     const { PRIMARY, SECONDARY } = BUTTON_TYPES;
-    const joinButtonDisabled = !displayName && isDisplayNameMandatory;
+    const joinButtonDisabled = isJoining || (!displayName && isDisplayNameMandatory);
 
     useEffect(() => {
         BackHandler.addEventListener('hardwareBackPress', goBack);
@@ -122,7 +120,8 @@ const Prejoin: React.FC<PrejoinProps> = ({ navigation }: PrejoinProps) => {
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            headerLeft
+            headerLeft,
+            headerTitle: t('prejoin.joinMeeting')
         });
     }, [ navigation ]);
 
@@ -153,18 +152,17 @@ const Prejoin: React.FC<PrejoinProps> = ({ navigation }: PrejoinProps) => {
                 isFocused
                 && <View style = { largeVideoContainerStyles }>
                     <LargeVideo />
+                    <View style = { styles.displayRoomNameBackdrop }>
+                        <Text
+                            numberOfLines = { 1 }
+                            style = { styles.preJoinRoomName as StyleProp<TextStyle> }>
+                            { roomName }
+                        </Text>
+                    </View>
                 </View>
             }
             <View style = { contentContainerStyles }>
                 <View style = { styles.formWrapper as StyleProp<ViewStyle> }>
-                    <Text style = { styles.preJoinTitle as StyleProp<TextStyle> }>
-                        { t('prejoin.joinMeeting') }
-                    </Text>
-                    <Text
-                        numberOfLines = { 1 }
-                        style = { styles.preJoinRoomName as StyleProp<TextStyle> }>
-                        { roomName }
-                    </Text>
                     <TextInput
                         onChangeText = { onChangeDisplayName }
                         placeholder = { t('dialog.enterDisplayName') }
@@ -176,13 +174,13 @@ const Prejoin: React.FC<PrejoinProps> = ({ navigation }: PrejoinProps) => {
                         disabled = { joinButtonDisabled }
                         labelKey = 'prejoin.joinMeeting'
                         onClick = { onJoin }
-                        style = { styles.prejoinButton }
+                        style = { styles.joinButton }
                         type = { PRIMARY } />
                     <Button
                         accessibilityLabel = 'prejoin.joinMeetingInLowBandwidthMode'
+                        disabled = { joinButtonDisabled }
                         labelKey = 'prejoin.joinMeetingInLowBandwidthMode'
                         onClick = { onJoinLowBandwidth }
-                        style = { styles.prejoinButton }
                         type = { SECONDARY } />
                 </View>
                 <View style = { toolboxContainerStyles }>

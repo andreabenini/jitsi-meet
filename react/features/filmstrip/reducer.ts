@@ -2,26 +2,26 @@ import { PARTICIPANT_LEFT } from '../base/participants/actionTypes';
 import ReducerRegistry from '../base/redux/ReducerRegistry';
 
 import {
+    CLEAR_STAGE_PARTICIPANTS,
     REMOVE_STAGE_PARTICIPANT,
-    SET_STAGE_PARTICIPANTS,
     SET_FILMSTRIP_ENABLED,
+    SET_FILMSTRIP_HEIGHT,
     SET_FILMSTRIP_VISIBLE,
     SET_FILMSTRIP_WIDTH,
     SET_HORIZONTAL_VIEW_DIMENSIONS,
     SET_REMOTE_PARTICIPANTS,
+    SET_SCREENSHARE_FILMSTRIP_PARTICIPANT,
+    SET_SCREENSHARING_TILE_DIMENSIONS,
     SET_STAGE_FILMSTRIP_DIMENSIONS,
+    SET_STAGE_PARTICIPANTS,
     SET_TILE_VIEW_DIMENSIONS,
+    SET_TOP_PANEL_VISIBILITY,
+    SET_USER_FILMSTRIP_HEIGHT,
     SET_USER_FILMSTRIP_WIDTH,
     SET_USER_IS_RESIZING,
     SET_VERTICAL_VIEW_DIMENSIONS,
     SET_VISIBLE_REMOTE_PARTICIPANTS,
-    SET_VOLUME,
-    CLEAR_STAGE_PARTICIPANTS,
-    SET_SCREENSHARING_TILE_DIMENSIONS,
-    SET_USER_FILMSTRIP_HEIGHT,
-    SET_FILMSTRIP_HEIGHT,
-    SET_TOP_PANEL_VISIBILITY,
-    SET_SCREENSHARE_FILMSTRIP_PARTICIPANT
+    SET_VOLUME
 } from './actionTypes';
 
 const DEFAULT_STATE = {
@@ -178,12 +178,12 @@ const DEFAULT_STATE = {
     }
 };
 
-interface Dimensions {
+interface IDimensions {
     height: number;
     width: number;
 }
 
-interface FilmstripDimensions {
+interface IFilmstripDimensions {
     filmstripHeight?: number;
     filmstripWidth?: number;
     gridDimensions?: {
@@ -191,7 +191,7 @@ interface FilmstripDimensions {
         rows: number;
     };
     hasScroll?: boolean;
-    thumbnailSize?: Dimensions;
+    thumbnailSize?: IDimensions;
 }
 
 export interface IFilmstripState {
@@ -202,9 +202,9 @@ export interface IFilmstripState {
     enabled: boolean;
     horizontalViewDimensions: {
         hasScroll?: boolean;
-        local?: Dimensions;
-        remote?: Dimensions;
-        remoteVideosContainer?: Dimensions;
+        local?: IDimensions;
+        remote?: IDimensions;
+        remoteVideosContainer?: IDimensions;
     };
     isResizing: boolean;
     participantsVolume: {
@@ -214,11 +214,11 @@ export interface IFilmstripState {
     screenshareFilmstripDimensions: {
         filmstripHeight?: number;
         filmstripWidth?: number;
-        thumbnailSize?: Dimensions;
+        thumbnailSize?: IDimensions;
     };
     screenshareFilmstripParticipantId?: string | null;
-    stageFilmstripDimensions: FilmstripDimensions;
-    tileViewDimensions?: FilmstripDimensions;
+    stageFilmstripDimensions: IFilmstripDimensions;
+    tileViewDimensions?: IFilmstripDimensions;
     topPanelHeight: {
         current: number | null;
         userSet: number | null;
@@ -231,12 +231,12 @@ export interface IFilmstripState {
                 rows: number;
             };
             hasScroll: boolean;
-            thumbnailSize: Dimensions;
+            thumbnailSize: IDimensions;
         };
         hasScroll?: boolean;
-        local?: Dimensions;
-        remote?: Dimensions;
-        remoteVideosContainer?: Dimensions;
+        local?: IDimensions;
+        remote?: IDimensions;
+        remoteVideosContainer?: IDimensions;
     };
     visible: boolean;
     visibleParticipantsEndIndex: number;

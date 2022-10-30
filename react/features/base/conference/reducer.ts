@@ -1,7 +1,5 @@
-/* eslint-disable lines-around-comment */
 import { LOCKED_LOCALLY, LOCKED_REMOTELY } from '../../room-lock/constants';
 import { CONNECTION_WILL_CONNECT, SET_LOCATION_URL } from '../connection/actionTypes';
-// @ts-ignore
 import { JitsiConferenceErrors } from '../lib-jitsi-meet';
 import ReducerRegistry from '../redux/ReducerRegistry';
 import { assign, set } from '../redux/functions';
@@ -26,7 +24,6 @@ import {
     SET_START_MUTED_POLICY,
     SET_START_REACTIONS_MUTED
 } from './actionTypes';
-// @ts-ignore
 import { isRoomValid } from './functions';
 
 const DEFAULT_STATE = {
@@ -41,29 +38,56 @@ const DEFAULT_STATE = {
 };
 
 export interface IJitsiConference {
+    addCommandListener: Function;
     addTrack: Function;
+    authenticateAndUpgradeRole: Function;
+    avModerationApprove: Function;
+    avModerationReject: Function;
+    createVideoSIPGWSession: Function;
+    disableAVModeration: Function;
+    enableAVModeration: Function;
+    end: Function;
     getBreakoutRooms: Function;
+    getLocalParticipantProperty: Function;
     getLocalTracks: Function;
+    getMeetingUniqueId: Function;
+    getParticipantById: Function;
     grantOwner: Function;
     isAVModerationSupported: Function;
+    isCallstatsEnabled: Function;
     isEndConferenceSupported: Function;
     isLobbySupported: Function;
+    isStartAudioMuted: Function;
+    isStartVideoMuted: Function;
+    join: Function;
     kickParticipant: Function;
+    lock: Function;
     muteParticipant: Function;
+    myLobbyUserId: Function;
+    myUserId: Function;
     on: Function;
     removeTrack: Function;
     replaceTrack: Function;
     sendCommand: Function;
+    sendCommandOnce: Function;
     sendEndpointMessage: Function;
+    sendFeedback: Function;
+    sendLobbyMessage: Function;
     sessionId: string;
+    setDesktopSharingFrameRate: Function;
     setDisplayName: Function;
     setLocalParticipantProperty: Function;
+    setReceiverConstraints: Function;
+    setSenderVideoConstraint: Function;
+    setSubject: Function;
 }
 
 export interface IConferenceState {
     authEnabled?: boolean;
     authLogin?: string;
-    authRequired?: Object;
+    authRequired?: {
+        join: Function;
+    };
     conference?: IJitsiConference;
     conferenceTimestamp?: number;
     e2eeSupported?: boolean;
@@ -200,7 +224,7 @@ function _conferenceFailed(state: IConferenceState, { conference, error }: { con
         return state;
     }
 
-    let authRequired;
+    let authRequired: any;
     let membersOnly;
     let passwordRequired;
 

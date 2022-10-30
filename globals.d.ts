@@ -13,6 +13,13 @@ declare global {
     const interfaceConfig: any;
 
     interface Window {
-        config?: IConfig;
+        config: IConfig;
+        JITSI_MEET_LITE_SDK?: boolean;
+        interfaceConfig?: any;
+        JitsiMeetJS?: any;
     }
+
+    const config: IConfig;
+
+    const JitsiMeetJS: any;
 }

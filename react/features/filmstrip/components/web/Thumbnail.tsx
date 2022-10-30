@@ -8,11 +8,13 @@ import { connect } from 'react-redux';
 
 import { createScreenSharingIssueEvent } from '../../../analytics/AnalyticsEvents';
 import { sendAnalytics } from '../../../analytics/functions';
-import { IState } from '../../../app/types';
+import { IReduxState } from '../../../app/types';
 // @ts-ignore
 import { Avatar } from '../../../base/avatar';
-// @ts-ignore
-import { getMultipleVideoSupportFeatureFlag, getSourceNameSignalingFeatureFlag } from '../../../base/config';
+import {
+    getMultipleVideoSupportFeatureFlag,
+    getSourceNameSignalingFeatureFlag
+} from '../../../base/config/functions.web';
 import { isMobileBrowser } from '../../../base/environment/utils';
 import { JitsiTrackEvents } from '../../../base/lib-jitsi-meet';
 // @ts-ignore
@@ -22,25 +24,23 @@ import { pinParticipant } from '../../../base/participants/actions';
 import {
     getLocalParticipant,
     getParticipantByIdOrUndefined,
-    hasRaisedHand
+    hasRaisedHand,
+    isLocalScreenshareParticipant,
+    isScreenShareParticipant,
+    isWhiteboardParticipant
 } from '../../../base/participants/functions';
-import { Participant } from '../../../base/participants/types';
+import { IParticipant } from '../../../base/participants/types';
 import { ASPECT_RATIO_NARROW } from '../../../base/responsive-ui/constants';
-// @ts-ignore
-import { isTestModeEnabled } from '../../../base/testing';
+import { isTestModeEnabled } from '../../../base/testing/functions';
+import { trackStreamingStatusChanged, updateLastTrackVideoMediaEvent } from '../../../base/tracks/actions';
 import {
     getLocalAudioTrack,
     getLocalVideoTrack,
     getTrackByMediaTypeAndParticipant,
-    getVirtualScreenshareParticipantTrack,
-    updateLastTrackVideoMediaEvent,
-    trackStreamingStatusChanged
-    // @ts-ignore
-} from '../../../base/tracks';
+    getVirtualScreenshareParticipantTrack
+} from '../../../base/tracks/functions';
 import { getVideoObjectPosition } from '../../../face-landmarks/functions';
-// @ts-ignore
 import { hideGif, showGif } from '../../../gifs/actions';
-// @ts-ignore
 import { getGifDisplayMode, getGifForParticipant } from '../../../gifs/functions';
 // @ts-ignore
 import { PresenceLabel } from '../../../presence-status';
@@ -62,8 +62,8 @@ import {
     getActiveParticipantsIds,
     getDisplayModeInput,
     getThumbnailTypeFromLayout,
-    isVideoPlayable,
     isStageFilmstripAvailable,
+    isVideoPlayable,
     showGridInVerticalView
     // @ts-ignore
 } from '../../functions';
@@ -198,7 +198,7 @@ export type Props = {
     /**
      * An object with information about the participant related to the thumbnail.
      */
-    _participant: Participant;
+    _participant: IParticipant;
 
     /**
      * Whether or not the participant has the hand raised.
@@ -363,7 +363,6 @@ const defaultStyles = (theme: Theme) => {
             position: 'absolute' as const,
             width: '100%',
             height: '100%',
-            zIndex: 11,
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -1050,6 +1049,7 @@ class Thumbnail extends Component<Props, State> {
                         _thumbnailType === THUMBNAIL_TYPE.TILE && 'tile-view-mode'
                     ) }>
                     <ThumbnailTopIndicators
+                        disableConnectionIndicator = { isWhiteboardParticipant(_participant) }
                         hidePopover = { this._hidePopover }
                         indicatorsClassName = { classes.indicatorsBackground }
                         isHovered = { isHovered }
@@ -1066,9 +1066,9 @@ class Thumbnail extends Component<Props, State> {
                     ) }>
                     <ThumbnailBottomIndicators
                         className = { classes.indicatorsBackground }
-                        isVirtualScreenshareParticipant = { false }
                         local = { local }
                         participantId = { id }
+                        showStatusIndicators = { !isWhiteboardParticipant(_participant) }
                         thumbnailType = { _thumbnailType } />
                 </div>
                 {!_gifSrc && this._renderAvatar(styles.avatar) }
@@ -1113,13 +1113,16 @@ class Thumbnail extends Component<Props, State> {
             return null;
         }
 
-        const { isFakeParticipant, isLocalScreenShare, local } = _participant;
+        const { fakeParticipant, local } = _participant;
 
         if (local) {
             return this._renderParticipant(true);
         }
 
-        if (isFakeParticipant) {
+        if (fakeParticipant
+            && !isWhiteboardParticipant(_participant)
+            && !_isVirtualScreenshareParticipant
+        ) {
             return this._renderFakeParticipant();
         }
 
@@ -1139,7 +1142,7 @@ class Thumbnail extends Component<Props, State> {
                     classes = { classes }
                     containerClassName = { this._getContainerClassName() }
                     isHovered = { isHovered }
-                    isLocal = { isLocalScreenShare }
+                    isLocal = { isLocalScreenshareParticipant(_participant) }
                     isMobile = { _isMobile }
                     onClick = { this._onClick }
                     onMouseEnter = { this._onMouseEnter }
@@ -1167,19 +1170,20 @@ class Thumbnail extends Component<Props, State> {
  * @private
  * @returns {Props}
  */
-function _mapStateToProps(state: IState, ownProps: any): Object {
+function _mapStateToProps(state: IReduxState, ownProps: any): Object {
     const { participantID, filmstripType = FILMSTRIP_TYPE.MAIN } = ownProps;
 
     const participant = getParticipantByIdOrUndefined(state, participantID);
-    const id = participant?.id;
+    const id = participant?.id ?? '';
     const isLocal = participant?.local ?? true;
     const multipleVideoSupportEnabled = getMultipleVideoSupportFeatureFlag(state);
     const sourceNameSignalingEnabled = getSourceNameSignalingFeatureFlag(state);
+    const _isVirtualScreenshareParticipant = multipleVideoSupportEnabled && isScreenShareParticipant(participant);
     const tracks = state['features/base/tracks'];
 
     let _videoTrack;
 
-    if (multipleVideoSupportEnabled && participant?.isVirtualScreenshareParticipant) {
+    if (_isVirtualScreenshareParticipant) {
         _videoTrack = getVirtualScreenshareParticipantTrack(tracks, id);
     } else {
         _videoTrack = isLocal
@@ -1282,7 +1286,7 @@ function _mapStateToProps(state: IState, ownProps: any): Object {
         size._width = ownProps.width;
     }
 
-    const { gifUrl: gifSrc } = getGifForParticipant(state, id);
+    const { gifUrl: gifSrc } = getGifForParticipant(state, id ?? '');
     const mode = getGifDisplayMode(state);
     const participantId = isLocal ? getLocalParticipant(state)?.id : participantID;
 
@@ -1302,7 +1306,7 @@ function _mapStateToProps(state: IState, ownProps: any): Object {
         _isScreenSharing: _videoTrack?.videoType === 'desktop',
         _isTestModeEnabled: isTestModeEnabled(state),
         _isVideoPlayable: id && isVideoPlayable(state, id),
-        _isVirtualScreenshareParticipant: multipleVideoSupportEnabled && participant?.isVirtualScreenshareParticipant,
+        _isVirtualScreenshareParticipant,
         _localFlipX: Boolean(localFlipX),
         _multipleVideoSupport: multipleVideoSupportEnabled,
         _participant: participant,

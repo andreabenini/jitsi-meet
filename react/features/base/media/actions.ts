@@ -1,12 +1,11 @@
-import { Dispatch } from 'redux';
-
+import { IStore } from '../../app/types';
 import { showModeratedNotification } from '../../av-moderation/actions';
 import { shouldShowModeratedNotification } from '../../av-moderation/functions';
 import { isModerationNotificationDisplayed } from '../../notifications/functions';
 
 import {
-    SET_AUDIO_MUTED,
     SET_AUDIO_AVAILABLE,
+    SET_AUDIO_MUTED,
     SET_AUDIO_UNMUTE_PERMISSIONS,
     SET_CAMERA_FACING_MODE,
     SET_SCREENSHARE_MUTED,
@@ -106,7 +105,7 @@ export function setScreenshareMuted(
         mediaType: MediaType = MEDIA_TYPE.SCREENSHARE,
         authority: number = SCREENSHARE_MUTISM_AUTHORITY.USER,
         ensureTrack = false) {
-    return (dispatch: Dispatch<any>, getState: Function) => {
+    return (dispatch: IStore['dispatch'], getState: IStore['getState']) => {
         const state = getState();
 
         // check for A/V Moderation when trying to unmute
@@ -167,7 +166,7 @@ export function setVideoMuted(
         mediaType: string = MEDIA_TYPE.VIDEO,
         authority: number = VIDEO_MUTISM_AUTHORITY.USER,
         ensureTrack = false) {
-    return (dispatch: Dispatch<any>, getState: Function) => {
+    return (dispatch: IStore['dispatch'], getState: IStore['getState']) => {
         const state = getState();
 
         // check for A/V Moderation when trying to unmute

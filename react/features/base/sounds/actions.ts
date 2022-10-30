@@ -1,17 +1,16 @@
-/* eslint-disable lines-around-comment */
 import { Sounds } from '../config/configType';
+// eslint-disable-next-line lines-around-comment
 // @ts-ignore
 import type { AudioElement } from '../media';
 
 import {
-    _ADD_AUDIO_ELEMENT,
-    _REMOVE_AUDIO_ELEMENT,
     PLAY_SOUND,
     REGISTER_SOUND,
     STOP_SOUND,
-    UNREGISTER_SOUND
+    UNREGISTER_SOUND,
+    _ADD_AUDIO_ELEMENT,
+    _REMOVE_AUDIO_ELEMENT
 } from './actionTypes';
-// @ts-ignore
 import { getSoundsPath } from './functions';
 import { getDisabledSounds } from './functions.any';
 

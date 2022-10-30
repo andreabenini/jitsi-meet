@@ -1,26 +1,24 @@
 import { IStore } from '../app/types';
-// eslint-disable-next-line lines-around-comment
-// @ts-ignore
-import { getConferenceState } from '../base/conference';
+import { getConferenceState } from '../base/conference/functions';
 import { MEDIA_TYPE, type MediaType } from '../base/media/constants';
 import { getParticipantById, isParticipantModerator } from '../base/participants/functions';
-import { Participant } from '../base/participants/types';
+import { IParticipant } from '../base/participants/types';
 import { isForceMuted } from '../participants-pane/functions';
 
 import {
-    DISMISS_PENDING_PARTICIPANT,
     DISABLE_MODERATION,
+    DISMISS_PENDING_PARTICIPANT,
     ENABLE_MODERATION,
     LOCAL_PARTICIPANT_APPROVED,
     LOCAL_PARTICIPANT_MODERATION_NOTIFICATION,
+    LOCAL_PARTICIPANT_REJECTED,
     PARTICIPANT_APPROVED,
     PARTICIPANT_PENDING_AUDIO,
+    PARTICIPANT_REJECTED,
     REQUEST_DISABLE_AUDIO_MODERATION,
-    REQUEST_ENABLE_AUDIO_MODERATION,
     REQUEST_DISABLE_VIDEO_MODERATION,
-    REQUEST_ENABLE_VIDEO_MODERATION,
-    LOCAL_PARTICIPANT_REJECTED,
-    PARTICIPANT_REJECTED
+    REQUEST_ENABLE_AUDIO_MODERATION,
+    REQUEST_ENABLE_VIDEO_MODERATION
 } from './actionTypes';
 import { isEnabledFromState } from './functions';
 
@@ -40,7 +38,7 @@ export const approveParticipantAudio = (id: string) => (dispatch: IStore['dispat
     const isVideoForceMuted = isForceMuted(participant, MEDIA_TYPE.VIDEO, state);
 
     if (isAudioModerationOn || !isVideoModerationOn || !isVideoForceMuted) {
-        conference.avModerationApprove(MEDIA_TYPE.AUDIO, id);
+        conference?.avModerationApprove(MEDIA_TYPE.AUDIO, id);
     }
 };
 
@@ -59,7 +57,7 @@ export const approveParticipantVideo = (id: string) => (dispatch: IStore['dispat
     const isVideoModerationOn = isEnabledFromState(MEDIA_TYPE.VIDEO, state);
 
     if (isVideoModerationOn && isVideoForceMuted) {
-        conference.avModerationApprove(MEDIA_TYPE.VIDEO, id);
+        conference?.avModerationApprove(MEDIA_TYPE.VIDEO, id);
     }
 };
 
@@ -90,7 +88,7 @@ export const rejectParticipantAudio = (id: string) => (dispatch: IStore['dispatc
     const isModerator = isParticipantModerator(participant);
 
     if (audioModeration && !isAudioForceMuted && !isModerator) {
-        conference.avModerationReject(MEDIA_TYPE.AUDIO, id);
+        conference?.avModerationReject(MEDIA_TYPE.AUDIO, id);
     }
 };
 
@@ -110,7 +108,7 @@ export const rejectParticipantVideo = (id: string) => (dispatch: IStore['dispatc
     const isModerator = isParticipantModerator(participant);
 
     if (videoModeration && !isVideoForceMuted && !isModerator) {
-        conference.avModerationReject(MEDIA_TYPE.VIDEO, id);
+        conference?.avModerationReject(MEDIA_TYPE.VIDEO, id);
     }
 };
 
@@ -135,10 +133,10 @@ export const disableModeration = (mediaType: MediaType, actor: Object) => {
 /**
  * Hides the notification with the participant that asked to unmute audio.
  *
- * @param {Participant} participant - The participant for which the notification to be hidden.
+ * @param {IParticipant} participant - The participant for which the notification to be hidden.
  * @returns {Object}
  */
-export function dismissPendingAudioParticipant(participant: Participant) {
+export function dismissPendingAudioParticipant(participant: IParticipant) {
     return dismissPendingParticipant(participant.id, MEDIA_TYPE.AUDIO);
 }
 
@@ -272,10 +270,10 @@ export function showModeratedNotification(mediaType: MediaType) {
 /**
  * Shows a notification with the participant that asked to audio unmute.
  *
- * @param {Participant} participant - The participant for which is the notification.
+ * @param {IParticipant} participant - The participant for which is the notification.
  * @returns {Object}
  */
-export function participantPendingAudio(participant: Participant) {
+export function participantPendingAudio(participant: IParticipant) {
     return {
         type: PARTICIPANT_PENDING_AUDIO,
         participant

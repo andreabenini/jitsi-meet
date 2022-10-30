@@ -4,19 +4,19 @@ import React, { Component } from 'react';
 import { WithTranslation } from 'react-i18next';
 import { batch } from 'react-redux';
 
-// @ts-ignore
+// @ts-expect-error
 import keyboardShortcut from '../../../../../modules/keyboardshortcut/keyboardshortcut';
+// @ts-ignore
+import { isSpeakerStatsDisabled } from '../../../../features/speaker-stats/functions';
 import { ACTION_SHORTCUT_TRIGGERED, createShortcutEvent, createToolbarEvent } from '../../../analytics/AnalyticsEvents';
 import { sendAnalytics } from '../../../analytics/functions';
-import { IState } from '../../../app/types';
-import ContextMenu from '../../../base/components/context-menu/ContextMenu';
-import ContextMenuItemGroup from '../../../base/components/context-menu/ContextMenuItemGroup';
-// @ts-ignore
-import { getMultipleVideoSendingSupportFeatureFlag, getToolbarButtons } from '../../../base/config';
-// @ts-ignore
-import { isToolbarButtonEnabled } from '../../../base/config/functions.web';
-// @ts-ignore
-import { openDialog, toggleDialog } from '../../../base/dialog';
+import { IReduxState } from '../../../app/types';
+import {
+    getMultipleVideoSendingSupportFeatureFlag,
+    getToolbarButtons,
+    isToolbarButtonEnabled
+} from '../../../base/config/functions.web';
+import { openDialog, toggleDialog } from '../../../base/dialog/actions';
 import { isIosMobileBrowser, isMobileBrowser } from '../../../base/environment/utils';
 import { translate } from '../../../base/i18n/functions';
 import JitsiMeetJS from '../../../base/lib-jitsi-meet';
@@ -28,10 +28,10 @@ import {
     hasRaisedHand
 } from '../../../base/participants/functions';
 import { connect } from '../../../base/redux/functions';
-// @ts-ignore
-import { getLocalVideoTrack } from '../../../base/tracks';
-// @ts-ignore
-import { toggleChat } from '../../../chat';
+import { getLocalVideoTrack } from '../../../base/tracks/functions';
+import ContextMenu from '../../../base/ui/components/web/ContextMenu';
+import ContextMenuItemGroup from '../../../base/ui/components/web/ContextMenuItemGroup';
+import { toggleChat } from '../../../chat/actions.web';
 // @ts-ignore
 import { ChatButton } from '../../../chat/components';
 // @ts-ignore
@@ -40,13 +40,10 @@ import { EmbedMeetingButton } from '../../../embed-meeting';
 import { SharedDocumentButton } from '../../../etherpad';
 // @ts-ignore
 import { FeedbackButton } from '../../../feedback';
-// @ts-ignore
 import { setGifMenuVisibility } from '../../../gifs/actions';
-// @ts-ignore
 import { isGifEnabled } from '../../../gifs/functions';
 // @ts-ignore
 import { InviteButton } from '../../../invite/components/add-people-dialog';
-// @ts-ignore
 import { isVpaasMeeting } from '../../../jaas/functions';
 // @ts-ignore
 import { KeyboardShortcutsButton } from '../../../keyboard-shortcuts';
@@ -54,11 +51,9 @@ import { NoiseSuppressionButton } from '../../../noise-suppression/components';
 import {
     close as closeParticipantsPane,
     open as openParticipantsPane
-    // @ts-ignore
 } from '../../../participants-pane/actions';
 // @ts-ignore
 import { ParticipantsPaneButton } from '../../../participants-pane/components/web';
-// @ts-ignore
 import { getParticipantsPaneOpen } from '../../../participants-pane/functions';
 import { addReactionToBuffer } from '../../../reactions/actions.any';
 import { toggleReactionsMenuVisibility } from '../../../reactions/actions.web';
@@ -73,9 +68,9 @@ import {
 // @ts-ignore
 import { isSalesforceEnabled } from '../../../salesforce/functions';
 import {
+    ShareAudioButton,
     isScreenAudioSupported,
     isScreenVideoShared,
-    ShareAudioButton,
     startScreenShareFlow
     // @ts-ignore
 } from '../../../screen-share';
@@ -87,6 +82,7 @@ import { SettingsButton } from '../../../settings';
 import { SharedVideoButton } from '../../../shared-video/components';
 // @ts-ignore
 import { SpeakerStatsButton } from '../../../speaker-stats/components/web';
+import SpeakerStats from '../../../speaker-stats/components/web/SpeakerStats';
 import {
     ClosedCaptionButton
     // @ts-ignore
@@ -98,10 +94,11 @@ import {
     // @ts-ignore
 } from '../../../video-layout';
 // @ts-ignore
-import { VideoQualityDialog, VideoQualityButton } from '../../../video-quality/components';
+import { VideoQualityButton, VideoQualityDialog } from '../../../video-quality/components';
 // @ts-ignore
-import { VideoBackgroundButton, toggleBackgroundEffect } from '../../../virtual-background';
-import { VIRTUAL_BACKGROUND_TYPE } from '../../../virtual-background/constants';
+import { VideoBackgroundButton } from '../../../virtual-background';
+import WhiteboardButton from '../../../whiteboard/components/web/WhiteboardButton';
+import { isWhiteboardButtonVisible } from '../../../whiteboard/functions';
 import {
     setFullScreen,
     setHangupMenuVisible,
@@ -110,9 +107,9 @@ import {
     showToolbox
     // @ts-ignore
 } from '../../actions';
-import { THRESHOLDS, NOT_APPLICABLE, NOTIFY_CLICK_MODE } from '../../constants';
-// @ts-ignore
+import { NOTIFY_CLICK_MODE, NOT_APPLICABLE, THRESHOLDS } from '../../constants';
 import { isDesktopShareButtonDisabled, isToolboxVisible } from '../../functions';
+import { getJwtDisabledButtons } from '../../functions.any';
 // @ts-ignore
 import DownloadButton from '../DownloadButton';
 // @ts-ignore
@@ -149,7 +146,7 @@ import VideoSettingsButton from './VideoSettingsButton';
 /**
  * The type of the React {@code Component} props of {@link Toolbox}.
  */
-interface Props extends WithTranslation {
+interface IProps extends WithTranslation {
 
     /**
      * String showing if the virtual background type is desktop-share.
@@ -245,9 +242,20 @@ interface Props extends WithTranslation {
     _isProfileDisabled: boolean;
 
     /**
+     * Whether or not speaker stats is disable.
+     */
+     _isSpeakerStatsDisabled: boolean;
+
+
+     /**
      * Whether or not the current meeting belongs to a JaaS user.
      */
     _isVpaasMeeting: boolean;
+
+    /**
+     * The array of toolbar buttons disabled through jwt features.
+     */
+    _jwtDisabledButons: string[];
 
     /**
      * The ID of the local participant.
@@ -320,6 +328,11 @@ interface Props extends WithTranslation {
     _visible: boolean;
 
     /**
+     * Whether the whiteboard is visible.
+     */
+    _whiteboardEnabled: boolean;
+
+    /**
      * An object containing the CSS classes.
      */
     classes: any;
@@ -343,7 +356,8 @@ const styles = () => {
             position: 'relative' as const,
             right: 'auto',
             maxHeight: 'inherit',
-            margin: 0
+            margin: 0,
+            marginBottom: '8px'
         },
 
         hangupMenu: {
@@ -353,7 +367,8 @@ const styles = () => {
             flexDirection: 'column' as const,
             rowGap: '8px',
             margin: 0,
-            padding: '16px'
+            padding: '16px',
+            marginBottom: '8px'
         }
     };
 };
@@ -363,14 +378,14 @@ const styles = () => {
  *
  * @augments Component
  */
-class Toolbox extends Component<Props> {
+class Toolbox extends Component<IProps> {
     /**
      * Initializes a new {@code Toolbox} instance.
      *
-     * @param {Props} props - The read-only React {@code Component} props with
+     * @param {IProps} props - The read-only React {@code Component} props with
      * which the new instance is to be initialized.
      */
-    constructor(props: Props) {
+    constructor(props: IProps) {
         super(props);
 
         // Bind event handlers so they are only bound once per instance.
@@ -393,6 +408,7 @@ class Toolbox extends Component<Props> {
         this._onToolbarToggleRaiseHand = this._onToolbarToggleRaiseHand.bind(this);
         this._onToolbarToggleScreenshare = this._onToolbarToggleScreenshare.bind(this);
         this._onShortcutToggleTileView = this._onShortcutToggleTileView.bind(this);
+        this._onShortcutSpeakerStats = this._onShortcutSpeakerStats.bind(this);
         this._onEscKey = this._onEscKey.bind(this);
     }
 
@@ -403,7 +419,8 @@ class Toolbox extends Component<Props> {
      * @returns {void}
      */
     componentDidMount() {
-        const { _toolbarButtons, t, dispatch, _reactionsEnabled, _gifsEnabled } = this.props;
+        const { _toolbarButtons, t, dispatch, _reactionsEnabled, _gifsEnabled, _isSpeakerStatsDisabled } = this.props;
+
         const KEYBOARD_SHORTCUTS = [
             isToolbarButtonEnabled('videoquality', _toolbarButtons) && {
                 character: 'A',
@@ -439,6 +456,11 @@ class Toolbox extends Component<Props> {
                 character: 'W',
                 exec: this._onShortcutToggleTileView,
                 helpDescription: 'toolbar.tileViewToggle'
+            },
+            !_isSpeakerStatsDisabled && isToolbarButtonEnabled('stats', _toolbarButtons) && {
+                character: 'T',
+                exec: this._onShortcutSpeakerStats,
+                helpDescription: 'keyboardShortcuts.showSpeakerStats'
             }
         ];
 
@@ -501,7 +523,7 @@ class Toolbox extends Component<Props> {
      *
      * @inheritdoc
      */
-    componentDidUpdate(prevProps: Props) {
+    componentDidUpdate(prevProps: IProps) {
         const { _dialog, _visible, dispatch } = this.props;
 
 
@@ -652,29 +674,11 @@ class Toolbox extends Component<Props> {
      */
     _doToggleScreenshare() {
         const {
-            _backgroundType,
             _desktopSharingButtonDisabled,
             _desktopSharingEnabled,
-            _localVideo,
             _screenSharing,
-            _virtualSource,
             dispatch
         } = this.props;
-
-        if (_backgroundType === VIRTUAL_BACKGROUND_TYPE.DESKTOP_SHARE) {
-            const noneOptions = {
-                enabled: false,
-                backgroundType: VIRTUAL_BACKGROUND_TYPE.NONE,
-                selectedThumbnail: VIRTUAL_BACKGROUND_TYPE.NONE,
-                backgroundEffectEnabled: false
-            };
-
-            _virtualSource.dispose();
-
-            dispatch(toggleBackgroundEffect(noneOptions, _localVideo));
-
-            return;
-        }
 
         if (_desktopSharingEnabled && !_desktopSharingButtonDisabled) {
             dispatch(startScreenShareFlow(!_screenSharing));
@@ -710,11 +714,13 @@ class Toolbox extends Component<Props> {
     _getAllButtons() {
         const {
             _feedbackConfigured,
+            _hasSalesforce,
             _isIosMobile,
             _isMobile,
-            _hasSalesforce,
+            _isSpeakerStatsDisabled,
             _multiStreamModeEnabled,
-            _screenSharing
+            _screenSharing,
+            _whiteboardEnabled
         } = this.props;
 
         const microphone = {
@@ -845,6 +851,12 @@ class Toolbox extends Component<Props> {
         };
 
 
+        const whiteboard = _whiteboardEnabled && {
+            key: 'whiteboard',
+            Content: WhiteboardButton,
+            group: 3
+        };
+
         const etherpad = {
             key: 'etherpad',
             Content: SharedDocumentButton,
@@ -869,7 +881,7 @@ class Toolbox extends Component<Props> {
             group: 3
         };
 
-        const speakerStats = {
+        const speakerStats = !_isSpeakerStatsDisabled && {
             key: 'stats',
             Content: SpeakerStatsButton,
             group: 3
@@ -932,6 +944,7 @@ class Toolbox extends Component<Props> {
             shareVideo,
             shareAudio,
             noiseSuppression,
+            whiteboard,
             etherpad,
             virtualBackground,
             dockIframe,
@@ -994,9 +1007,9 @@ class Toolbox extends Component<Props> {
     _getVisibleButtons() {
         const {
             _clientWidth,
-            _toolbarButtons
+            _toolbarButtons,
+            _jwtDisabledButons
         } = this.props;
-
 
         const buttons = this._getAllButtons();
 
@@ -1012,7 +1025,9 @@ class Toolbox extends Component<Props> {
             ...order.map(key => buttons[key as keyof typeof buttons]),
             ...Object.values(buttons).filter((button, index) => !order.includes(keys[index]))
         ].filter(Boolean).filter(({ key, alias = NOT_APPLICABLE }) =>
-            isToolbarButtonEnabled(key, _toolbarButtons) || isToolbarButtonEnabled(alias, _toolbarButtons));
+            !_jwtDisabledButons.includes(key)
+            && (isToolbarButtonEnabled(key, _toolbarButtons) || isToolbarButtonEnabled(alias, _toolbarButtons))
+        );
 
         if (isHangupVisible) {
             sliceIndex -= 1;
@@ -1206,6 +1221,34 @@ class Toolbox extends Component<Props> {
         this._doToggleScreenshare();
     }
 
+    /**
+     * Creates an analytics keyboard shortcut event and dispatches an action for
+     * toggling speaker stats.
+     *
+     * @private
+     * @returns {void}
+     */
+    _onShortcutSpeakerStats() {
+        sendAnalytics(createShortcutEvent(
+            'speaker.stats'
+        ));
+
+        this._doToggleSpekearStats();
+    }
+
+    /**
+     * Dispatches an action to toggle speakerStats.
+     *
+     * @private
+     * @returns {void}
+     */
+    _doToggleSpekearStats() {
+        const { dispatch } = this.props;
+
+        dispatch(toggleDialog(SpeakerStats, {
+            conference: APP.conference
+        }));
+    }
 
     /**
      * Toggle the toolbar visibility when tabbing into it.
@@ -1480,9 +1523,10 @@ class Toolbox extends Component<Props> {
  * @private
  * @returns {{}}
  */
-function _mapStateToProps(state: IState, ownProps: Partial<Props>) {
+function _mapStateToProps(state: IReduxState, ownProps: Partial<IProps>) {
     const { conference } = state['features/base/conference'];
     const endConferenceSupported = conference?.isEndConferenceSupported();
+
     const {
         buttonsWithNotifyClick,
         callStatsID,
@@ -1518,7 +1562,9 @@ function _mapStateToProps(state: IState, ownProps: Partial<Props>) {
         _isProfileDisabled: Boolean(disableProfile),
         _isIosMobile: isIosMobileBrowser(),
         _isMobile: isMobileBrowser(),
+        _isSpeakerStatsDisabled: isSpeakerStatsDisabled(state),
         _isVpaasMeeting: isVpaasMeeting(state),
+        _jwtDisabledButons: getJwtDisabledButtons(state),
         _hasSalesforce: isSalesforceEnabled(state),
         _hangupMenuVisible: hangupMenuVisible,
         _localParticipantID: localParticipant?.id,
@@ -1533,7 +1579,8 @@ function _mapStateToProps(state: IState, ownProps: Partial<Props>) {
         _tileViewEnabled: shouldDisplayTileView(state),
         _toolbarButtons: toolbarButtons,
         _virtualSource: state['features/virtual-background'].virtualSource,
-        _visible: isToolboxVisible(state)
+        _visible: isToolboxVisible(state),
+        _whiteboardEnabled: isWhiteboardButtonVisible(state)
     };
 }
 

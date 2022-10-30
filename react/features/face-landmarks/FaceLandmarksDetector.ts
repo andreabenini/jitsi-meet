@@ -1,23 +1,21 @@
-/* eslint-disable lines-around-comment */
 import 'image-capture';
 import './createImageBitmap';
 import { IStore } from '../app/types';
-// @ts-ignore
 import { getLocalVideoTrack } from '../base/tracks/functions';
 import { getBaseUrl } from '../base/util/helpers';
 
 import {
     addFaceExpression,
-    faceLandmarkDetectionStopped,
     clearFaceExpressionBuffer,
+    faceLandmarkDetectionStopped,
     newFaceBox
 } from './actions';
 import {
     DETECTION_TYPES,
-    INIT_WORKER,
     DETECT_FACE,
-    WEBHOOK_SEND_TIME_INTERVAL,
-    FACE_LANDMARK_DETECTION_ERROR_THRESHOLD
+    FACE_LANDMARK_DETECTION_ERROR_THRESHOLD,
+    INIT_WORKER,
+    WEBHOOK_SEND_TIME_INTERVAL
 } from './constants';
 import {
     getDetectionInterval,
@@ -98,6 +96,7 @@ class FaceLandmarksDetector {
 
         const baseUrl = `${getBaseUrl()}libs/`;
         let workerUrl = `${baseUrl}face-landmarks-worker.min.js`;
+
         // @ts-ignore
         const workerBlob = new Blob([ `importScripts("${workerUrl}");` ], { type: 'application/javascript' });
 

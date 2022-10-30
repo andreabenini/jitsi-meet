@@ -1,16 +1,11 @@
-/* eslint-disable lines-around-comment */
 import { batch } from 'react-redux';
 
 import { createReactionSoundsDisabledEvent } from '../analytics/AnalyticsEvents';
 import { sendAnalytics } from '../analytics/functions';
 import { IStore } from '../app/types';
 import { APP_WILL_MOUNT, APP_WILL_UNMOUNT } from '../base/app/actionTypes';
-import {
-    CONFERENCE_JOIN_IN_PROGRESS,
-    SET_START_REACTIONS_MUTED,
-    setStartReactionsMuted
-    // @ts-ignore
-} from '../base/conference';
+import { CONFERENCE_JOIN_IN_PROGRESS, SET_START_REACTIONS_MUTED } from '../base/conference/actionTypes';
+import { setStartReactionsMuted } from '../base/conference/actions';
 import {
     getParticipantById,
     getParticipantCount,
@@ -18,20 +13,17 @@ import {
 } from '../base/participants/functions';
 import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
 import { SETTINGS_UPDATED } from '../base/settings/actionTypes';
-// @ts-ignore
 import { updateSettings } from '../base/settings/actions';
-// @ts-ignore
-import { playSound, registerSound, unregisterSound } from '../base/sounds';
-// @ts-ignore
+import { playSound, registerSound, unregisterSound } from '../base/sounds/actions';
 import { getDisabledSounds } from '../base/sounds/functions.any';
-// @ts-ignore
-import { NOTIFICATION_TIMEOUT_TYPE, showNotification } from '../notifications';
+import { showNotification } from '../notifications/actions';
+import { NOTIFICATION_TIMEOUT_TYPE } from '../notifications/constants';
 
 import {
     ADD_REACTION_BUFFER,
     FLUSH_REACTION_BUFFER,
-    SEND_REACTIONS,
     PUSH_REACTIONS,
+    SEND_REACTIONS,
     SHOW_SOUNDS_NOTIFICATION
 } from './actionTypes';
 import {
@@ -44,12 +36,12 @@ import {
 import { displayReactionSoundsNotification } from './actions.web';
 import {
     ENDPOINT_REACTION_NAME,
+    IMuteCommandAttributes,
+    MUTE_REACTIONS_COMMAND,
     RAISE_HAND_SOUND_ID,
     REACTIONS,
     REACTION_SOUND,
-    SOUNDS_THRESHOLDS,
-    MUTE_REACTIONS_COMMAND,
-    MuteCommandAttributes
+    SOUNDS_THRESHOLDS
 } from './constants';
 import {
     getReactionMessageFromBuffer,
@@ -115,7 +107,7 @@ MiddlewareRegistry.register((store: IStore) => (next: Function) => (action: any)
         const { conference } = action;
 
         conference.addCommandListener(
-            MUTE_REACTIONS_COMMAND, ({ attributes }: { attributes: MuteCommandAttributes; }, id: any) => {
+            MUTE_REACTIONS_COMMAND, ({ attributes }: { attributes: IMuteCommandAttributes; }, id: any) => {
                 _onMuteReactionsCommand(attributes, id, store);
             });
         break;
@@ -241,7 +233,7 @@ MiddlewareRegistry.register((store: IStore) => (next: Function) => (action: any)
  * @private
  * @returns {void}
  */
-function _onMuteReactionsCommand(attributes: MuteCommandAttributes = {}, id: string, store: IStore) {
+function _onMuteReactionsCommand(attributes: IMuteCommandAttributes = {}, id: string, store: IStore) {
     const state = store.getState();
 
     // We require to know who issued the command because (1) only a

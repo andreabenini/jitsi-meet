@@ -8,14 +8,13 @@ import { makeStyles } from 'tss-react/mui';
 import { translate } from '../../../base/i18n/functions';
 import Icon from '../../../base/icons/components/Icon';
 import { IconArrowLeft } from '../../../base/icons/svg';
-// @ts-ignore
-import { ActionButton } from '../../../base/premeeting';
+import { Button } from '../../../base/ui/components/web';
 // @ts-ignore
 import { getCountryCodeFromPhone } from '../../utils';
 // @ts-ignore
 import Label from '../Label';
 
-interface Props extends WithTranslation {
+interface IProps extends WithTranslation {
 
     /**
      * The number to call in order to join the conference.
@@ -99,10 +98,10 @@ const useStyles = makeStyles()((theme: Theme) => {
  * This component displays the dialog with all the information
  * to join a meeting by calling it.
  *
- * @param {Props} props - The props of the component.
+ * @param {IProps} props - The props of the component.
  * @returns {React$Element}
  */
-function DialinDialog(props: Props) {
+function DialinDialog(props: IProps) {
     const {
         number,
         onBack,
@@ -153,18 +152,18 @@ function DialinDialog(props: Props) {
                 {t('prejoin.connectedWithAudioQ')}
             </Label>
             <div className = 'prejoin-dialog-dialin-btns'>
-                <ActionButton
+                <Button
                     className = 'prejoin-dialog-btn'
+                    fullWidth = { true }
+                    labelKey = 'prejoin.joinMeeting'
                     onClick = { onPrimaryButtonClick }
-                    type = 'primary'>
-                    {t('prejoin.joinMeeting')}
-                </ActionButton>
-                <ActionButton
+                    type = 'primary' />
+                <Button
                     className = 'prejoin-dialog-btn'
+                    fullWidth = { true }
+                    labelKey = 'dialog.Cancel'
                     onClick = { onTextButtonClick }
-                    type = 'text'>
-                    {t('dialog.Cancel')}
-                </ActionButton>
+                    type = 'tertiary' />
             </div>
         </div>
     );

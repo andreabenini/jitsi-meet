@@ -1,16 +1,14 @@
-/* eslint-disable lines-around-comment */
 import { IStore } from '../app/types';
 import {
     CONFERENCE_JOINED,
     CONFERENCE_WILL_LEAVE
 } from '../base/conference/actionTypes';
-// @ts-ignore
 import { getCurrentConference } from '../base/conference/functions';
 import { JitsiConferenceEvents } from '../base/lib-jitsi-meet';
 import { getLocalParticipant, getParticipantCount } from '../base/participants/functions';
-import { Participant } from '../base/participants/types';
+import { IParticipant } from '../base/participants/types';
 import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
-import { TRACK_UPDATED, TRACK_ADDED, TRACK_REMOVED } from '../base/tracks/actionTypes';
+import { TRACK_ADDED, TRACK_REMOVED, TRACK_UPDATED } from '../base/tracks/actionTypes';
 
 import FaceLandmarksDetector from './FaceLandmarksDetector';
 import { ADD_FACE_EXPRESSION, NEW_FACE_COORDINATES, UPDATE_FACE_COORDINATES } from './actionTypes';
@@ -34,7 +32,7 @@ MiddlewareRegistry.register((store: IStore) => (next: Function) => (action: any)
         // allow using remote face centering data when local face centering is not enabled
         action.conference.on(
             JitsiConferenceEvents.ENDPOINT_MESSAGE_RECEIVED,
-            (participant: Participant | undefined, eventData: any) => {
+            (participant: IParticipant | undefined, eventData: any) => {
                 if (!participant || !eventData || !participant.getId) {
                     return;
                 }
@@ -63,7 +61,7 @@ MiddlewareRegistry.register((store: IStore) => (next: Function) => (action: any)
         return next(action);
     }
     case TRACK_ADDED: {
-        const { jitsiTrack: { isLocal, muted, videoType } } = action.track;
+        const { jitsiTrack: { isLocal, videoType }, muted } = action.track;
 
         if (videoType === 'camera' && isLocal() && !muted) {
             // need to pass this since the track is not yet added in the store

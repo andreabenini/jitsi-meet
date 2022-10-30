@@ -13,12 +13,13 @@ import {
 } from './actionTypes';
 import {
     NOTIFICATION_ICON,
-    NOTIFICATION_TIMEOUT_TYPE,
     NOTIFICATION_TIMEOUT,
+    NOTIFICATION_TIMEOUT_TYPE,
     NOTIFICATION_TYPE,
     SILENT_JOIN_THRESHOLD,
     SILENT_LEFT_THRESHOLD
 } from './constants';
+import { INotificationProps } from './types';
 
 /**
  * Function that returns notification timeout value based on notification timeout type.
@@ -87,22 +88,6 @@ export function setNotificationsEnabled(enabled: boolean) {
         type: SET_NOTIFICATIONS_ENABLED,
         enabled
     };
-}
-
-interface INotificationProps {
-    appearance?: string;
-    concatText?: boolean;
-    customActionHandler?: Function[];
-    customActionNameKey?: string[];
-    description?: string;
-    descriptionKey?: string;
-    icon?: string;
-    title?: string;
-    titleArguments?: {
-        [key: string]: string;
-    };
-    titleKey?: string;
-    uid?: string;
 }
 
 /**

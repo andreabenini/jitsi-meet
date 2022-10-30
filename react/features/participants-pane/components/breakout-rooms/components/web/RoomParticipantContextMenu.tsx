@@ -7,12 +7,10 @@ import { makeStyles } from 'tss-react/mui';
 
 // @ts-ignore
 import { Avatar } from '../../../../../base/avatar';
-// @ts-ignore
-import { ContextMenu, ContextMenuItemGroup } from '../../../../../base/components';
 import { isLocalParticipantModerator } from '../../../../../base/participants/functions';
-// @ts-ignore
+import ContextMenu from '../../../../../base/ui/components/web/ContextMenu';
+import ContextMenuItemGroup from '../../../../../base/ui/components/web/ContextMenuItemGroup';
 import { getBreakoutRooms } from '../../../../../breakout-rooms/functions';
-// @ts-ignore
 import { showOverflowDrawer } from '../../../../../toolbox/functions.web';
 // @ts-ignore
 import SendToRoomButton from '../../../../../video-menu/components/web/SendToRoomButton';
@@ -38,17 +36,17 @@ type Props = {
     /**
      * Callback for the mouse entering the component.
      */
-    onEnter: Function;
+    onEnter: () => void;
 
     /**
      * Callback for the mouse leaving the component.
      */
-    onLeave: Function;
+    onLeave: () => void;
 
     /**
      * Callback for making a selection in the menu.
      */
-    onSelect: Function;
+    onSelect: (force?: any) => void;
 };
 
 const useStyles = makeStyles()((theme: Theme) => {

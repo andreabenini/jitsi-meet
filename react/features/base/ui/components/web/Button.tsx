@@ -6,9 +6,9 @@ import { makeStyles } from 'tss-react/mui';
 import Icon from '../../../icons/components/Icon';
 import { withPixelLineHeight } from '../../../styles/functions.web';
 import { BUTTON_TYPES } from '../../constants';
-import { ButtonProps } from '../types';
+import { IButtonProps } from '../types';
 
-interface IButtonProps extends ButtonProps {
+interface IProps extends IButtonProps {
 
     /**
      * Class name used for additional styles.
@@ -178,6 +178,7 @@ const useStyles = makeStyles()((theme: Theme) => {
 
 const Button = React.forwardRef<any, any>(({
     accessibilityLabel,
+    autoFocus = false,
     className,
     disabled,
     fullWidth,
@@ -190,13 +191,14 @@ const Button = React.forwardRef<any, any>(({
     size = 'medium',
     testId,
     type = BUTTON_TYPES.PRIMARY
-}: IButtonProps, ref) => {
+}: IProps, ref) => {
     const { classes: styles, cx } = useStyles();
     const { t } = useTranslation();
 
     return (
         <button
             aria-label = { accessibilityLabel }
+            autoFocus = { autoFocus }
             className = { cx(styles.button, styles[type],
                 disabled && styles.disabled,
                 icon && !(labelKey || label) && `${styles.iconButton} iconButton`,

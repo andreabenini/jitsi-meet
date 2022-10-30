@@ -19,7 +19,7 @@ import {
 
 // @ts-ignore
 import { getDefaultURL } from '../../../app/functions';
-import { IState } from '../../../app/types';
+import { IReduxState } from '../../../app/types';
 // @ts-ignore
 import { Avatar } from '../../../base/avatar';
 import { translate } from '../../../base/i18n/functions';
@@ -27,8 +27,7 @@ import { translate } from '../../../base/i18n/functions';
 import JitsiScreen from '../../../base/modal/components/JitsiScreen';
 import { getLocalParticipant } from '../../../base/participants/functions';
 import { connect } from '../../../base/redux/functions';
-// @ts-ignore
-import { updateSettings } from '../../../base/settings';
+import { updateSettings } from '../../../base/settings/actions';
 import BaseThemeNative from '../../../base/ui/components/BaseTheme.native';
 import Switch from '../../../base/ui/components/native/Switch';
 // @ts-ignore
@@ -36,7 +35,7 @@ import { screen } from '../../../mobile/navigation/routes';
 // @ts-ignore
 import { AVATAR_SIZE } from '../../../welcome/components/styles';
 // @ts-ignore
-import { normalizeUserInputURL, isServerURLChangeEnabled } from '../../functions';
+import { isServerURLChangeEnabled, normalizeUserInputURL } from '../../functions';
 
 // @ts-ignore
 import FormRow from './FormRow';
@@ -51,7 +50,7 @@ import styles, { PLACEHOLDER_COLOR, PLACEHOLDER_TEXT_COLOR } from './styles';
 const { AppInfo } = NativeModules;
 
 
-interface State {
+interface IState {
 
     /**
      * State variable for the disable call integration switch.
@@ -89,6 +88,11 @@ interface State {
     serverURL: string;
 
     /**
+     * State variable for start car mode.
+     */
+    startCarMode: boolean;
+
+    /**
      * State variable for the start with audio muted switch.
      */
     startWithAudioMuted: boolean;
@@ -103,7 +107,7 @@ interface State {
  * The type of the React {@code Component} props of
  * {@link SettingsView}.
  */
-interface Props extends WithTranslation {
+interface IProps extends WithTranslation {
 
     /**
      * The ID of the local participant.
@@ -135,6 +139,7 @@ interface Props extends WithTranslation {
         displayName: string;
         email: string;
         serverURL: string;
+        startCarMode: boolean;
         startWithAudioMuted: boolean;
         startWithVideoMuted: boolean;
     };
@@ -147,6 +152,11 @@ interface Props extends WithTranslation {
     _visible: boolean;
 
     /**
+     * Add bottom padding to the screen.
+     */
+    addBottomInset?: boolean;
+
+    /**
      * Redux store dispatch function.
      */
     dispatch: Function;
@@ -157,15 +167,15 @@ interface Props extends WithTranslation {
     navigation: Object;
 
     /**
-     * Callback to be invoked when settings screen is focused.
+     * Bounce when scrolling.
      */
-    onSettingsScreenFocused: Function;
+    scrollBounces?: boolean;
 }
 
 /**
  * The native container rendering the app settings page.
  */
-class SettingsView extends Component<Props, State> {
+class SettingsView extends Component<IProps, IState> {
     _urlField: Object;
 
     /**
@@ -174,7 +184,7 @@ class SettingsView extends Component<Props, State> {
      *
      * @inheritdoc
      */
-    constructor(props: Props) {
+    constructor(props: IProps) {
         super(props);
 
         const {
@@ -185,6 +195,7 @@ class SettingsView extends Component<Props, State> {
             displayName,
             email,
             serverURL,
+            startCarMode,
             startWithAudioMuted,
             startWithVideoMuted
         } = props._settings || {};
@@ -197,6 +208,7 @@ class SettingsView extends Component<Props, State> {
             displayName,
             email,
             serverURL,
+            startCarMode,
             startWithAudioMuted,
             startWithVideoMuted
         };
@@ -213,6 +225,8 @@ class SettingsView extends Component<Props, State> {
         this._onDisableSelfView = this._onDisableSelfView.bind(this);
         this._onStartAudioMutedChange
             = this._onStartAudioMutedChange.bind(this);
+        this._onStartCarmodeInLowBandwidthMode
+            = this._onStartCarmodeInLowBandwidthMode.bind(this);
         this._onStartVideoMutedChange
             = this._onStartVideoMutedChange.bind(this);
         this._setURLFieldReference = this._setURLFieldReference.bind(this);
@@ -225,7 +239,7 @@ class SettingsView extends Component<Props, State> {
      * @inheritdoc
      * @returns {void}
      */
-    componentDidUpdate(prevProps: Props) {
+    componentDidUpdate(prevProps: IProps) {
         const { _settings } = this.props;
 
         if (!_.isEqual(prevProps._settings, _settings)) {
@@ -250,11 +264,16 @@ class SettingsView extends Component<Props, State> {
             displayName,
             email,
             serverURL,
+            startCarMode,
             startWithAudioMuted,
             startWithVideoMuted
         } = this.state;
 
-        const { t } = this.props;
+        const {
+            addBottomInset = false,
+            scrollBounces = false,
+            t
+        } = this.props;
 
         const textInputTheme = {
             colors: {
@@ -268,9 +287,10 @@ class SettingsView extends Component<Props, State> {
 
         return (
             <JitsiScreen
-                safeAreaInsets = { [ 'bottom', 'left', 'right' ] }
+                disableForcedKeyboardDismiss = { true }
+                safeAreaInsets = { [ addBottomInset && 'bottom', 'left', 'right' ].filter(Boolean) }
                 style = { styles.settingsViewContainer }>
-                <ScrollView>
+                <ScrollView bounces = { scrollBounces }>
                     <View style = { styles.avatarContainer }>
                         <Avatar
                             participantId = { this.props._localParticipantId }
@@ -324,6 +344,13 @@ class SettingsView extends Component<Props, State> {
                             textContentType = { 'URL' } // iOS only
                             theme = { textInputTheme }
                             value = { serverURL } />
+                        <Divider style = { styles.fieldSeparator } />
+                        <FormRow label = 'settingsView.startCarModeInLowBandwidthMode'>
+                            <Switch
+                                checked = { startCarMode }
+                                // @ts-ignore
+                                onChange = { this._onStartCarmodeInLowBandwidthMode } />
+                        </FormRow>
                         <Divider style = { styles.fieldSeparator } />
                         <FormRow
                             label = 'settingsView.startWithAudioMuted'>
@@ -532,6 +559,23 @@ class SettingsView extends Component<Props, State> {
         });
     }
 
+    /** .
+     * Handles car mode in low bandwidth mode.
+     *
+     * @param {boolean} startCarMode - The new value.
+     * @private
+     * @returns {void}
+     */
+    _onStartCarmodeInLowBandwidthMode(startCarMode: boolean) {
+        this.setState({
+            startCarMode
+        });
+
+        this._updateSettings({
+            startCarMode
+        });
+    }
+
     /**
      * Handles the disable crash reporting change event.
      *
@@ -709,9 +753,9 @@ class SettingsView extends Component<Props, State> {
  * Maps part of the Redux state to the props of this component.
  *
  * @param {Object} state - The Redux state.
- * @returns {Props}
+ * @returns {IProps}
  */
-function _mapStateToProps(state: IState) {
+function _mapStateToProps(state: IReduxState) {
     const localParticipant = getLocalParticipant(state);
 
     return {

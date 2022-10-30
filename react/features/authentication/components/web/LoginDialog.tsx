@@ -1,37 +1,32 @@
-/* eslint-disable lines-around-comment */
 import React, { Component } from 'react';
 import { WithTranslation } from 'react-i18next';
-import type { Dispatch } from 'redux';
 
-// @ts-ignore
+// @ts-expect-error
 import { connect } from '../../../../../connection';
-import { IState } from '../../../app/types';
+import { IReduxState, IStore } from '../../../app/types';
+import { IJitsiConference } from '../../../base/conference/reducer';
 import { IConfig } from '../../../base/config/configType';
-// @ts-ignore
 import { toJid } from '../../../base/connection/functions';
-// @ts-ignore
-import { Dialog } from '../../../base/dialog';
 import { translate, translateToHTML } from '../../../base/i18n/functions';
-// @ts-ignore
 import { JitsiConnectionErrors } from '../../../base/lib-jitsi-meet';
 import { connect as reduxConnect } from '../../../base/redux/functions';
+import Dialog from '../../../base/ui/components/web/Dialog';
 import Input from '../../../base/ui/components/web/Input';
 import {
     authenticateAndUpgradeRole,
     cancelLogin
-    // @ts-ignore
 } from '../../actions.web';
 
 /**
  * The type of the React {@code Component} props of {@link LoginDialog}.
  */
-interface Props extends WithTranslation {
+interface IProps extends WithTranslation {
 
     /**
      * {@link JitsiConference} That needs authentication - will hold a valid
      * value in XMPP login + guest access mode.
      */
-    _conference: Object;
+    _conference: IJitsiConference;
 
     /**
      * The server hosts specified in the global config.
@@ -57,7 +52,7 @@ interface Props extends WithTranslation {
     /**
      * Redux store dispatch method.
      */
-    dispatch: Dispatch<any>;
+    dispatch: IStore['dispatch'];
 
     /**
      * Invoked when username and password are submitted.
@@ -96,13 +91,13 @@ type State = {
  *
  *  @returns {React$Element<any>}
  */
-class LoginDialog extends Component<Props, State> {
+class LoginDialog extends Component<IProps, State> {
     /**
      * Initializes a new {@code LoginDialog} instance.
      *
      * @inheritdoc
      */
-    constructor(props: Props) {
+    constructor(props: IProps) {
         super(props);
 
         this.state = {
@@ -258,19 +253,18 @@ class LoginDialog extends Component<Props, State> {
 
         return (
             <Dialog
-                disableBlanketClickDismiss = { true }
-                hideCloseIconButton = { true }
-                okDisabled = {
-                    connecting
-                    || loginStarted
-                    || !password
-                    || !username
-                }
-                okKey = { t('dialog.login') }
+                disableBackdropClose = { true }
+                hideCloseButton = { true }
+                ok = {{
+                    disabled: connecting
+                        || loginStarted
+                        || !password
+                        || !username,
+                    translationKey: 'dialog.login'
+                }}
                 onCancel = { this._onCancelLogin }
                 onSubmit = { this._onLogin }
-                titleKey = { t('dialog.authenticationRequired') }
-                width = { 'small' }>
+                titleKey = { t('dialog.authenticationRequired') }>
                 <Input
                     autoFocus = { true }
                     label = { t('dialog.user') }
@@ -281,6 +275,7 @@ class LoginDialog extends Component<Props, State> {
                     value = { username } />
                 <br />
                 <Input
+                    className = 'dialog-bottom-margin'
                     label = { t('dialog.userPassword') }
                     name = 'password'
                     onChange = { this._onPasswordChange }
@@ -299,9 +294,9 @@ class LoginDialog extends Component<Props, State> {
  *
  * @param {Object} state - The Redux state.
  * @private
- * @returns {Props}
+ * @returns {IProps}
  */
-function mapStateToProps(state: IState) {
+function mapStateToProps(state: IReduxState) {
     const {
         error: authenticateAndUpgradeRoleError,
         progress,

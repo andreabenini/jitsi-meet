@@ -1,10 +1,10 @@
 import {
+    BOO_SOUND_FILES,
     CLAP_SOUND_FILES,
     LAUGH_SOUND_FILES,
     LIKE_SOUND_FILES,
-    BOO_SOUND_FILES,
-    SURPRISE_SOUND_FILES,
-    SILENCE_SOUND_FILES
+    SILENCE_SOUND_FILES,
+    SURPRISE_SOUND_FILES
 } from './sounds';
 
 /**
@@ -85,7 +85,7 @@ export const SILENCE_SOUND_ID = `${REACTION_SOUND}_SILENCE_`;
  */
 export const RAISE_HAND_SOUND_ID = 'RAISE_HAND_SOUND';
 
-export interface ReactionEmojiProps {
+export interface IReactionEmojiProps {
 
     /**
      * Reaction to be displayed.
@@ -160,6 +160,6 @@ export type ReactionThreshold = {
     threshold: number;
 };
 
-export interface MuteCommandAttributes {
+export interface IMuteCommandAttributes {
     startReactionsMuted?: string;
 }

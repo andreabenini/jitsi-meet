@@ -115,6 +115,7 @@ export interface IConfig {
     autoKnockLobby?: boolean;
     backgroundAlpha?: number;
     bosh?: string;
+    brandingDataUrl?: string;
     brandingRoomAlias?: string;
     breakoutRooms?: {
         hideAddRoomButton?: boolean;
@@ -311,7 +312,8 @@ export interface IConfig {
     giphy?: {
         displayMode?: 'all' | 'tile' | 'chat';
         enabled?: boolean;
-        sdkKey?: '';
+        rating?: 'g' | 'pg' | 'pg-13' | 'r';
+        sdkKey?: string;
         tileTime?: number;
     };
     gravatar?: {
@@ -342,6 +344,8 @@ export interface IConfig {
     iAmRecorder?: boolean;
     iAmSipGateway?: boolean;
     inviteAppName?: string | null;
+    jaasFeedbackMetadataURL?: string;
+    jaasTokenUrl?: string;
     lastNLimits?: {
         [key: number]: number;
     };
@@ -425,6 +429,11 @@ export interface IConfig {
         mode?: 'always' | 'recording';
     };
     serviceUrl?: string;
+    speakerStats?: {
+        disableSearch?: boolean;
+        disabled?: boolean;
+        order?: Array<'role' | 'name' | 'hasLeft'>;
+    };
     speakerStatsOrder?: Array<'role' | 'name' | 'hasLeft'>;
     startAudioMuted?: number;
     startAudioOnly?: boolean;
@@ -440,7 +449,6 @@ export interface IConfig {
         callStatsThreshold?: number;
         capScreenshareBitrate?: number;
         disableE2EE?: boolean;
-        enableThumbnailReordering?: boolean;
         mobileXmppWsThreshold?: number;
         noAutoPlayVideo?: boolean;
         p2pTestMode?: boolean;
@@ -464,6 +472,8 @@ export interface IConfig {
         disableStartForAll?: boolean;
         enabled?: boolean;
         preferredLanguage?: string;
+        translationLanguages?: Array<string>;
+        translationLanguagesHead?: Array<string>;
         useAppLanguage?: boolean;
     };
     useHostPageLocalStorage?: boolean;
@@ -479,9 +489,10 @@ export interface IConfig {
                 standard?: number;
             };
         };
-        minHeightForQualityLvl: {
+        minHeightForQualityLvl?: {
             [key: number]: string;
         };
+        persist?: boolean;
         preferredCodec?: string;
         resizeDesktopForPresenter?: boolean;
     };
@@ -490,4 +501,8 @@ export interface IConfig {
     webrtcIceUdpDisable?: boolean;
     websocket?: string;
     websocketKeepAliveUrl?: string;
+    whiteboard?: {
+        collabServerBaseUrl?: string;
+        enabled?: boolean;
+    };
 }

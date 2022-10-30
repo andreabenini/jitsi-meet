@@ -1,7 +1,7 @@
 // @ts-ignore
 import jwtDecode from 'jwt-decode';
 
-import { IState } from '../../app/types';
+import { IReduxState } from '../../app/types';
 import { getLocalParticipant } from '../participants/functions';
 import { parseURLParams } from '../util/parseURLParams';
 
@@ -24,10 +24,10 @@ export function parseJWTFromURLParams(url: URL | Location = window.location) {
 /**
  * Returns the user name after decoding the jwt.
  *
- * @param {IState} state - The app state.
+ * @param {IReduxState} state - The app state.
  * @returns {string}
  */
-export function getJwtName(state: IState) {
+export function getJwtName(state: IReduxState) {
     const { user } = state['features/base/jwt'];
 
     return user?.name;
@@ -36,12 +36,13 @@ export function getJwtName(state: IState) {
 /**
  * Check if the given JWT feature is enabled.
  *
- * @param {IState} state - The app state.
+ * @param {IReduxState} state - The app state.
  * @param {string} feature - The feature we want to check.
  * @param {boolean} ifNoToken - Default value if there is no token.
- * @returns {string}
+ * @param {boolean} ifNotInFeatures - Default value if features prop exists but does not have the {@code feature}.
+ * @returns {bolean}
  */
-export function isJwtFeatureEnabled(state: IState, feature: string, ifNoToken = false) {
+export function isJwtFeatureEnabled(state: IReduxState, feature: string, ifNoToken = false, ifNotInFeatures = false) {
     const { jwt } = state['features/base/jwt'];
 
     if (!jwt) {
@@ -53,6 +54,10 @@ export function isJwtFeatureEnabled(state: IState, feature: string, ifNoToken = 
     // If `features` is undefined, act as if everything is enabled.
     if (typeof features === 'undefined') {
         return true;
+    }
+
+    if (typeof features[feature as keyof typeof features] === 'undefined') {
+        return ifNotInFeatures;
     }
 
     return String(features[feature as keyof typeof features]) === 'true';
@@ -147,9 +152,10 @@ export function validateJwt(jwt: string) {
             errors.push('- `context` object is missing from the payload');
         } else if (context.features) {
             const { features } = context;
+            const meetFeatures = Object.values(MEET_FEATURES);
 
             Object.keys(features).forEach(feature => {
-                if (MEET_FEATURES.includes(feature)) {
+                if (meetFeatures.includes(feature)) {
                     const featureValue = features[feature];
 
                     // cannot use truthy or falsy because we need the exact value and type check.

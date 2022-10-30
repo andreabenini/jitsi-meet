@@ -6,31 +6,32 @@ import clsx from 'clsx';
 import React from 'react';
 import { WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import type { Dispatch } from 'redux';
 
-import { IState } from '../../../app/types';
-// @ts-ignore
-import { getSourceNameSignalingFeatureFlag } from '../../../base/config';
+import { IReduxState, IStore } from '../../../app/types';
+import { getSourceNameSignalingFeatureFlag } from '../../../base/config/functions.any';
 import { translate } from '../../../base/i18n/functions';
 import { MEDIA_TYPE } from '../../../base/media/constants';
-import { getLocalParticipant, getParticipantById } from '../../../base/participants/functions';
-// @ts-ignore
-import { Popover } from '../../../base/popover';
 import {
-    getVirtualScreenshareParticipantTrack,
-    getSourceNameByParticipantId, // @ts-ignore
-    getTrackByMediaTypeAndParticipant } from '../../../base/tracks';
+    getLocalParticipant,
+    getParticipantById,
+    isScreenShareParticipant
+} from '../../../base/participants/functions';
+import Popover from '../../../base/popover/components/Popover.web';
+import {
+    getSourceNameByParticipantId,
+    getTrackByMediaTypeAndParticipant,
+    getVirtualScreenshareParticipantTrack
+} from '../../../base/tracks/functions';
 import {
     isParticipantConnectionStatusInactive,
     isParticipantConnectionStatusInterrupted,
     isTrackStreamingStatusInactive,
     isTrackStreamingStatusInterrupted
-    // @ts-ignore
 } from '../../functions';
 import AbstractConnectionIndicator, {
-    INDICATOR_DISPLAY_THRESHOLD,
     type Props as AbstractProps,
-    type State as AbstractState
+    type State as AbstractState,
+    INDICATOR_DISPLAY_THRESHOLD
     // @ts-ignore
 } from '../AbstractConnectionIndicator';
 
@@ -126,7 +127,7 @@ type Props = AbstractProps & WithTranslation & {
     /**
      * The Redux dispatch function.
      */
-    dispatch: Dispatch<any>;
+    dispatch: IStore['dispatch'];
 
     /**
      * Whether or not clicking the indicator should display a popover for more
@@ -251,7 +252,6 @@ class ConnectionIndicator extends AbstractConnectionIndicator<Props, State> {
                     participantId = { participantId } /> }
                 disablePopover = { !enableStatsDisplay }
                 id = 'participant-connection-indicator'
-                noPaddingContent = { true }
                 onPopoverClose = { this._onHidePopover }
                 onPopoverOpen = { this._onShowPopover }
                 position = { statsPopoverPosition }
@@ -392,7 +392,7 @@ class ConnectionIndicator extends AbstractConnectionIndicator<Props, State> {
  * @param {Props} ownProps - The own props of the component.
  * @returns {Props}
  */
-export function _mapStateToProps(state: IState, ownProps: Props) {
+export function _mapStateToProps(state: IReduxState, ownProps: Props) {
     const { participantId } = ownProps;
     const tracks = state['features/base/tracks'];
     const sourceNameSignalingEnabled = getSourceNameSignalingFeatureFlag(state);
@@ -400,7 +400,7 @@ export function _mapStateToProps(state: IState, ownProps: Props) {
 
     let firstVideoTrack;
 
-    if (sourceNameSignalingEnabled && participant?.isVirtualScreenshareParticipant) {
+    if (sourceNameSignalingEnabled && isScreenShareParticipant(participant)) {
         firstVideoTrack = getVirtualScreenshareParticipantTrack(tracks, participantId);
     } else {
         firstVideoTrack = getTrackByMediaTypeAndParticipant(tracks, MEDIA_TYPE.VIDEO, participantId);

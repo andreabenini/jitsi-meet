@@ -5,18 +5,19 @@ import { batch } from 'react-redux';
 import VideoLayout from '../../../modules/UI/videolayout/VideoLayout';
 import {
     DOMINANT_SPEAKER_CHANGED,
+    PARTICIPANT_JOINED,
+    PARTICIPANT_LEFT,
     getDominantSpeakerParticipant,
     getLocalParticipant,
     getLocalScreenShareParticipant,
-    PARTICIPANT_JOINED,
-    PARTICIPANT_LEFT
+    isScreenShareParticipant
 } from '../base/participants';
 import { MiddlewareRegistry } from '../base/redux';
 import { CLIENT_RESIZED } from '../base/responsive-ui';
 import { SETTINGS_UPDATED } from '../base/settings';
 import {
-    getCurrentLayout,
     LAYOUTS,
+    getCurrentLayout,
     setTileView
 } from '../video-layout';
 
@@ -45,13 +46,13 @@ import {
     TOP_FILMSTRIP_HEIGHT
 } from './constants';
 import {
-    isFilmstripResizable,
-    isStageFilmstripAvailable,
-    updateRemoteParticipants,
-    updateRemoteParticipantsOnLeave,
     getActiveParticipantsIds,
     getPinnedActiveParticipants,
-    isStageFilmstripTopPanel
+    isFilmstripResizable,
+    isStageFilmstripAvailable,
+    isStageFilmstripTopPanel,
+    updateRemoteParticipants,
+    updateRemoteParticipantsOnLeave
 } from './functions.web';
 import './subscriber';
 
@@ -108,7 +109,7 @@ MiddlewareRegistry.register(store => next => action => {
     }
     case PARTICIPANT_JOINED: {
         result = next(action);
-        if (action.participant?.isLocalScreenShare) {
+        if (isScreenShareParticipant(action.participant)) {
             break;
         }
 

@@ -1,4 +1,3 @@
-/* eslint-disable lines-around-comment */
 // @ts-ignore
 import { jitsiLocalStorage } from '@jitsi/js-utils';
 import _ from 'lodash';
@@ -37,6 +36,7 @@ const DEFAULT_STATE: ISettingsState = {
     soundsTalkWhileMuted: true,
     soundsReactions: true,
     startAudioOnly: false,
+    startCarMode: false,
     startWithAudioMuted: false,
     startWithVideoMuted: false,
     userSelectedAudioOutputDeviceId: undefined,
@@ -53,6 +53,7 @@ const DEFAULT_STATE: ISettingsState = {
 
 export interface ISettingsState {
     audioOutputDeviceId?: string | boolean;
+    audioSettingsVisible?: boolean;
     avatarURL?: string;
     cameraDeviceId?: string | boolean;
     disableCallIntegration?: boolean;
@@ -73,6 +74,7 @@ export interface ISettingsState {
     soundsReactions?: boolean;
     soundsTalkWhileMuted?: boolean;
     startAudioOnly?: boolean;
+    startCarMode?: boolean;
     startWithAudioMuted?: boolean;
     startWithVideoMuted?: boolean;
     userSelectedAudioOutputDeviceId?: string;
@@ -83,8 +85,9 @@ export interface ISettingsState {
     userSelectedMicDeviceLabel?: string;
     userSelectedNotifications?: {
         [key: string]: boolean;
-    } | boolean;
+    };
     userSelectedSkipPrejoin?: boolean;
+    videoSettingsVisible?: boolean;
     visible?: boolean;
 }
 

@@ -1,11 +1,8 @@
-/* eslint-disable lines-around-comment */
-// @ts-ignore
+// @ts-expect-error
 import { API_ID } from '../../../modules/API/constants';
-// @ts-ignore
 import { getName as getAppName } from '../app/functions';
 import { IStore } from '../app/types';
-// @ts-ignore
-import { getAnalyticsRoomName } from '../base/conference';
+import { getAnalyticsRoomName } from '../base/conference/functions';
 import {
     checkChromeExtensionsInstalled,
     isMobileBrowser
@@ -14,12 +11,10 @@ import JitsiMeetJS, {
     analytics,
     browser
 } from '../base/lib-jitsi-meet';
-// @ts-ignore
-import { isAnalyticsEnabled } from '../base/lib-jitsi-meet/functions';
-// @ts-ignore
-import { loadScript } from '../base/util';
+import { isAnalyticsEnabled } from '../base/lib-jitsi-meet/functions.any';
 import { getJitsiMeetGlobalNS } from '../base/util/helpers';
 import { inIframe } from '../base/util/iframeUtils';
+import { loadScript } from '../base/util/loadScript';
 import { parseURIString } from '../base/util/uri';
 
 import AmplitudeHandler from './handlers/AmplitudeHandler';
@@ -260,7 +255,7 @@ function _loadHandlers(scriptURLs: any[] = [], handlerConstructorOptions: Object
 
     return Promise.all(promises).then(values => {
         for (const el of values) {
-            if (el.type === 'error') {
+            if (el.type === 'error') { // @ts-ignore
                 logger.warn(`Failed to load ${el.url}: ${el.error}`);
             }
         }

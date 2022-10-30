@@ -4,9 +4,9 @@ import clsx from 'clsx';
 import React, { Component } from 'react';
 import { WithTranslation } from 'react-i18next';
 
-import ContextMenu from '../../base/components/context-menu/ContextMenu';
 import { isMobileBrowser } from '../../base/environment/utils';
 import { translate } from '../../base/i18n/functions';
+import ContextMenu from '../../base/ui/components/web/ContextMenu';
 
 type DownloadUpload = {
     download: number;
@@ -17,7 +17,7 @@ type DownloadUpload = {
  * The type of the React {@code Component} props of
  * {@link ConnectionStatsTable}.
  */
-interface Props extends WithTranslation {
+interface IProps extends WithTranslation {
 
     /**
      * The audio SSRC of this client.
@@ -246,7 +246,7 @@ const styles = (theme: Theme) => {
  *
  * @augments Component
  */
-class ConnectionStatsTable extends Component<Props> {
+class ConnectionStatsTable extends Component<IProps> {
     /**
      * Implements React's {@link Component#render()}.
      *

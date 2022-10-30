@@ -1,4 +1,4 @@
-import { IState, IStore } from '../../app/types';
+import { IReduxState, IStore } from '../../app/types';
 import { IStateful } from '../app/types';
 import {
     getMultipleVideoSendingSupportFeatureFlag,
@@ -7,9 +7,13 @@ import {
 import { isMobileBrowser } from '../environment/utils';
 import JitsiMeetJS, { JitsiTrackErrors, browser } from '../lib-jitsi-meet';
 import { setAudioMuted } from '../media/actions';
-import { MediaType, MEDIA_TYPE, VIDEO_TYPE } from '../media/constants';
-import { getParticipantByIdOrUndefined, getVirtualScreenshareParticipantOwnerId } from '../participants/functions';
-import { Participant } from '../participants/types';
+import { MEDIA_TYPE, MediaType, VIDEO_TYPE } from '../media/constants';
+import {
+    getParticipantByIdOrUndefined,
+    getVirtualScreenshareParticipantOwnerId,
+    isScreenShareParticipant
+} from '../participants/functions';
+import { IParticipant } from '../participants/types';
 import { toState } from '../redux/functions';
 import {
     getUserSelectedCameraDeviceId,
@@ -20,25 +24,25 @@ import {
 import loadEffects from './loadEffects';
 import logger from './logger';
 import { ITrack } from './reducer';
-import { TrackOptions } from './types';
+import { ITrackOptions } from './types';
 
 /**
  * Returns root tracks state.
  *
- * @param {IState} state - Global state.
+ * @param {IReduxState} state - Global state.
  * @returns {Object} Tracks state.
  */
-export const getTrackState = (state: IState) => state['features/base/tracks'];
+export const getTrackState = (state: IReduxState) => state['features/base/tracks'];
 
 /**
  * Checks if the passed media type is muted for the participant.
  *
- * @param {Participant} participant - Participant reference.
+ * @param {IParticipant} participant - Participant reference.
  * @param {MediaType} mediaType - Media type.
- * @param {IState} state - Global state.
+ * @param {IReduxState} state - Global state.
  * @returns {boolean} - Is the media type muted for the participant.
  */
-export function isParticipantMediaMuted(participant: Participant, mediaType: MediaType, state: IState) {
+export function isParticipantMediaMuted(participant: IParticipant, mediaType: MediaType, state: IReduxState) {
     if (!participant) {
         return false;
     }
@@ -47,7 +51,7 @@ export function isParticipantMediaMuted(participant: Participant, mediaType: Med
 
     if (participant?.local) {
         return isLocalTrackMuted(tracks, mediaType);
-    } else if (!participant?.isFakeParticipant) {
+    } else if (!participant?.fakeParticipant) {
         return isRemoteTrackMuted(tracks, mediaType, participant.id);
     }
 
@@ -57,22 +61,22 @@ export function isParticipantMediaMuted(participant: Participant, mediaType: Med
 /**
  * Checks if the participant is audio muted.
  *
- * @param {Participant} participant - Participant reference.
- * @param {IState} state - Global state.
+ * @param {IParticipant} participant - Participant reference.
+ * @param {IReduxState} state - Global state.
  * @returns {boolean} - Is audio muted for the participant.
  */
-export function isParticipantAudioMuted(participant: Participant, state: IState) {
+export function isParticipantAudioMuted(participant: IParticipant, state: IReduxState) {
     return isParticipantMediaMuted(participant, MEDIA_TYPE.AUDIO, state);
 }
 
 /**
  * Checks if the participant is video muted.
  *
- * @param {Participant} participant - Participant reference.
- * @param {IState} state - Global state.
+ * @param {IParticipant} participant - Participant reference.
+ * @param {IReduxState} state - Global state.
  * @returns {boolean} - Is video muted for the participant.
  */
-export function isParticipantVideoMuted(participant: Participant, state: IState) {
+export function isParticipantVideoMuted(participant: IParticipant, state: IReduxState) {
     return isParticipantMediaMuted(participant, MEDIA_TYPE.VIDEO, state);
 }
 
@@ -88,7 +92,7 @@ export function isParticipantVideoMuted(participant: Participant, state: IState)
  * shared.
  * @returns {Promise<JitsiLocalTrack>}
  */
-export async function createLocalPresenterTrack(options: TrackOptions, desktopHeight: number) {
+export async function createLocalPresenterTrack(options: ITrackOptions, desktopHeight: number) {
     const { cameraDeviceId } = options;
 
     // compute the constraints of the camera track based on the resolution
@@ -132,20 +136,16 @@ export async function createLocalPresenterTrack(options: TrackOptions, desktopHe
  * @param {boolean} [options.firePermissionPromptIsShownEvent] - Whether lib-jitsi-meet
  * should check for a {@code getUserMedia} permission prompt and fire a
  * corresponding event.
- * @param {boolean} [options.fireSlowPromiseEvent] - Whether lib-jitsi-meet
- * should check for a slow {@code getUserMedia} request and fire a
- * corresponding event.
  * @param {IStore} store - The redux store in the context of which the function
  * is to execute and from which state such as {@code config} is to be retrieved.
  * @returns {Promise<JitsiLocalTrack[]>}
  */
-export function createLocalTracksF(options: TrackOptions = {}, store?: IStore) {
+export function createLocalTracksF(options: ITrackOptions = {}, store?: IStore) {
     let { cameraDeviceId, micDeviceId } = options;
     const {
         desktopSharingSourceDevice,
         desktopSharingSources,
         firePermissionPromptIsShownEvent,
-        fireSlowPromiseEvent,
         timeout
     } = options;
 
@@ -193,7 +193,6 @@ export function createLocalTracksF(options: TrackOptions = {}, store?: IStore) {
                     effects,
                     firefox_fake_device, // eslint-disable-line camelcase
                     firePermissionPromptIsShownEvent,
-                    fireSlowPromiseEvent,
                     micDeviceId,
                     resolution,
                     timeout
@@ -326,10 +325,10 @@ export function getLocalDesktopTrack(tracks: ITrack[], includePending = false) {
 /**
  * Returns the stored local desktop jitsiLocalTrack.
  *
- * @param {IState} state - The redux state.
+ * @param {IReduxState} state - The redux state.
  * @returns {JitsiLocalTrack|undefined}
  */
-export function getLocalJitsiDesktopTrack(state: IState) {
+export function getLocalJitsiDesktopTrack(state: IReduxState) {
     const track = getLocalDesktopTrack(getTrackState(state));
 
     return track?.jitsiTrack;
@@ -401,10 +400,10 @@ export function getLocalVideoType(tracks: ITrack[]) {
 /**
  * Returns the stored local video track.
  *
- * @param {IState} state - The redux state.
+ * @param {IReduxState} state - The redux state.
  * @returns {Object}
  */
-export function getLocalJitsiVideoTrack(state: IState) {
+export function getLocalJitsiVideoTrack(state: IReduxState) {
     const track = getLocalVideoTrack(getTrackState(state));
 
     return track?.jitsiTrack;
@@ -413,10 +412,10 @@ export function getLocalJitsiVideoTrack(state: IState) {
 /**
  * Returns the stored local audio track.
  *
- * @param {IState} state - The redux state.
+ * @param {IReduxState} state - The redux state.
  * @returns {Object}
  */
-export function getLocalJitsiAudioTrack(state: IState) {
+export function getLocalJitsiAudioTrack(state: IReduxState) {
     const track = getLocalAudioTrack(getTrackState(state));
 
     return track?.jitsiTrack;
@@ -425,19 +424,21 @@ export function getLocalJitsiAudioTrack(state: IState) {
 /**
  * Returns track of specified media type for specified participant.
  *
- * @param {ITrack[]} tracks - List of all tracks.
- * @param {Participant} participant - Participant Object.
+ * @param {IReduxState} state - The redux state.
+ * @param {IParticipant} participant - Participant Object.
  * @returns {(Track|undefined)}
  */
 export function getVideoTrackByParticipant(
-        tracks: ITrack[],
-        participant?: Participant) {
+        state: IReduxState,
+        participant?: IParticipant) {
 
     if (!participant) {
         return;
     }
 
-    if (participant?.isVirtualScreenshareParticipant) {
+    const tracks = state['features/base/tracks'];
+
+    if (isScreenShareParticipant(participant)) {
         return getVirtualScreenshareParticipantTrack(tracks, participant.id);
     }
 
@@ -447,14 +448,13 @@ export function getVideoTrackByParticipant(
 /**
  * Returns source name for specified participant id.
  *
- * @param {IState} state - The Redux state.
+ * @param {IReduxState} state - The Redux state.
  * @param {string} participantId - Participant ID.
  * @returns {string | undefined}
  */
-export function getSourceNameByParticipantId(state: IState, participantId: string) {
+export function getSourceNameByParticipantId(state: IReduxState, participantId: string) {
     const participant = getParticipantByIdOrUndefined(state, participantId);
-    const tracks = state['features/base/tracks'];
-    const track = getVideoTrackByParticipant(tracks, participant);
+    const track = getVideoTrackByParticipant(state, participant);
 
     return track?.jitsiTrack?.getSourceName();
 }
@@ -492,11 +492,11 @@ export function getVirtualScreenshareParticipantTrack(tracks: ITrack[], virtualS
 /**
  * Returns track source names of given screen share participant ids.
  *
- * @param {IState} state - The entire redux state.
+ * @param {IReduxState} state - The entire redux state.
  * @param {string[]} screenShareParticipantIds - Participant ID.
  * @returns {(string[])}
  */
-export function getRemoteScreenSharesSourceNames(state: IState, screenShareParticipantIds = []) {
+export function getRemoteScreenSharesSourceNames(state: IReduxState, screenShareParticipantIds: string[] = []) {
     const tracks = state['features/base/tracks'];
 
     return getMultipleVideoSupportFeatureFlag(state)
@@ -611,10 +611,10 @@ export function isLocalTrackMuted(tracks: ITrack[], mediaType: MediaType) {
 /**
  * Checks if the local video track is of type DESKtOP.
  *
- * @param {IState} state - The redux state.
+ * @param {IReduxState} state - The redux state.
  * @returns {boolean}
  */
-export function isLocalVideoTrackDesktop(state: IState) {
+export function isLocalVideoTrackDesktop(state: IReduxState) {
     const videoTrack = getLocalVideoTrack(getTrackState(state));
 
     return videoTrack && videoTrack.videoType === VIDEO_TYPE.DESKTOP;
@@ -641,10 +641,10 @@ export function isRemoteTrackMuted(tracks: ITrack[], mediaType: MediaType, parti
  * Returns whether or not the current environment needs a user interaction with
  * the page before any unmute can occur.
  *
- * @param {IState} state - The redux state.
+ * @param {IReduxState} state - The redux state.
  * @returns {boolean}
  */
-export function isUserInteractionRequiredForUnmute(state: IState) {
+export function isUserInteractionRequiredForUnmute(state: IReduxState) {
     return browser.isUserInteractionRequiredForUnmute()
         && window
         && window.self !== window.top
@@ -660,7 +660,7 @@ export function isUserInteractionRequiredForUnmute(state: IState) {
  * @param {Object} state - The redux state.
  * @returns {Promise}
  */
-export function setTrackMuted(track: any, muted: boolean, state: IState) {
+export function setTrackMuted(track: any, muted: boolean, state: IReduxState) {
     muted = Boolean(muted); // eslint-disable-line no-param-reassign
 
     // Ignore the check for desktop track muted operation. When the screenshare is terminated by clicking on the

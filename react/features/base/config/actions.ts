@@ -1,16 +1,16 @@
 // @ts-ignore
 import { jitsiLocalStorage } from '@jitsi/js-utils';
-import { Dispatch } from 'redux';
 
+import { IStore } from '../../app/types';
 import { addKnownDomains } from '../known-domains/actions';
 import { parseURIString } from '../util/uri';
 
 import {
     CONFIG_WILL_LOAD,
     LOAD_CONFIG_ERROR,
+    OVERWRITE_CONFIG,
     SET_CONFIG,
-    UPDATE_CONFIG,
-    OVERWRITE_CONFIG
+    UPDATE_CONFIG
 } from './actionTypes';
 import { IConfig } from './configType';
 import { _CONFIG_STORE_PREFIX } from './constants';
@@ -99,7 +99,7 @@ export function overwriteConfig(config: Object) {
  * @returns {Function}
  */
 export function setConfig(config: Object = {}) {
-    return (dispatch: Dispatch<any>, getState: Function) => {
+    return (dispatch: IStore['dispatch'], getState: IStore['getState']) => {
         const { locationURL } = getState()['features/base/connection'];
 
         // Now that the loading of the config was successful override the values
@@ -116,8 +116,6 @@ export function setConfig(config: Object = {}) {
                 // On Web the config also comes from the window.config global,
                 // but it is resolved in the loadConfig procedure.
                 config,
-
-                // @ts-ignore
                 window.interfaceConfig,
                 locationURL);
 
@@ -137,14 +135,13 @@ export function setConfig(config: Object = {}) {
  * @returns {Function}
  */
 export function storeConfig(baseURL: string, config: Object) {
-    return (dispatch: Dispatch<any>) => {
+    return (dispatch: IStore['dispatch']) => {
         // Try to store the configuration in localStorage. If the deployment
         // specified 'getroom' as a function, for example, it does not make
         // sense to and it will not be stored.
         let b = false;
 
         try {
-            // @ts-ignore
             if (typeof window.config === 'undefined' || window.config !== config) {
                 jitsiLocalStorage.setItem(`${_CONFIG_STORE_PREFIX}/${baseURL}`, JSON.stringify(config));
                 b = true;

@@ -5,15 +5,13 @@ import ReducerRegistry from '../redux/ReducerRegistry';
 import { equals } from '../redux/functions';
 
 import {
-    UPDATE_CONFIG,
     CONFIG_WILL_LOAD,
     LOAD_CONFIG_ERROR,
+    OVERWRITE_CONFIG,
     SET_CONFIG,
-    OVERWRITE_CONFIG
+    UPDATE_CONFIG
 } from './actionTypes';
 import { IConfig } from './configType';
-// eslint-disable-next-line lines-around-comment
-// @ts-ignore
 import { _cleanupConfig } from './functions';
 
 declare let interfaceConfig: any;
@@ -52,10 +50,14 @@ const INITIAL_RN_STATE: IConfig = {
     disableAudioLevels: true,
 
     p2p: {
-        disabledCodec: '',
-        disableH264: false, // deprecated
-        preferredCodec: 'H264',
-        preferH264: true // deprecated
+        preferredCodec: 'h264'
+    },
+
+    videoQuality: {
+        // FIXME: Mobile codecs should probably be configurable separately, rather
+        // than requiring this override here...
+        enforcePreferredCodec: true,
+        preferredCodec: 'vp8'
     }
 };
 
@@ -446,6 +448,25 @@ function _translateLegacyConfig(oldValue: IConfig) {
         newValue.liveStreaming = {
             ...newValue.liveStreaming,
             helpLink: interfaceConfig.LIVE_STREAMING_HELP_LINK
+        };
+    }
+
+    newValue.speakerStats = newValue.speakerStats || {};
+
+    if (oldValue.disableSpeakerStatsSearch !== undefined
+        && newValue.speakerStats.disableSearch === undefined
+    ) {
+        newValue.speakerStats = {
+            ...newValue.speakerStats,
+            disableSearch: oldValue.disableSpeakerStatsSearch
+        };
+    }
+
+    if (oldValue.speakerStatsOrder !== undefined
+         && newValue.speakerStats.order === undefined) {
+        newValue.speakerStats = {
+            ...newValue.speakerStats,
+            order: oldValue.speakerStatsOrder
         };
     }
 

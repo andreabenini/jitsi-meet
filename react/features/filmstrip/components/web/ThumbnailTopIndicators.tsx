@@ -4,19 +4,16 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
-import { IState } from '../../../app/types';
-// @ts-ignore
-import { getMultipleVideoSupportFeatureFlag } from '../../../base/config';
+import { IReduxState } from '../../../app/types';
+import { getMultipleVideoSupportFeatureFlag } from '../../../base/config/functions.any';
 import { isMobileBrowser } from '../../../base/environment/utils';
-// @ts-ignore
+import { isScreenShareParticipantById } from '../../../base/participants/functions';
 import ConnectionIndicator from '../../../connection-indicator/components/web/ConnectionIndicator';
 import { STATS_POPOVER_POSITION, THUMBNAIL_TYPE } from '../../constants';
 // @ts-ignore
 import { getIndicatorsTooltipPosition } from '../../functions.web';
 
-// @ts-ignore
 import PinnedIndicator from './PinnedIndicator';
-// @ts-ignore
 import RaisedHandIndicator from './RaisedHandIndicator';
 // @ts-ignore
 import StatusIndicators from './StatusIndicators';
@@ -25,6 +22,11 @@ import VideoMenuTriggerButton from './VideoMenuTriggerButton';
 declare let interfaceConfig: any;
 
 type Props = {
+
+    /**
+     * Whether to hide the connection indicator.
+     */
+    disableConnectionIndicator?: boolean;
 
     /**
      * Hide popover callback.
@@ -40,11 +42,6 @@ type Props = {
      * Whether or not the thumbnail is hovered.
      */
     isHovered: boolean;
-
-    /**
-     * Whether or not the thumbnail is a virtual screen share participant.
-     */
-    isVirtualScreenshareParticipant?: boolean;
 
     /**
      * Whether or not the indicators are for the local participant.
@@ -85,9 +82,9 @@ const useStyles = makeStyles()(() => {
 });
 
 const ThumbnailTopIndicators = ({
+    disableConnectionIndicator,
     hidePopover,
     indicatorsClassName,
-    isVirtualScreenshareParticipant,
     isHovered,
     local,
     participantId,
@@ -101,11 +98,14 @@ const ThumbnailTopIndicators = ({
     const { NORMAL = 16 } = interfaceConfig.INDICATOR_FONT_SIZES || {};
     const _indicatorIconSize = NORMAL;
     const _connectionIndicatorAutoHideEnabled = Boolean(
-        useSelector((state: IState) => state['features/base/config'].connectionIndicators?.autoHide) ?? true);
-    const _connectionIndicatorDisabled = _isMobile
-        || Boolean(useSelector((state: IState) => state['features/base/config'].connectionIndicators?.disabled));
+        useSelector((state: IReduxState) => state['features/base/config'].connectionIndicators?.autoHide) ?? true);
+    const _connectionIndicatorDisabled = _isMobile || disableConnectionIndicator
+        || Boolean(useSelector((state: IReduxState) => state['features/base/config'].connectionIndicators?.disabled));
     const _isMultiStreamEnabled = useSelector(getMultipleVideoSupportFeatureFlag);
     const showConnectionIndicator = isHovered || !_connectionIndicatorAutoHideEnabled;
+    const isVirtualScreenshareParticipant = useSelector(
+        (state: IReduxState) => isScreenShareParticipantById(state, participantId)
+    );
 
     if (_isMultiStreamEnabled && isVirtualScreenshareParticipant) {
         return (
