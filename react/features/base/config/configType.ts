@@ -39,11 +39,13 @@ type ButtonsWithNotifyClick = 'camera' |
     'desktop' |
     'download' |
     'embedmeeting' |
+    'end-meeting' |
     'etherpad' |
     'feedback' |
     'filmstrip' |
     'fullscreen' |
     'hangup' |
+    'hangup-menu' |
     'help' |
     'invite' |
     'livestreaming' |
@@ -304,8 +306,6 @@ export interface IConfig {
     };
     firefox_fake_device?: string;
     flags?: {
-        sendMultipleVideoStreams?: boolean;
-        sourceNameSignaling?: boolean;
     };
     focusUserJid?: string;
     gatherStats?: boolean;
@@ -344,6 +344,7 @@ export interface IConfig {
     iAmRecorder?: boolean;
     iAmSipGateway?: boolean;
     inviteAppName?: string | null;
+    jaasActuatorUrl?: string;
     jaasFeedbackMetadataURL?: string;
     jaasTokenUrl?: string;
     lastNLimits?: {
@@ -393,6 +394,7 @@ export interface IConfig {
         hideMuteAllButton?: boolean;
     };
     pcStatsInterval?: number;
+    peopleSearchUrl?: string;
     preferH264?: boolean;
     preferredTranscribeLanguage?: string;
     prejoinConfig?: {
@@ -429,6 +431,7 @@ export interface IConfig {
         mode?: 'always' | 'recording';
     };
     serviceUrl?: string;
+    sipInviteUrl?: string;
     speakerStats?: {
         disableSearch?: boolean;
         disabled?: boolean;
@@ -458,6 +461,7 @@ export interface IConfig {
     tileView?: {
         numberOfVisibleTiles?: number;
     };
+    tokenAuthUrl?: string;
     toolbarButtons?: Array<ToolbarButtons>;
     toolbarConfig?: {
         alwaysVisible?: boolean;
@@ -494,7 +498,6 @@ export interface IConfig {
         };
         persist?: boolean;
         preferredCodec?: string;
-        resizeDesktopForPresenter?: boolean;
     };
     webhookProxyUrl?: string;
     webrtcIceTcpDisable?: boolean;

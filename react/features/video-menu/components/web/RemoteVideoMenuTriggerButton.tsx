@@ -7,7 +7,7 @@ import { batch, connect } from 'react-redux';
 import { IReduxState } from '../../../app/types';
 import { isMobileBrowser } from '../../../base/environment/utils';
 import { translate } from '../../../base/i18n/functions';
-import { IconHorizontalPoints } from '../../../base/icons/svg';
+import { IconDotsHorizontal } from '../../../base/icons/svg';
 import { getLocalParticipant, getParticipantById } from '../../../base/participants/functions';
 import { IParticipant } from '../../../base/participants/types';
 import Popover from '../../../base/popover/components/Popover.web';
@@ -117,7 +117,12 @@ const styles = () => {
     return {
         triggerButton: {
             padding: '3px !important',
-            borderRadius: '4px'
+            borderRadius: '4px',
+
+            '& svg': {
+                width: '18px',
+                height: '18px'
+            }
         },
 
         contextMenu: {
@@ -194,7 +199,7 @@ class RemoteVideoMenuTriggerButton extends Component<IProps> {
                     !isMobileBrowser() && <Button
                         accessibilityLabel = { this.props.t('dialog.remoteUserControls', { username }) }
                         className = { classes.triggerButton }
-                        icon = { IconHorizontalPoints }
+                        icon = { IconDotsHorizontal }
                         size = 'small' />
                 )}
             </Popover>

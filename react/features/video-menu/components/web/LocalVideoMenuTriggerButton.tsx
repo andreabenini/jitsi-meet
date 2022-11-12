@@ -7,7 +7,7 @@ import { batch, connect } from 'react-redux';
 import { IReduxState } from '../../../app/types';
 import { isMobileBrowser } from '../../../base/environment/utils';
 import { translate } from '../../../base/i18n/functions';
-import { IconHorizontalPoints } from '../../../base/icons/svg';
+import { IconDotsHorizontal } from '../../../base/icons/svg';
 import { getLocalParticipant } from '../../../base/participants/functions';
 import Popover from '../../../base/popover/components/Popover.web';
 import { setParticipantContextMenuOpen } from '../../../base/responsive-ui/actions';
@@ -115,7 +115,12 @@ const styles = () => {
     return {
         triggerButton: {
             padding: '3px !important',
-            borderRadius: '4px'
+            borderRadius: '4px',
+
+            '& svg': {
+                width: '18px',
+                height: '18px'
+            }
         },
 
         contextMenu: {
@@ -222,7 +227,7 @@ class LocalVideoMenuTriggerButton extends Component<IProps> {
                         <Button
                             accessibilityLabel = { t('dialog.localUserControls') }
                             className = { classes.triggerButton }
-                            icon = { IconHorizontalPoints }
+                            icon = { IconDotsHorizontal }
                             size = 'small' />
                     )}
                 </Popover>

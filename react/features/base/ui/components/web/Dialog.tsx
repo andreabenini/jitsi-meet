@@ -7,7 +7,7 @@ import { keyframes } from 'tss-react';
 import { makeStyles } from 'tss-react/mui';
 
 import { hideDialog } from '../../../dialog/actions';
-import { IconClose } from '../../../icons/svg';
+import { IconCloseLarge } from '../../../icons/svg';
 import { withPixelLineHeight } from '../../../styles/functions.web';
 
 import Button from './Button';
@@ -277,13 +277,19 @@ const Dialog = ({
                         {!hideCloseButton && (
                             <ClickableIcon
                                 accessibilityLabel = { t('dialog.close') }
-                                icon = { IconClose }
+                                icon = { IconCloseLarge }
                                 id = 'modal-header-close-button'
                                 onClick = { onClose } />
                         )}
                     </div>
-                    <div className = { classes.content }>{children}</div>
-                    <div className = { classes.footer }>
+                    <div
+                        className = { classes.content }
+                        data-autofocus-inside = 'true'>
+                        {children}
+                    </div>
+                    <div
+                        className = { classes.footer }
+                        data-autofocus-inside = 'true'>
                         {!back.hidden && <Button
                             accessibilityLabel = { t(back.translationKey ?? '') }
                             labelKey = { back.translationKey }

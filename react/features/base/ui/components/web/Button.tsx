@@ -5,7 +5,7 @@ import { makeStyles } from 'tss-react/mui';
 
 import Icon from '../../../icons/components/Icon';
 import { withPixelLineHeight } from '../../../styles/functions.web';
-import { BUTTON_TYPES } from '../../constants';
+import { BUTTON_TYPES } from '../../constants.web';
 import { IButtonProps } from '../types';
 
 interface IProps extends IButtonProps {
@@ -143,7 +143,7 @@ const useStyles = makeStyles()((theme: Theme) => {
         },
 
         iconButton: {
-            padding: '10px'
+            padding: theme.spacing(2)
         },
 
         textWithIcon: {
@@ -166,7 +166,7 @@ const useStyles = makeStyles()((theme: Theme) => {
             ...withPixelLineHeight(theme.typography.bodyShortBoldLarge),
 
             '&.iconButton': {
-                padding: '14px'
+                padding: '12px'
             }
         },
 
@@ -211,7 +211,7 @@ const Button = React.forwardRef<any, any>(({
             title = { accessibilityLabel }
             type = { isSubmit ? 'submit' : 'button' }>
             {icon && <Icon
-                size = { 20 }
+                size = { 24 }
                 src = { icon } />}
             {(labelKey || label) && <span className = { icon ? styles.textWithIcon : '' }>
                 {labelKey ? t(labelKey) : label}

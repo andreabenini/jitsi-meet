@@ -9,14 +9,14 @@ import { FixedSizeGrid, FixedSizeList } from 'react-window';
 import { ACTION_SHORTCUT_TRIGGERED, createShortcutEvent, createToolbarEvent } from '../../../analytics/AnalyticsEvents';
 import { sendAnalytics } from '../../../analytics/functions';
 import { IReduxState, IStore } from '../../../app/types';
-import { getSourceNameSignalingFeatureFlag, getToolbarButtons } from '../../../base/config/functions.web';
+import { getToolbarButtons } from '../../../base/config/functions.web';
 import { isMobileBrowser } from '../../../base/environment/utils';
 import { translate } from '../../../base/i18n/functions';
 import Icon from '../../../base/icons/components/Icon';
-import { IconMenuDown, IconMenuUp } from '../../../base/icons/svg';
+import { IconArrowDown, IconArrowUp } from '../../../base/icons/svg';
 import { IParticipant } from '../../../base/participants/types';
 import { connect } from '../../../base/redux/functions';
-import { shouldHideSelfView } from '../../../base/settings/functions.any';
+import { shouldHideSelfView } from '../../../base/settings/functions.web';
 // @ts-ignore
 import { showToolbox } from '../../../toolbox/actions.web';
 import { isButtonEnabled, isToolboxVisible } from '../../../toolbox/functions.web';
@@ -835,7 +835,7 @@ class Filmstrip extends PureComponent <IProps, IState> {
             _topPanelFilmstrip,
             _topPanelVisible
         } = this.props;
-        const icon = (_topPanelFilmstrip ? _topPanelVisible : _mainFilmstripVisible) ? IconMenuDown : IconMenuUp;
+        const icon = (_topPanelFilmstrip ? _topPanelVisible : _mainFilmstripVisible) ? IconArrowDown : IconArrowUp;
         const actions = isMobileBrowser()
             ? { onTouchStart: this._onToggleButtonTouch }
             : { onClick: this._onToolbarToggleFilmstrip };
@@ -915,7 +915,7 @@ function _mapStateToProps(state: IReduxState, ownProps: Partial<IProps>) {
         _isFilmstripButtonEnabled: isButtonEnabled('filmstrip', state),
         _isToolboxVisible: isToolboxVisible(state),
         _isVerticalFilmstrip,
-        _localScreenShare: getSourceNameSignalingFeatureFlag(state) && localScreenShare,
+        _localScreenShare: localScreenShare,
         _mainFilmstripVisible: visible,
         _maxFilmstripWidth: clientWidth - MIN_STAGE_VIEW_WIDTH,
         _maxTopPanelHeight: clientHeight - MIN_STAGE_VIEW_HEIGHT,

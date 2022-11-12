@@ -6,7 +6,7 @@ import Icon from '../../../icons/components/Icon';
 // @ts-ignore
 import styles from '../../../react/components/native/styles';
 import { IIconButtonProps } from '../../../react/types';
-import { BUTTON_TYPES } from '../../constants';
+import { BUTTON_TYPES } from '../../constants.native';
 import BaseTheme from '../BaseTheme.native';
 
 
@@ -44,6 +44,11 @@ const IconButton: React.FC<IIconButtonProps> = ({
         rippleColor = tapColor;
     }
 
+    if (disabled) {
+        color = BaseTheme.palette.icon03;
+        iconButtonContainerStyles = styles.iconButtonContainerDisabled;
+        rippleColor = 'transparent';
+    }
 
     return (
         <TouchableRipple

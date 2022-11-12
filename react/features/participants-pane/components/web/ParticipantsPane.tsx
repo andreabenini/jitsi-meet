@@ -8,16 +8,16 @@ import { makeStyles } from 'tss-react/mui';
 import { IReduxState } from '../../../app/types';
 import participantsPaneTheme from '../../../base/components/themes/participantsPaneTheme.json';
 import { openDialog } from '../../../base/dialog/actions';
-import { IconClose, IconHorizontalPoints } from '../../../base/icons/svg';
+import { IconCloseLarge, IconDotsHorizontal } from '../../../base/icons/svg';
 import { isLocalParticipantModerator } from '../../../base/participants/functions';
 import Button from '../../../base/ui/components/web/Button';
 import ClickableIcon from '../../../base/ui/components/web/ClickableIcon';
-import { BUTTON_TYPES } from '../../../base/ui/constants';
+import { BUTTON_TYPES } from '../../../base/ui/constants.web';
 import { findAncestorByClass } from '../../../base/ui/functions.web';
 import { isAddBreakoutRoomButtonVisible } from '../../../breakout-rooms/functions';
 // @ts-ignore
 import { MuteEveryoneDialog } from '../../../video-menu/components/';
-import { close } from '../../actions';
+import { close } from '../../actions.web';
 import {
     getParticipantsPaneOpen,
     isMoreActionsVisible,
@@ -149,7 +149,7 @@ const ParticipantsPane = () => {
                 <div className = { classes.header }>
                     <ClickableIcon
                         accessibilityLabel = { t('participantsPane.close', 'Close') }
-                        icon = { IconClose }
+                        icon = { IconCloseLarge }
                         onClick = { onClosePane } />
                 </div>
                 <div className = { classes.container }>
@@ -174,7 +174,7 @@ const ParticipantsPane = () => {
                             <div className = { classes.footerMoreContainer }>
                                 <Button
                                     accessibilityLabel = { t('participantsPane.actions.moreModerationActions') }
-                                    icon = { IconHorizontalPoints }
+                                    icon = { IconDotsHorizontal }
                                     id = 'participants-pane-context-menu'
                                     onClick = { onToggleContext }
                                     type = { BUTTON_TYPES.SECONDARY } />

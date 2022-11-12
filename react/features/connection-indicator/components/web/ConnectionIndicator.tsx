@@ -8,7 +8,6 @@ import { WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 
 import { IReduxState, IStore } from '../../../app/types';
-import { getSourceNameSignalingFeatureFlag } from '../../../base/config/functions.any';
 import { translate } from '../../../base/i18n/functions';
 import { MEDIA_TYPE } from '../../../base/media/constants';
 import {
@@ -22,8 +21,6 @@ import {
     getVirtualScreenshareParticipantTrack
 } from '../../../base/tracks/functions';
 import {
-    isParticipantConnectionStatusInactive,
-    isParticipantConnectionStatusInterrupted,
     isTrackStreamingStatusInactive,
     isTrackStreamingStatusInterrupted
 } from '../../functions';
@@ -87,25 +84,9 @@ type Props = AbstractProps & WithTranslation & {
     _connectionIndicatorInactiveDisabled: boolean;
 
     /**
-     * The current condition of the user's connection, matching one of the
-     * enumerated values in the library.
-     */
-    _connectionStatus: string;
-
-    /**
      * Whether the indicator popover is disabled.
      */
     _popoverDisabled: boolean;
-
-    /**
-     * The source name of the track.
-     */
-    _sourceName: string;
-
-    /**
-     * Whether source name signaling is enabled.
-     */
-    _sourceNameSignalingEnabled: boolean;
 
     /**
      * Whether or not the component should ignore setting a visibility class for
@@ -394,33 +375,24 @@ class ConnectionIndicator extends AbstractConnectionIndicator<Props, IState> {
 export function _mapStateToProps(state: IReduxState, ownProps: Props) {
     const { participantId } = ownProps;
     const tracks = state['features/base/tracks'];
-    const sourceNameSignalingEnabled = getSourceNameSignalingFeatureFlag(state);
     const participant = participantId ? getParticipantById(state, participantId) : getLocalParticipant(state);
+    let _videoTrack = getTrackByMediaTypeAndParticipant(tracks, MEDIA_TYPE.VIDEO, participantId);
 
-    let firstVideoTrack;
-
-    if (sourceNameSignalingEnabled && isScreenShareParticipant(participant)) {
-        firstVideoTrack = getVirtualScreenshareParticipantTrack(tracks, participantId);
-    } else {
-        firstVideoTrack = getTrackByMediaTypeAndParticipant(tracks, MEDIA_TYPE.VIDEO, participantId);
+    if (isScreenShareParticipant(participant)) {
+        _videoTrack = getVirtualScreenshareParticipantTrack(tracks, participantId);
     }
 
-    const _isConnectionStatusInactive = sourceNameSignalingEnabled
-        ? isTrackStreamingStatusInactive(firstVideoTrack)
-        : isParticipantConnectionStatusInactive(participant);
-
-    const _isConnectionStatusInterrupted = sourceNameSignalingEnabled
-        ? isTrackStreamingStatusInterrupted(firstVideoTrack)
-        : isParticipantConnectionStatusInterrupted(participant);
+    const _isConnectionStatusInactive = isTrackStreamingStatusInactive(_videoTrack);
+    const _isConnectionStatusInterrupted = isTrackStreamingStatusInterrupted(_videoTrack);
 
     return {
         _connectionIndicatorInactiveDisabled:
             Boolean(state['features/base/config'].connectionIndicators?.inactiveDisabled),
-        _isVirtualScreenshareParticipant: sourceNameSignalingEnabled && isScreenShareParticipant(participant),
+        _isVirtualScreenshareParticipant: isScreenShareParticipant(participant),
         _popoverDisabled: state['features/base/config'].connectionIndicators?.disableDetails,
-        _videoTrack: firstVideoTrack,
         _isConnectionStatusInactive,
-        _isConnectionStatusInterrupted
+        _isConnectionStatusInterrupted,
+        _videoTrack
     };
 }
 

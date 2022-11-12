@@ -11,7 +11,7 @@ import { parseURLParams } from '../util/parseURLParams';
 
 import { IConfig } from './configType';
 import CONFIG_WHITELIST from './configWhitelist';
-import { FEATURE_FLAGS, _CONFIG_STORE_PREFIX } from './constants';
+import { _CONFIG_STORE_PREFIX } from './constants';
 import INTERFACE_CONFIG_WHITELIST from './interfaceConfigWhitelist';
 import logger from './logger';
 
@@ -54,35 +54,13 @@ export function getMeetingRegion(state: IReduxState) {
 }
 
 /**
- * Selector for determining if receiving multiple stream support is enabled.
- *
- * @param {Object} state - The global state.
- * @returns {boolean}
- */
-export function getMultipleVideoSupportFeatureFlag(state: IReduxState) {
-    return (getFeatureFlag(state, FEATURE_FLAGS.MULTIPLE_VIDEO_STREAMS_SUPPORT)
-        && getSourceNameSignalingFeatureFlag(state)) ?? true;
-}
-
-/**
  * Selector for determining if sending multiple stream support is enabled.
  *
  * @param {Object} state - The global state.
  * @returns {boolean}
  */
 export function getMultipleVideoSendingSupportFeatureFlag(state: IReduxState) {
-    return navigator.product !== 'ReactNative'
-        && ((getMultipleVideoSupportFeatureFlag(state) ?? true) && isUnifiedPlanEnabled(state));
-}
-
-/**
- * Selector used to get the sourceNameSignaling feature flag.
- *
- * @param {Object} state - The global state.
- * @returns {boolean}
- */
-export function getSourceNameSignalingFeatureFlag(state: IReduxState) {
-    return getFeatureFlag(state, FEATURE_FLAGS.SOURCE_NAME_SIGNALING) ?? true;
+    return navigator.product !== 'ReactNative' && isUnifiedPlanEnabled(state);
 }
 
 /**
@@ -308,3 +286,23 @@ export function setConfigFromURLParams(
 }
 
 /* eslint-enable max-params */
+
+/**
+ * Returns the dial out url.
+ *
+ * @param {Object} state - The state of the app.
+ * @returns {string}
+ */
+export function getDialOutStatusUrl(state: IReduxState) {
+    return state['features/base/config'].guestDialOutStatusUrl;
+}
+
+/**
+ * Returns the dial out status url.
+ *
+ * @param {Object} state - The state of the app.
+ * @returns {string}
+ */
+export function getDialOutUrl(state: IReduxState) {
+    return state['features/base/config'].guestDialOutUrl;
+}

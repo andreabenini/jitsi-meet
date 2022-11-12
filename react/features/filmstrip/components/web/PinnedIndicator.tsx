@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
 import { IReduxState } from '../../../app/types';
-import { IconPinParticipant } from '../../../base/icons/svg';
+import { IconPin } from '../../../base/icons/svg';
 import { getParticipantById } from '../../../base/participants/functions';
 import BaseIndicator from '../../../base/react/components/web/BaseIndicator';
 // eslint-disable-next-line lines-around-comment
@@ -36,7 +36,7 @@ const useStyles = makeStyles()(() => {
     return {
         pinnedIndicator: {
             backgroundColor: 'rgba(0, 0, 0, .7)',
-            padding: '2px',
+            padding: '4px',
             zIndex: 3,
             display: 'inline-block',
             borderRadius: '4px',
@@ -57,7 +57,7 @@ const PinnedIndicator = ({
 }: IProps) => {
     const stageFilmstrip = useSelector(isStageFilmstripAvailable);
     const pinned = useSelector((state: IReduxState) => getParticipantById(state, participantId))?.pinned;
-    const activePinnedParticipants: Array<{ participantId: string; pinned: boolean; }>
+    const activePinnedParticipants: Array<{ participantId: string; pinned?: boolean; }>
         = useSelector(getPinnedActiveParticipants);
     const isPinned = activePinnedParticipants.find(p => p.participantId === participantId);
     const { classes: styles } = useStyles();
@@ -71,7 +71,7 @@ const PinnedIndicator = ({
             className = { styles.pinnedIndicator }
             id = { `pin-indicator-${participantId}` }>
             <BaseIndicator
-                icon = { IconPinParticipant }
+                icon = { IconPin }
                 iconSize = { `${iconSize}px` }
                 tooltipKey = 'pinnedParticipant'
                 tooltipPosition = { tooltipPosition } />

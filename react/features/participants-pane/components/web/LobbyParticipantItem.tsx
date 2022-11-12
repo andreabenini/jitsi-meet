@@ -1,16 +1,18 @@
+// eslint-disable-next-line lines-around-comment
+
 import { Theme } from '@mui/material';
 import React, { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
-import { IconChat, IconCloseCircle, IconHorizontalPoints } from '../../../base/icons/svg';
+import { IconDotsHorizontal, IconMessage, IconUserDeleted } from '../../../base/icons/svg';
 import { hasRaisedHand } from '../../../base/participants/functions';
 import { IParticipant } from '../../../base/participants/types';
 import Button from '../../../base/ui/components/web/Button';
 import ContextMenu from '../../../base/ui/components/web/ContextMenu';
 import ContextMenuItemGroup from '../../../base/ui/components/web/ContextMenuItemGroup';
-import { BUTTON_TYPES } from '../../../base/ui/constants';
+import { BUTTON_TYPES } from '../../../base/ui/constants.web';
 // eslint-disable-next-line lines-around-comment
 // @ts-ignore
 import { showLobbyChatButton } from '../../../lobby/functions';
@@ -100,7 +102,7 @@ export const LobbyParticipantItem = ({
                 <Button
                     accessibilityLabel = { `${t('participantsPane.actions.moreModerationActions')} ${p.name}` }
                     className = { styles.moreButton }
-                    icon = { IconHorizontalPoints }
+                    icon = { IconDotsHorizontal }
                     onClick = { openContextMenu }
                     ref = { moreButtonRef }
                     size = 'small' />
@@ -114,7 +116,7 @@ export const LobbyParticipantItem = ({
                             accessibilityLabel: `${t('lobby.chat')} ${p.name}`,
                             onClick: chat,
                             testId: `lobby-chat-${id}`,
-                            icon: IconChat,
+                            icon: IconMessage,
                             text: t('lobby.chat')
                         } ] } />
                     <ContextMenuItemGroup
@@ -122,7 +124,7 @@ export const LobbyParticipantItem = ({
                             accessibilityLabel: `${t('lobby.reject')} ${p.name}`,
                             onClick: reject,
                             testId: `reject-${id}`,
-                            icon: IconCloseCircle,
+                            icon: IconUserDeleted,
                             text: t('lobby.reject')
                         } ] } />
                 </ContextMenu>
