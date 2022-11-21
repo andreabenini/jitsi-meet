@@ -1,4 +1,3 @@
-import { Theme } from '@mui/material';
 import React, { useCallback, useContext, useEffect } from 'react';
 import FocusLock from 'react-focus-lock';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +14,7 @@ import ClickableIcon from './ClickableIcon';
 import { DialogTransitionContext } from './DialogTransition';
 
 
-const useStyles = makeStyles()((theme: Theme) => {
+const useStyles = makeStyles()(theme => {
     return {
         container: {
             width: '100%',
@@ -68,7 +67,7 @@ const useStyles = makeStyles()((theme: Theme) => {
             flexDirection: 'column',
             height: 'auto',
             minHeight: '200px',
-            maxHeight: '560px',
+            maxHeight: '660px',
             marginTop: '64px',
             animation: `${keyframes`
                 0% {
@@ -191,6 +190,7 @@ interface IDialogProps {
     children?: React.ReactNode;
     className?: string;
     description?: string;
+    disableAutoHideOnSubmit?: boolean;
     disableBackdropClose?: boolean;
     disableEnter?: boolean;
     hideCloseButton?: boolean;
@@ -212,6 +212,7 @@ const Dialog = ({
     children,
     className,
     description,
+    disableAutoHideOnSubmit = false,
     disableBackdropClose,
     hideCloseButton,
     disableEnter,
@@ -233,7 +234,7 @@ const Dialog = ({
     }, [ onCancel ]);
 
     const submit = useCallback(() => {
-        dispatch(hideDialog());
+        !disableAutoHideOnSubmit && dispatch(hideDialog());
         onSubmit?.();
     }, [ onSubmit ]);
 
