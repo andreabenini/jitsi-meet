@@ -55,10 +55,7 @@ import {
     p2pStatusChanged,
     sendLocalParticipant
 } from './react/features/base/conference';
-import {
-    getMultipleVideoSendingSupportFeatureFlag,
-    getReplaceParticipant
-} from './react/features/base/config/functions';
+import { getReplaceParticipant } from './react/features/base/config/functions';
 import {
     checkAndNotifyForNewDevice,
     getAvailableDevices,
@@ -461,6 +458,11 @@ export default {
      * the tracks won't exist).
      */
     _localTracksInitialized: false,
+
+    /**
+     * Flag used to prevent the creation of another local video track in this.muteVideo if one is already in progress.
+     */
+    isCreatingLocalTrack: false,
 
     isSharingScreen: false,
 
@@ -1031,10 +1033,12 @@ export default {
 
         const localVideo = getLocalJitsiVideoTrack(APP.store.getState());
 
-        if (!localVideo && !mute) {
+        if (!localVideo && !mute && !this.isCreatingLocalTrack) {
             const maybeShowErrorDialog = error => {
                 showUI && APP.store.dispatch(notifyCameraError(error));
             };
+
+            this.isCreatingLocalTrack = true;
 
             // Try to create local video if there wasn't any.
             // This handles the case when user joined with no video
@@ -1057,6 +1061,9 @@ export default {
                     logger.debug(`muteVideo: calling useVideoStream for track: ${videoTrack}`);
 
                     return this.useVideoStream(videoTrack);
+                })
+                .finally(() => {
+                    this.isCreatingLocalTrack = false;
                 });
         } else {
             // FIXME show error dialog if it fails (should be handled by react)
@@ -1422,30 +1429,13 @@ export default {
                     return;
                 }
 
-                // In the multi-stream mode, add the track to the conference if there is no existing track, replace it
-                // otherwise.
-                if (getMultipleVideoSendingSupportFeatureFlag(state)) {
-                    const trackAction = oldTrack
-                        ? replaceLocalTrack(oldTrack, newTrack, room)
-                        : addLocalTrack(newTrack);
+                // Add the track to the conference if there is no existing track, replace it otherwise.
+                const trackAction = oldTrack
+                    ? replaceLocalTrack(oldTrack, newTrack, room)
+                    : addLocalTrack(newTrack);
 
-                    APP.store.dispatch(trackAction)
-                        .then(() => {
-                            this.setVideoMuteStatus();
-                        })
-                        .then(resolve)
-                        .catch(error => {
-                            logger.error(`useVideoStream failed: ${error}`);
-                            reject(error);
-                        })
-                        .then(onFinish);
-
-                    return;
-                }
-                APP.store.dispatch(
-                    replaceLocalTrack(oldTrack, newTrack, room))
+                APP.store.dispatch(trackAction)
                     .then(() => {
-                        this._setSharingScreen(newTrack);
                         this.setVideoMuteStatus();
                     })
                     .then(resolve)

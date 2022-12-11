@@ -1,4 +1,6 @@
+import { FaceLandmarks } from '../../face-landmarks/types';
 import { LOCKED_LOCALLY, LOCKED_REMOTELY } from '../../room-lock/constants';
+import { ISpeakerStats } from '../../speaker-stats/reducer';
 import { CONNECTION_WILL_CONNECT, SET_LOCATION_URL } from '../connection/actionTypes';
 import { JitsiConferenceErrors } from '../lib-jitsi-meet';
 import ReducerRegistry from '../redux/ReducerRegistry';
@@ -53,20 +55,24 @@ export interface IJitsiConference {
     getMeetingUniqueId: Function;
     getParticipantById: Function;
     getParticipants: Function;
+    getSpeakerStats: () => ISpeakerStats;
     grantOwner: Function;
     isAVModerationSupported: Function;
     isCallstatsEnabled: Function;
+    isE2EEEnabled: Function;
     isEndConferenceSupported: Function;
     isLobbySupported: Function;
     isSIPCallingSupported: Function;
     isStartAudioMuted: Function;
     isStartVideoMuted: Function;
     join: Function;
+    joinLobby: Function;
     kickParticipant: Function;
     lock: Function;
     muteParticipant: Function;
     myLobbyUserId: Function;
     myUserId: Function;
+    off: Function;
     on: Function;
     removeTrack: Function;
     replaceTrack: Function;
@@ -74,6 +80,7 @@ export interface IJitsiConference {
     sendCommand: Function;
     sendCommandOnce: Function;
     sendEndpointMessage: Function;
+    sendFaceLandmarks: (faceLandmarks: FaceLandmarks) => void;
     sendFeedback: Function;
     sendLobbyMessage: Function;
     sessionId: string;
@@ -83,6 +90,7 @@ export interface IJitsiConference {
     setReceiverConstraints: Function;
     setSenderVideoConstraint: Function;
     setSubject: Function;
+    startVerification: Function;
 }
 
 export interface IConferenceState {
@@ -100,7 +108,7 @@ export interface IConferenceState {
     leaving?: Object;
     localSubject?: string;
     locked?: string;
-    membersOnly?: Object;
+    membersOnly?: IJitsiConference;
     obfuscatedRoom?: string;
     obfuscatedRoomSource?: string;
     p2p?: Object;
@@ -223,7 +231,8 @@ function _authStatusChanged(state: IConferenceState,
  * @returns {Object} The new state of the feature base/conference after the
  * reduction of the specified action.
  */
-function _conferenceFailed(state: IConferenceState, { conference, error }: { conference: Object; error: Error; }) {
+function _conferenceFailed(state: IConferenceState, { conference, error }: {
+    conference: IJitsiConference; error: Error; }) {
     // The current (similar to getCurrentConference in
     // base/conference/functions.any.js) conference which is joining or joined:
     const conference_ = state.conference || state.joining;
