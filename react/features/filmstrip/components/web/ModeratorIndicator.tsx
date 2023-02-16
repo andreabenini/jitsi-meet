@@ -1,8 +1,10 @@
-/* @flow */
+/* eslint-disable lines-around-comment */
 
 import React from 'react';
 
-import { IconCrown } from '../../../base/icons';
+// @ts-ignore
+import { IconModerator } from '../../../base/icons';
+// @ts-ignore
 import { BaseIndicator } from '../../../base/react';
 
 /**
@@ -13,17 +15,17 @@ type Props = {
     /**
      * From which side of the indicator the tooltip should appear from.
      */
-    tooltipPosition: string
+    tooltipPosition: string;
 };
 
 /**
  * React {@code Component} for showing a moderator icon with a tooltip.
  *
- * @returns {Component}
+ * @returns {JSX.Element}
  */
-const ModeratorIndicator = ({ tooltipPosition }: Props) => (
+const ModeratorIndicator = ({ tooltipPosition }: Props): JSX.Element => (
     <BaseIndicator
-        icon = { IconCrown }
+        icon = { IconModerator }
         iconSize = { 16 }
         tooltipKey = 'videothumbnail.moderator'
         tooltipPosition = { tooltipPosition } />
