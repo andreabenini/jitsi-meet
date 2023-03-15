@@ -16,11 +16,12 @@ import {
     isFilmstripVisible,
     shouldDisplayLocalThumbnailSeparately,
     shouldRemoteVideosBeVisible
-} from '../../functions';
+} from '../../functions.native';
 
 import LocalThumbnail from './LocalThumbnail';
 import Thumbnail from './Thumbnail';
 import styles from './styles';
+
 
 // Immutable reference to avoid re-renders.
 const NO_REMOTE_VIDEOS = [];

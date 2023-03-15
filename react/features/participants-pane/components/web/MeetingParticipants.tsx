@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
 import { IReduxState } from '../../../app/types';
-import { rejectParticipantAudio } from '../../../av-moderation/actions';
+import { rejectParticipantAudio, rejectParticipantVideo } from '../../../av-moderation/actions';
 import participantsPaneTheme from '../../../base/components/themes/participantsPaneTheme.json';
 import { isToolbarButtonEnabled } from '../../../base/config/functions.web';
 import { MEDIA_TYPE } from '../../../base/media/constants';
@@ -30,6 +30,9 @@ import MeetingParticipantItems from './MeetingParticipantItems';
 
 const useStyles = makeStyles()(theme => {
     return {
+        headingW: {
+            color: theme.palette.warning02
+        },
         heading: {
             color: theme.palette.text02,
 
@@ -85,10 +88,13 @@ function MeetingParticipants({
     const { t } = useTranslation();
 
     const [ lowerMenu, , toggleMenu, menuEnter, menuLeave, raiseContext ] = useContextMenu();
-
     const muteAudio = useCallback(id => () => {
         dispatch(muteRemote(id, MEDIA_TYPE.AUDIO));
         dispatch(rejectParticipantAudio(id));
+    }, [ dispatch ]);
+    const stopVideo = useCallback(id => () => {
+        dispatch(muteRemote(id, MEDIA_TYPE.VIDEO));
+        dispatch(rejectParticipantVideo(id));
     }, [ dispatch ]);
     const [ drawerParticipant, closeDrawer, openDrawerForParticipant ] = useParticipantDrawer();
 
@@ -100,14 +106,23 @@ function MeetingParticipants({
     // mounted.
     const participantActionEllipsisLabel = t('participantsPane.actions.moreParticipantOptions');
     const youText = t('chat.you');
-    const askUnmuteText = t('participantsPane.actions.askUnmute');
-    const muteParticipantButtonText = t('dialog.muteParticipantButton');
     const isBreakoutRoom = useSelector(isInBreakoutRoom);
+    const visitorsCount = useSelector((state: IReduxState) => state['features/visitors'].count);
 
-    const { classes: styles } = useStyles();
+    const { classes: styles, cx } = useStyles();
 
     return (
         <>
+            <span
+                aria-level = { 1 }
+                className = 'sr-only'
+                role = 'heading'>
+                { t('participantsPane.title') }
+            </span>
+            <div className = { cx(styles.heading, styles.headingW) }>
+                {visitorsCount && visitorsCount > 0
+                    && t('participantsPane.headings.visitors', { count: visitorsCount })}
+            </div>
             <div className = { styles.heading }>
                 {currentRoom?.name
                     ? `${currentRoom.name} (${participantsCount})`
@@ -122,11 +137,9 @@ function MeetingParticipants({
                 value = { searchString } />
             <div>
                 <MeetingParticipantItems
-                    askUnmuteText = { askUnmuteText }
                     isInBreakoutRoom = { isBreakoutRoom }
                     lowerMenu = { lowerMenu }
                     muteAudio = { muteAudio }
-                    muteParticipantButtonText = { muteParticipantButtonText }
                     openDrawerForParticipant = { openDrawerForParticipant }
                     overflowDrawer = { overflowDrawer }
                     participantActionEllipsisLabel = { participantActionEllipsisLabel }
@@ -134,6 +147,7 @@ function MeetingParticipants({
                     participantsCount = { participantsCount }
                     raiseContextId = { raiseContext.entity }
                     searchString = { normalizeAccents(searchString) }
+                    stopVideo = { stopVideo }
                     toggleMenu = { toggleMenu }
                     youText = { youText } />
             </div>

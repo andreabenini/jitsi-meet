@@ -12,7 +12,7 @@ import { Container, LoadingIndicator, TintedView } from '../../../base/react';
 import { connect } from '../../../base/redux';
 import { ASPECT_RATIO_NARROW } from '../../../base/responsive-ui/constants';
 import { TestConnectionInfo } from '../../../base/testing';
-import { ConferenceNotification, isCalendarEnabled } from '../../../calendar-sync';
+import { isCalendarEnabled } from '../../../calendar-sync/functions.native';
 import { DisplayNameLabel } from '../../../display-name';
 import { BrandingImageBackground } from '../../../dynamic-branding/components/native';
 import {
@@ -24,7 +24,6 @@ import {
 import { CalleeInfoContainer } from '../../../invite';
 import { LargeVideo } from '../../../large-video';
 import { startKnocking } from '../../../lobby/actions.any';
-import { KnockingParticipantList } from '../../../lobby/components/native';
 import { getIsLobbyVisible } from '../../../lobby/functions';
 import { navigate }
     from '../../../mobile/navigation/components/conference/ConferenceNavigationContainerRef';
@@ -322,21 +321,6 @@ class Conference extends AbstractConference<Props, State> {
         return true;
     }
 
-    /**
-     * Renders the conference notification badge if the feature is enabled.
-     *
-     * @private
-     * @returns {React$Node}
-     */
-    _renderConferenceNotification() {
-        const { _calendarEnabled, _reducedUI } = this.props;
-
-        return (
-            _calendarEnabled && !_reducedUI
-                ? <ConferenceNotification />
-                : undefined);
-    }
-
     _createOnPress: (string) => void;
 
     /**
@@ -433,7 +417,14 @@ class Conference extends AbstractConference<Props, State> {
 
                     <LonelyMeetingExperience />
 
-                    { _shouldDisplayTileView || <><Filmstrip /><Toolbox /></> }
+                    {
+                        _shouldDisplayTileView
+                        || <>
+                            <Filmstrip />
+                            { this._renderNotificationsContainer() }
+                            <Toolbox />
+                        </>
+                    }
                 </View>
 
                 <SafeAreaView
@@ -462,12 +453,9 @@ class Conference extends AbstractConference<Props, State> {
                         {/* eslint-disable-next-line react/jsx-no-bind */}
                         <AlwaysOnLabels createOnPress = { this._createOnPress } />
                     </View>
-                    { this._renderNotificationsContainer() }
-                    <KnockingParticipantList />
                 </SafeAreaView>
 
                 <TestConnectionInfo />
-                { this._renderConferenceNotification() }
 
                 {_shouldDisplayTileView && <Toolbox />}
             </>
@@ -525,7 +513,8 @@ class Conference extends AbstractConference<Props, State> {
 
         return super.renderNotificationsContainer(
             {
-                style: notificationsStyle
+                style: notificationsStyle,
+                toolboxVisible: this.props._toolboxVisible
             }
         );
     }

@@ -11,6 +11,7 @@ import { ACTION_SHORTCUT_TRIGGERED, createShortcutEvent, createToolbarEvent } fr
 import { sendAnalytics } from '../../../analytics/functions';
 import { IReduxState } from '../../../app/types';
 import { IJitsiConference } from '../../../base/conference/reducer';
+import { VISITORS_MODE_BUTTONS } from '../../../base/config/constants';
 import {
     getButtonsWithNotifyClick,
     getMultipleVideoSendingSupportFeatureFlag,
@@ -53,7 +54,7 @@ import { NoiseSuppressionButton } from '../../../noise-suppression/components';
 import {
     close as closeParticipantsPane,
     open as openParticipantsPane
-} from '../../../participants-pane/actions';
+} from '../../../participants-pane/actions.web';
 // @ts-ignore
 import { ParticipantsPaneButton } from '../../../participants-pane/components/web';
 import { getParticipantsPaneOpen } from '../../../participants-pane/functions';
@@ -100,6 +101,7 @@ import {
 import { VideoQualityButton, VideoQualityDialog } from '../../../video-quality/components';
 // @ts-ignore
 import { VideoBackgroundButton } from '../../../virtual-background';
+import { iAmVisitor } from '../../../visitors/functions';
 import WhiteboardButton from '../../../whiteboard/components/web/WhiteboardButton';
 import { isWhiteboardButtonVisible } from '../../../whiteboard/functions';
 import {
@@ -366,7 +368,7 @@ const styles = () => {
             margin: 0,
             marginBottom: '8px',
             maxHeight: 'calc(100vh - 100px)',
-            width: '240px'
+            minWidth: '240px'
         },
 
         hangupMenu: {
@@ -1464,6 +1466,7 @@ class Toolbox extends Component<IProps> {
                                     accessibilityLabel = { t(toolbarAccLabel) }
                                     className = { classes.contextMenu }
                                     hidden = { false }
+                                    id = 'overflow-context-menu'
                                     inDrawer = { _overflowDrawer }
                                     onKeyDown = { this._onEscKey }>
                                     {overflowMenuButtons.reduce((acc, val) => {
@@ -1562,7 +1565,11 @@ function _mapStateToProps(state: IReduxState, ownProps: Partial<IProps>) {
     const localParticipant = getLocalParticipant(state);
     const localVideo = getLocalVideoTrack(state['features/base/tracks']);
     const { clientWidth } = state['features/base/responsive-ui'];
-    const toolbarButtons = ownProps.toolbarButtons || getToolbarButtons(state);
+    let toolbarButtons = ownProps.toolbarButtons || getToolbarButtons(state);
+
+    if (iAmVisitor(state)) {
+        toolbarButtons = VISITORS_MODE_BUTTONS.filter(e => toolbarButtons.indexOf(e) > -1);
+    }
 
     return {
         _backgroundType: state['features/virtual-background'].backgroundType ?? '',

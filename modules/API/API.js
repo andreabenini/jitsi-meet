@@ -106,6 +106,8 @@ import { startAudioScreenShareFlow, startScreenShareFlow } from '../../react/fea
 import { isScreenAudioSupported } from '../../react/features/screen-share/functions';
 import { toggleScreenshotCaptureSummary } from '../../react/features/screenshot-capture';
 import { isScreenshotCaptureEnabled } from '../../react/features/screenshot-capture/functions';
+import SettingsDialog from '../../react/features/settings/components/web/SettingsDialog';
+import { SETTINGS_TABS } from '../../react/features/settings/constants';
 import { playSharedVideo, stopSharedVideo } from '../../react/features/shared-video/actions.any';
 import { extractYoutubeIdOrURL } from '../../react/features/shared-video/functions';
 import { setRequestingSubtitles, toggleRequestingSubtitles } from '../../react/features/subtitles/actions';
@@ -113,7 +115,6 @@ import { isAudioMuteButtonDisabled } from '../../react/features/toolbox/function
 import { setTileView, toggleTileView } from '../../react/features/video-layout';
 import { muteAllParticipants } from '../../react/features/video-menu/actions';
 import { setVideoQuality } from '../../react/features/video-quality';
-import VirtualBackgroundDialog from '../../react/features/virtual-background/components/VirtualBackgroundDialog';
 import { getJitsiMeetTransport } from '../transport';
 
 import { API_ID, ENDPOINT_TEXT_MESSAGE_NAME } from './constants';
@@ -798,7 +799,8 @@ function initCommands() {
             APP.store.dispatch(overwriteConfig(whitelistedConfig));
         },
         'toggle-virtual-background': () => {
-            APP.store.dispatch(toggleDialog(VirtualBackgroundDialog));
+            APP.store.dispatch(toggleDialog(SettingsDialog, {
+                defaultTab: SETTINGS_TABS.VIRTUAL_BACKGROUND }));
         },
         'end-conference': () => {
             APP.store.dispatch(endConference());
@@ -1226,6 +1228,22 @@ class API {
             name: 'moderation-participant-rejected',
             id: participantId,
             mediaType
+        });
+    }
+
+    /**
+     * Notify the external app that a notification has been triggered.
+     *
+     * @param {string} title - The notification title.
+     * @param {string} description - The notification description.
+     *
+     * @returns {void}
+     */
+    notifyNotificationTriggered(title: string, description: string) {
+        this._sendEvent({
+            description,
+            name: 'notification-triggered',
+            title
         });
     }
 

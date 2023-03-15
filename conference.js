@@ -153,6 +153,7 @@ import { createRnnoiseProcessor } from './react/features/stream-effects/rnnoise'
 import { endpointMessageReceived } from './react/features/subtitles';
 import { handleToggleVideoMuted } from './react/features/toolbox/actions.any';
 import { muteLocal } from './react/features/video-menu/actions.any';
+import { setIAmVisitor } from './react/features/visitors/actions';
 import UIEvents from './service/UI/UIEvents';
 
 const logger = Logger.getLogger(__filename);
@@ -341,6 +342,8 @@ class ConferenceConnector {
 
         case JitsiConferenceErrors.REDIRECTED: {
             generateVisitorConfig(APP.store.getState(), params);
+
+            APP.store.dispatch(setIAmVisitor(true));
 
             connection.disconnect().then(() => {
                 connect(this._conference.roomName).then(con => {
@@ -1034,10 +1037,17 @@ export default {
             return;
         }
 
+        const state = APP.store.getState();
+
         if (!mute
-                && isUserInteractionRequiredForUnmute(APP.store.getState())) {
+                && isUserInteractionRequiredForUnmute(state)) {
             logger.error('Unmuting video requires user interaction');
 
+            return;
+        }
+
+        // check for A/V Moderation when trying to unmute and return early
+        if (!mute && shouldShowModeratedNotification(MEDIA_TYPE.VIDEO, state)) {
             return;
         }
 
@@ -1054,7 +1064,7 @@ export default {
             return;
         }
 
-        const localVideo = getLocalJitsiVideoTrack(APP.store.getState());
+        const localVideo = getLocalJitsiVideoTrack(state);
 
         if (!localVideo && !mute && !this.isCreatingLocalTrack) {
             const maybeShowErrorDialog = error => {
@@ -1445,7 +1455,7 @@ export default {
 
                 logger.debug(`useVideoStream: Replacing ${oldTrack} with ${newTrack}`);
 
-                if (oldTrack === newTrack) {
+                if (oldTrack === newTrack || (!oldTrack && !newTrack)) {
                     resolve();
                     onFinish();
 
