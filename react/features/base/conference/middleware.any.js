@@ -5,26 +5,30 @@ import {
     ACTION_PINNED,
     ACTION_UNPINNED,
     createOfferAnswerFailedEvent,
-    createPinnedEvent,
-    sendAnalytics
-} from '../../analytics';
+    createPinnedEvent
+} from '../../analytics/AnalyticsEvents';
+import { sendAnalytics } from '../../analytics/functions';
 import { reloadNow } from '../../app/actions';
 import { removeLobbyChatParticipant } from '../../chat/actions.any';
-import { openDisplayNamePrompt } from '../../display-name';
-import { NOTIFICATION_TIMEOUT_TYPE, showErrorNotification, showWarningNotification } from '../../notifications';
-import { CONNECTION_ESTABLISHED, CONNECTION_FAILED, connectionDisconnected } from '../connection';
-import { validateJwt } from '../jwt';
+import { openDisplayNamePrompt } from '../../display-name/actions';
+import { showErrorNotification, showWarningNotification } from '../../notifications/actions';
+import { NOTIFICATION_TIMEOUT_TYPE } from '../../notifications/constants';
+import { setIAmVisitor } from '../../visitors/actions';
+import { overwriteConfig } from '../config/actions';
+import { CONNECTION_ESTABLISHED, CONNECTION_FAILED } from '../connection/actionTypes';
+import { connect, connectionDisconnected, disconnect } from '../connection/actions';
+import { validateJwt } from '../jwt/functions';
 import { JitsiConferenceErrors } from '../lib-jitsi-meet';
+import { PARTICIPANT_UPDATED, PIN_PARTICIPANT } from '../participants/actionTypes';
+import { PARTICIPANT_ROLE } from '../participants/constants';
 import {
-    PARTICIPANT_ROLE,
-    PARTICIPANT_UPDATED,
-    PIN_PARTICIPANT,
     getLocalParticipant,
     getParticipantById,
     getPinnedParticipant
-} from '../participants';
-import { MiddlewareRegistry } from '../redux';
-import { TRACK_ADDED, TRACK_REMOVED } from '../tracks';
+} from '../participants/functions';
+import MiddlewareRegistry from '../redux/MiddlewareRegistry';
+import { TRACK_ADDED, TRACK_REMOVED } from '../tracks/actionTypes';
+import { destroyLocalTracks } from '../tracks/actions.any';
 
 import {
     CONFERENCE_FAILED,
@@ -47,7 +51,9 @@ import {
     _addLocalTracksToConference,
     _removeLocalTracksFromConference,
     forEachConference,
-    getCurrentConference
+    getCurrentConference,
+    getVisitorOptions,
+    restoreConferenceOptions
 } from './functions';
 import logger from './logger';
 
@@ -119,8 +125,15 @@ MiddlewareRegistry.register(store => next => action => {
  * @returns {Object} The value returned by {@code next(action)}.
  */
 function _conferenceFailed({ dispatch, getState }, next, action) {
-    const result = next(action);
     const { conference, error } = action;
+
+    if (error.name === JitsiConferenceErrors.REDIRECTED) {
+        if (typeof error.recoverable === 'undefined') {
+            error.recoverable = true;
+        }
+    }
+
+    const result = next(action);
     const { enableForcedReload } = getState()['features/base/config'];
 
     // Handle specific failure reasons.
@@ -165,9 +178,51 @@ function _conferenceFailed({ dispatch, getState }, next, action) {
 
         break;
     }
+    case JitsiConferenceErrors.CONFERENCE_MAX_USERS: {
+        if (typeof APP === 'undefined') {
+            // in case of max users(it can be from a visitor node), let's restore
+            // oldConfig if any as we will be back to the main prosody
+            const newConfig = restoreConferenceOptions(getState);
+
+            if (newConfig) {
+                dispatch(overwriteConfig(newConfig))
+                    .then(dispatch(conferenceWillLeave(conference)))
+                    .then(conference.leave())
+                    .then(dispatch(disconnect()))
+                    .then(dispatch(connect()));
+            }
+        }
+
+        break;
+    }
     case JitsiConferenceErrors.OFFER_ANSWER_FAILED:
         sendAnalytics(createOfferAnswerFailedEvent());
         break;
+    case JitsiConferenceErrors.REDIRECTED: {
+        // once conference.js is gone this can be removed and both
+        // redirect logics to be merged
+        if (typeof APP === 'undefined') {
+            const newConfig = getVisitorOptions(getState, error.params);
+
+            if (!newConfig) {
+                logger.warn('Not redirected missing params');
+                break;
+            }
+
+            const [ vnode ] = error.params;
+
+            dispatch(overwriteConfig(newConfig))
+                .then(dispatch(conferenceWillLeave(conference)))
+                .then(conference.leave())
+                .then(dispatch(disconnect()))
+                .then(dispatch(setIAmVisitor(Boolean(vnode))))
+
+                // we do not clear local tracks on error, so we need to manually clear them
+                .then(dispatch(destroyLocalTracks()))
+                .then(dispatch(connect()));
+        }
+        break;
+    }
     }
 
     if (typeof APP === 'undefined') {

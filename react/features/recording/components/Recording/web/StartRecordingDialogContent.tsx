@@ -1,15 +1,11 @@
-/* eslint-disable lines-around-comment  */
 import React from 'react';
+import { connect } from 'react-redux';
 
 import { translate } from '../../../../base/i18n/functions';
-import {
-    Container,
-    Image,
-    LoadingIndicator,
-    Text
-    // @ts-ignore
-} from '../../../../base/react';
-import { connect } from '../../../../base/redux/functions';
+import Container from '../../../../base/react/components/web/Container';
+import Image from '../../../../base/react/components/web/Image';
+import LoadingIndicator from '../../../../base/react/components/web/LoadingIndicator';
+import Text from '../../../../base/react/components/web/Text';
 import Button from '../../../../base/ui/components/web/Button';
 import Switch from '../../../../base/ui/components/web/Switch';
 import { BUTTON_TYPES } from '../../../../base/ui/constants.web';
@@ -25,7 +21,6 @@ import {
     ICON_INFO,
     ICON_USERS,
     LOCAL_RECORDING
-    // @ts-ignore
 } from '../styles.web';
 
 
@@ -122,7 +117,6 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent<IP
             onSharingSettingChanged,
             sharingSetting,
             t
-            // @ts-ignore
         } = this.props;
 
         return (

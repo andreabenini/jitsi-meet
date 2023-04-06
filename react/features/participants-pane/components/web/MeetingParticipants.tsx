@@ -1,7 +1,6 @@
-/* eslint-disable lines-around-comment */
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDispatch, useSelector } from 'react-redux';
+import { connect, useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
 import { IReduxState } from '../../../app/types';
@@ -10,7 +9,6 @@ import participantsPaneTheme from '../../../base/components/themes/participantsP
 import { isToolbarButtonEnabled } from '../../../base/config/functions.web';
 import { MEDIA_TYPE } from '../../../base/media/constants';
 import { getParticipantById, isScreenShareParticipant } from '../../../base/participants/functions';
-import { connect } from '../../../base/redux/functions';
 import { withPixelLineHeight } from '../../../base/styles/functions.web';
 import Input from '../../../base/ui/components/web/Input';
 import useContextMenu from '../../../base/ui/hooks/useContextMenu.web';
@@ -22,11 +20,8 @@ import { getSortedParticipantIds, shouldRenderInviteButton } from '../../functio
 import { useParticipantDrawer } from '../../hooks';
 
 import { InviteButton } from './InviteButton';
-// @ts-ignore
 import MeetingParticipantContextMenu from './MeetingParticipantContextMenu';
-// @ts-ignore
 import MeetingParticipantItems from './MeetingParticipantItems';
-/* eslint-enable lines-around-comment */
 
 const useStyles = makeStyles()(theme => {
     return {
@@ -35,18 +30,17 @@ const useStyles = makeStyles()(theme => {
         },
         heading: {
             color: theme.palette.text02,
-
-            // @ts-ignore
-            ...withPixelLineHeight(theme.typography.labelButton),
-            margin: `8px 0 ${participantsPaneTheme.panePadding}px`,
+            ...withPixelLineHeight(theme.typography.bodyShortBold),
+            marginBottom: theme.spacing(3),
 
             [`@media(max-width: ${participantsPaneTheme.MD_BREAKPOINT})`]: {
-                // @ts-ignore
-                ...withPixelLineHeight(theme.typography.labelButtonLarge)
+                ...withPixelLineHeight(theme.typography.bodyShortBoldLarge)
             }
         },
 
         search: {
+            margin: `${theme.spacing(3)} 0`,
+
             '& input': {
                 textAlign: 'center',
                 paddingRight: '16px'
@@ -87,7 +81,7 @@ function MeetingParticipants({
     const dispatch = useDispatch();
     const { t } = useTranslation();
 
-    const [ lowerMenu, , toggleMenu, menuEnter, menuLeave, raiseContext ] = useContextMenu();
+    const [ lowerMenu, , toggleMenu, menuEnter, menuLeave, raiseContext ] = useContextMenu<string>();
     const muteAudio = useCallback(id => () => {
         dispatch(muteRemote(id, MEDIA_TYPE.AUDIO));
         dispatch(rejectParticipantAudio(id));
@@ -107,7 +101,7 @@ function MeetingParticipants({
     const participantActionEllipsisLabel = t('participantsPane.actions.moreParticipantOptions');
     const youText = t('chat.you');
     const isBreakoutRoom = useSelector(isInBreakoutRoom);
-    const visitorsCount = useSelector((state: IReduxState) => state['features/visitors'].count);
+    const visitorsCount = useSelector((state: IReduxState) => state['features/visitors'].count || 0);
 
     const { classes: styles, cx } = useStyles();
 
@@ -119,10 +113,11 @@ function MeetingParticipants({
                 role = 'heading'>
                 { t('participantsPane.title') }
             </span>
-            <div className = { cx(styles.heading, styles.headingW) }>
-                {visitorsCount && visitorsCount > 0
-                    && t('participantsPane.headings.visitors', { count: visitorsCount })}
-            </div>
+            {visitorsCount > 0 && (
+                <div className = { cx(styles.heading, styles.headingW) }>
+                    {t('participantsPane.headings.visitors', { count: visitorsCount })}
+                </div>
+            )}
             <div className = { styles.heading }>
                 {currentRoom?.name
                     ? `${currentRoom.name} (${participantsCount})`
@@ -144,7 +139,6 @@ function MeetingParticipants({
                     overflowDrawer = { overflowDrawer }
                     participantActionEllipsisLabel = { participantActionEllipsisLabel }
                     participantIds = { sortedParticipantIds }
-                    participantsCount = { participantsCount }
                     raiseContextId = { raiseContext.entity }
                     searchString = { normalizeAccents(searchString) }
                     stopVideo = { stopVideo }
@@ -173,7 +167,7 @@ function MeetingParticipants({
  * @private
  * @returns {IProps}
  */
-function _mapStateToProps(state: IReduxState): Object {
+function _mapStateToProps(state: IReduxState) {
     let sortedParticipantIds: any = getSortedParticipantIds(state);
 
     // Filter out the virtual screenshare participants since we do not want them to be displayed as separate

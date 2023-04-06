@@ -14,15 +14,20 @@ import { getCurrentCameraDeviceId } from '../../../../base/settings/functions.we
 import { toggleVideoSettings } from '../../../actions';
 import { getVideoSettingsVisibility } from '../../../functions.web';
 
-import VideoSettingsContent, { type IProps as VideoSettingsProps } from './VideoSettingsContent';
+import VideoSettingsContent from './VideoSettingsContent';
 
 
-interface IProps extends VideoSettingsProps {
+interface IProps {
 
     /**
     * Component children (the Video button).
     */
     children: ReactNode;
+
+    /**
+     * The deviceId of the camera device currently being used.
+     */
+    currentCameraDeviceId: string;
 
     /**
     * Flag controlling the visibility of the popup.
@@ -38,6 +43,16 @@ interface IProps extends VideoSettingsProps {
      * The popup placement enum value.
      */
     popupPlacement: string;
+
+    /**
+     * Callback invoked to change current camera.
+     */
+    setVideoInputDevice: Function;
+
+    /**
+     * All the camera device ids currently connected.
+     */
+    videoDeviceIds: string[];
 }
 
 /**
@@ -57,6 +72,7 @@ function VideoSettingsPopup({
     return (
         <div className = 'video-preview'>
             <Popover
+                allowClick = { true }
                 content = { <VideoSettingsContent
                     currentCameraDeviceId = { currentCameraDeviceId }
                     setVideoInputDevice = { setVideoInputDevice }

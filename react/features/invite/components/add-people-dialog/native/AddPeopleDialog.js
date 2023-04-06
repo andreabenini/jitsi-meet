@@ -6,25 +6,27 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { connect } from 'react-redux';
 
-import { AlertDialog, openDialog } from '../../../../base/dialog';
-import { translate } from '../../../../base/i18n';
+import { openDialog } from '../../../../base/dialog/actions';
+import AlertDialog from '../../../../base/dialog/components/native/AlertDialog';
+import { translate } from '../../../../base/i18n/functions';
+import Icon from '../../../../base/icons/components/Icon';
 import {
-    Icon,
     IconCheck,
     IconCloseCircle,
     IconPhoneRinging,
     IconSearch,
     IconShare
-} from '../../../../base/icons';
+} from '../../../../base/icons/svg';
 import JitsiScreen from '../../../../base/modal/components/JitsiScreen';
-import { AvatarListItem, type Item } from '../../../../base/react';
-import { connect } from '../../../../base/redux';
+import AvatarListItem from '../../../../base/react/components/native/AvatarListItem';
+import { Item } from '../../../../base/react/types';
 import BaseTheme from '../../../../base/ui/components/BaseTheme.native';
 import Input from '../../../../base/ui/components/native/Input';
 import HeaderNavigationButton
     from '../../../../mobile/navigation/components/HeaderNavigationButton';
-import { beginShareRoom } from '../../../../share-room';
+import { beginShareRoom } from '../../../../share-room/actions';
 import { INVITE_TYPES } from '../../../constants';
 import AbstractAddPeopleDialog, {
     type Props as AbstractProps,

@@ -1,15 +1,12 @@
 // @flow
 
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
-import {
-    createCalendarClickedEvent,
-    createCalendarSelectedEvent,
-    sendAnalytics
-} from '../../analytics';
+import { createCalendarClickedEvent, createCalendarSelectedEvent } from '../../analytics/AnalyticsEvents';
+import { sendAnalytics } from '../../analytics/functions';
 import { appNavigate } from '../../app/actions';
-import { MeetingsList } from '../../base/react';
-import { connect } from '../../base/redux';
+import MeetingsList from '../../base/react/components/web/MeetingsList';
 
 import AddMeetingUrlButton from './AddMeetingUrlButton';
 import JoinButton from './JoinButton';

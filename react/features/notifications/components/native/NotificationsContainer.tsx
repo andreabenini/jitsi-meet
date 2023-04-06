@@ -1,17 +1,16 @@
-/* eslint-disable lines-around-comment  */
-
 import React, { Component } from 'react';
 import { WithTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 import { Edge, SafeAreaView } from 'react-native-safe-area-context';
+import { connect } from 'react-redux';
 
 import { IReduxState } from '../../../app/types';
-import { connect } from '../../../base/redux/functions';
 import { hideNotification } from '../../actions';
 import { areThereNotifications } from '../../functions';
 import NotificationsTransition from '../NotificationsTransition';
 
 import Notification from './Notification';
+// eslint-disable-next-line lines-around-comment
 // @ts-ignore
 import styles from './styles';
 
@@ -28,6 +27,11 @@ interface IProps extends WithTranslation {
      * Invoked to update the redux store in order to remove notifications.
      */
     dispatch: Function;
+
+    /**
+     * Whether or not the layout should change to support tile view mode.
+     */
+    shouldDisplayTileView: boolean;
 
     /**
      * Checks toolbox visibility.
@@ -176,9 +180,21 @@ class NotificationsContainer extends Component<IProps> {
      * @inheritdoc
      */
     render() {
-        const { _notifications, toolboxVisible } = this.props;
-        const notificationsContainerStyle
-            = toolboxVisible ? styles.withToolbox : styles.withoutToolbox;
+        const { _notifications, shouldDisplayTileView, toolboxVisible } = this.props;
+        let notificationsContainerStyle;
+
+        if (shouldDisplayTileView) {
+
+            if (toolboxVisible) {
+                notificationsContainerStyle = styles.withToolboxTileView;
+            } else {
+                notificationsContainerStyle = styles.withoutToolboxTileView;
+            }
+
+        } else {
+            notificationsContainerStyle
+                = toolboxVisible ? styles.withToolbox : styles.withoutToolbox;
+        }
 
         return (
             <SafeAreaView

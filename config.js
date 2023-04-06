@@ -139,9 +139,6 @@ var config = {
     // Media
     //
 
-    // Enable unified plan implementation support on Chromium based browsers.
-    // enableUnifiedOnChrome: false,
-
     // Audio
 
     // Disable measuring of audio levels.
@@ -195,6 +192,22 @@ var config = {
     //     stereo: false,
     //     opusMaxAverageBitrate: null, // Value to fit the 6000 to 510000 range.
     //     enableOpusDtx: false,
+    // },
+
+    // Noise suppression configuration. By default rnnoise is used. Optionally Krisp
+    // can be used by enabling it below, but the Krisp JS SDK files must be supplied in your
+    // installation. Specifically, these files are needed:
+    //   - https://meet.example.com/libs/krisp/krisp.mjs
+    //   - https://meet.example.com/libs/krisp/models/model_8.kw
+    //   - https://meet.example.com/libs/krisp/models/model_16.kw
+    //   - https://meet.example.com/libs/krisp/models/model_32.kw
+    // NOTE: Krisp JS SDK v1.0.9 was tested.
+    // noiseSuppression: {
+    //     krisp: {
+    //         enabled: false,
+    //         logProcessStats: false,
+    //         debugLogs: false,
+    //     },
     // },
 
     // Video
@@ -256,12 +269,6 @@ var config = {
 
     // Enable / disable simulcast support.
     // disableSimulcast: false,
-
-    // Enable / disable layer suspension.  If enabled, endpoints whose HD layers are not in use will be suspended
-    // (no longer sent) until they are requested again. This is enabled by default. This must be enabled for screen
-    // sharing to work as expected on Chrome. Disabling this might result in low resolution screenshare being sent
-    // by the client.
-    // enableLayerSuspension: false,
 
     // Every participant after the Nth will start video muted.
     // startVideoMuted: 10,
@@ -415,22 +422,6 @@ var config = {
     // value will be used when the quality level is selected using "Manage Video Quality" slider.
     // startLastN: 1,
 
-    // Provides a way to use different "last N" values based on the number of participants in the conference.
-    // The keys in an Object represent number of participants and the values are "last N" to be used when number of
-    // participants gets to or above the number.
-    //
-    // For the given example mapping, "last N" will be set to 20 as long as there are at least 5, but less than
-    // 29 participants in the call and it will be lowered to 15 when the 30th participant joins. The 'channelLastN'
-    // will be used as default until the first threshold is reached.
-    //
-    // lastNLimits: {
-    //     5: 20,
-    //     30: 15,
-    //     50: 10,
-    //     70: 5,
-    //     90: 2,
-    // },
-
     // Specify the settings for video quality optimizations on the client.
     // videoQuality: {
     //    // Provides a way to prevent a video codec from being negotiated on the JVB connection. The codec specified
@@ -573,6 +564,9 @@ var config = {
 
     // Require users to always specify a display name.
     // requireDisplayName: true,
+
+    // Enables webhid functionality for Audio.
+    // enableWebHIDFeature: false,
 
     // DEPRECATED! Use 'welcomePage.disabled' instead.
     // Whether to use a welcome page or not. In case it's false a random room
@@ -930,9 +924,6 @@ var config = {
         // connection.
         enabled: true,
 
-        // Enable unified plan implementation support on Chromium for p2p connection.
-        // enableUnifiedOnChrome: false,
-
         // Sets the ICE transport policy for the p2p connection. At the time
         // of this writing the list of possible values are 'all' and 'relay',
         // but that is subject to change in the future. The enum is defined in
@@ -1258,7 +1249,6 @@ var config = {
                 ui03: "violet",
                 ui04: "magenta",
                 ui05: "blueviolet",
-                field02Hover: 'red',
                 action01: 'green',
                 action01Hover: 'lightgreen',
                 disabled01: 'beige',
@@ -1408,7 +1398,6 @@ var config = {
     /**
      _peerConnStatusOutOfLastNTimeout
      _peerConnStatusRtcMuteTimeout
-     abTesting
      avgRtpStatsN
      callStatsConfIDNamespace
      callStatsCustomScriptUrl

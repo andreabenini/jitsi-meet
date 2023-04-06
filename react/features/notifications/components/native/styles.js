@@ -10,12 +10,12 @@ const contentColumn = {
 
 const notification = {
     display: 'flex',
-    backgroundColor: BaseTheme.palette.ui12,
+    backgroundColor: BaseTheme.palette.ui10,
     borderRadius: BaseTheme.shape.borderRadius,
     borderLeftColor: BaseTheme.palette.link01Active,
     borderLeftWidth: 4,
     flexDirection: 'row',
-    maxHeight: 104,
+    maxHeight: 120,
     height: 'auto',
     marginBottom: BaseTheme.spacing[2],
     marginHorizontal: BaseTheme.spacing[2],
@@ -108,12 +108,24 @@ export default {
     },
 
     withToolbox: {
-        bottom: 64,
+        bottom: 56,
+        position: 'absolute',
+        width: '100%'
+    },
+
+    withToolboxTileView: {
+        bottom: 56,
         position: 'absolute',
         width: '100%'
     },
 
     withoutToolbox: {
+        position: 'absolute',
+        width: '100%'
+    },
+
+    withoutToolboxTileView: {
+        bottom: 0,
         position: 'absolute',
         width: '100%'
     }

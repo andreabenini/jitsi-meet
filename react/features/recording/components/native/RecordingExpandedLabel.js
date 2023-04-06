@@ -1,12 +1,10 @@
 // @flow
 
-import { translate } from '../../../base/i18n';
-import {
-    type Props as AbstractProps,
-    ExpandedLabel
-} from '../../../base/label';
+import { connect } from 'react-redux';
+
+import { translate } from '../../../base/i18n/functions';
+import ExpandedLabel, { Props as AbstractProps } from '../../../base/label/components/native/ExpandedLabel';
 import { JitsiRecordingConstants } from '../../../base/lib-jitsi-meet';
-import { connect } from '../../../base/redux';
 import { getSessionStatusToShow } from '../../functions';
 
 type Props = AbstractProps & {

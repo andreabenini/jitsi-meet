@@ -10,13 +10,11 @@ const indicatorContainer = {
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderRadius: BaseTheme.shape.borderRadius,
-    flexShrink: 1,
     height: 24,
-    justifyContent: 'center',
     margin: 2,
-    minWidth: 16,
     padding: 2
 };
+
 
 /**
  * The styles of the feature filmstrip.
@@ -107,7 +105,7 @@ export default {
     thumbnail: {
         alignItems: 'stretch',
         backgroundColor: BaseTheme.palette.ui02,
-        borderColor: '#424242',
+        borderColor: BaseTheme.palette.ui03,
         borderRadius: BaseTheme.shape.borderRadius,
         borderStyle: 'solid',
         borderWidth: 1,
@@ -126,15 +124,19 @@ export default {
         ...indicatorContainer
     },
 
+    screenShareIndicatorContainer: {
+        ...indicatorContainer
+    },
+
     /**
      * The thumbnail indicator container.
      */
     thumbnailIndicatorContainer: {
         ...indicatorContainer,
-        bottom: BaseTheme.spacing[1],
+        bottom: 3,
         flex: 1,
         flexDirection: 'row',
-        left: BaseTheme.spacing[1],
+        left: 3,
         position: 'absolute',
         maxWidth: '95%',
         overflow: 'hidden',
@@ -146,15 +148,12 @@ export default {
         flexDirection: 'row'
     },
 
-    thumbnailTopIndicatorContainer: {
-        flexDirection: 'row',
-        padding: BaseTheme.spacing[1],
-        position: 'absolute',
-        top: BaseTheme.spacing[0]
-    },
-
     thumbnailTopLeftIndicatorContainer: {
-        left: BaseTheme.spacing[0]
+        ...indicatorContainer,
+        backgroundColor: 'unset',
+        flexDirection: 'row',
+        position: 'absolute',
+        top: BaseTheme.spacing[1]
     },
 
     raisedHandIndicator: {
@@ -172,7 +171,7 @@ export default {
     },
 
     thumbnailDominantSpeaker: {
-        borderWidth: 4,
+        borderWidth: 2,
         borderColor: BaseTheme.palette.action01Hover
     },
 

@@ -1,13 +1,10 @@
 // @flow
 
 import React, { PureComponent } from 'react';
+import { connect } from 'react-redux';
 
-import { connect } from '../../../../base/redux';
-import {
-    getConferenceId,
-    getDefaultDialInNumber,
-    updateDialInNumbers
-} from '../../../../invite';
+import { updateDialInNumbers } from '../../../../invite/actions.web';
+import { getConferenceId, getDefaultDialInNumber } from '../../../../invite/functions';
 import {
     dialOut as dialOutAction,
     joinConferenceWithoutAudio as joinConferenceWithoutAudioAction,
@@ -228,7 +225,7 @@ class JoinByPhoneDialog extends PureComponent<Props, State> {
  * @param {Object} state - The redux state.
  * @returns {Object}
  */
-function mapStateToProps(state): Object {
+function mapStateToProps(state) {
     return {
         dialInNumber: getDefaultDialInNumber(state),
         dialOutNumber: getFullDialOutNumber(state),

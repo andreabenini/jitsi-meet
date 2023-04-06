@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import _ from 'lodash';
 import React, { PureComponent } from 'react';
 import { WithTranslation } from 'react-i18next';
+import { connect } from 'react-redux';
 import { FixedSizeGrid, FixedSizeList } from 'react-window';
 
 import { ACTION_SHORTCUT_TRIGGERED, createShortcutEvent, createToolbarEvent } from '../../../analytics/AnalyticsEvents';
@@ -13,7 +14,6 @@ import { isMobileBrowser } from '../../../base/environment/utils';
 import { translate } from '../../../base/i18n/functions';
 import Icon from '../../../base/icons/components/Icon';
 import { IconArrowDown, IconArrowUp } from '../../../base/icons/svg';
-import { connect } from '../../../base/redux/functions';
 import { getHideSelfView } from '../../../base/settings/functions.any';
 import { showToolbox } from '../../../toolbox/actions.web';
 import { isButtonEnabled, isToolboxVisible } from '../../../toolbox/functions.web';
@@ -43,7 +43,6 @@ import {
     shouldRemoteVideosBeVisible
 } from '../../functions';
 
-// @ts-ignore
 import AudioTracksContainer from './AudioTracksContainer';
 import Thumbnail from './Thumbnail';
 import ThumbnailWrapper from './ThumbnailWrapper';
@@ -67,7 +66,7 @@ interface IProps extends WithTranslation {
     /**
      * The current layout of the filmstrip.
      */
-    _currentLayout: string;
+    _currentLayout?: string;
 
     /**
      * Whether or not to hide the self view.
@@ -132,7 +131,7 @@ interface IProps extends WithTranslation {
     /**
      * The participants in the call.
      */
-    _remoteParticipants: Array<Object>;
+    _remoteParticipants: Array<string>;
 
     /**
      * The length of the remote participants array.
@@ -167,7 +166,7 @@ interface IProps extends WithTranslation {
     /**
      * The height of the top panel (user resized).
      */
-    _topPanelHeight?: number;
+    _topPanelHeight?: number | null;
 
     /**
      * The max height of the top panel.
@@ -182,7 +181,7 @@ interface IProps extends WithTranslation {
     /**
      * The width of the vertical filmstrip (user resized).
      */
-    _verticalFilmstripWidth?: number;
+    _verticalFilmstripWidth?: number | null;
 
     /**
      * Whether or not the vertical filmstrip should have a background color.
@@ -597,7 +596,7 @@ class Filmstrip extends PureComponent <IProps, IState> {
      * @param {Object} data - An object with the indexes identifying the ThumbnailWrapper instance.
      * @returns {string} - The key.
      */
-    _gridItemKey({ columnIndex, rowIndex }: { columnIndex: number; rowIndex: number; }) {
+    _gridItemKey({ columnIndex, rowIndex }: { columnIndex: number; rowIndex: number; }): string {
         const {
             _disableSelfView,
             _columns,
@@ -699,8 +698,6 @@ class Filmstrip extends PureComponent <IProps, IState> {
                     initialScrollLeft = { 0 }
                     initialScrollTop = { 0 }
                     itemData = {{ filmstripType }}
-
-                    // @ts-ignore
                     itemKey = { this._gridItemKey }
                     onItemsRendered = { this._onGridItemsRendered }
                     overscanRowCount = { 1 }
@@ -922,7 +919,7 @@ function _mapStateToProps(state: IReduxState, ownProps: Partial<IProps>) {
         _mainFilmstripVisible: visible,
         _maxFilmstripWidth: clientWidth - MIN_STAGE_VIEW_WIDTH,
         _maxTopPanelHeight: clientHeight - MIN_STAGE_VIEW_HEIGHT,
-        _remoteParticipantsLength: _remoteParticipants?.length,
+        _remoteParticipantsLength: _remoteParticipants?.length ?? 0,
         _topPanelHeight: topPanelHeight.current,
         _topPanelMaxHeight: topPanelHeight.current || TOP_FILMSTRIP_HEIGHT,
         _topPanelVisible,

@@ -19,6 +19,8 @@ import { IReduxState } from '../../../app/types';
 import { setAudioOnly } from '../../../base/audio-only/actions';
 import { getConferenceName } from '../../../base/conference/functions';
 import { connect } from '../../../base/connection/actions.native';
+import { PREJOIN_PAGE_HIDE_DISPLAY_NAME } from '../../../base/flags/constants';
+import { getFeatureFlag } from '../../../base/flags/functions';
 import { IconCloseLarge } from '../../../base/icons/svg';
 // @ts-ignore
 import JitsiScreen from '../../../base/modal/components/JitsiScreen';
@@ -29,7 +31,7 @@ import { updateSettings } from '../../../base/settings/actions';
 import Button from '../../../base/ui/components/native/Button';
 import Input from '../../../base/ui/components/native/Input';
 import { BUTTON_TYPES } from '../../../base/ui/constants.native';
-import { BrandingImageBackground } from '../../../dynamic-branding/components/native';
+import BrandingImageBackground from '../../../dynamic-branding/components/native/BrandingImageBackground';
 // @ts-ignore
 import LargeVideo from '../../../large-video/components/LargeVideo.native';
 // @ts-ignore
@@ -58,6 +60,8 @@ const Prejoin: React.FC<IPrejoinProps> = ({ navigation }: IPrejoinProps) => {
     );
     const localParticipant = useSelector((state: IReduxState) => getLocalParticipant(state));
     const isDisplayNameMandatory = useSelector((state: IReduxState) => isDisplayNameRequired(state));
+    const isDisplayNameVisible
+        = useSelector((state: IReduxState) => !getFeatureFlag(state, PREJOIN_PAGE_HIDE_DISPLAY_NAME, false));
     const roomName = useSelector((state: IReduxState) => getConferenceName(state));
     const participantName = localParticipant?.name;
     const [ displayName, setDisplayName ]
@@ -166,12 +170,15 @@ const Prejoin: React.FC<IPrejoinProps> = ({ navigation }: IPrejoinProps) => {
                         // @ts-ignore
                         styles = { styles.buttonStylesBorderless } />
                 </View>
-                <Input
-                    // @ts-ignore
-                    customStyles = {{ input: styles.customInput }}
-                    onChange = { onChangeDisplayName }
-                    placeholder = { t('dialog.enterDisplayName') }
-                    value = { displayName } />
+                {
+                    isDisplayNameVisible
+                    && <Input
+                        // @ts-ignore
+                        customStyles = {{ input: styles.customInput }}
+                        onChange = { onChangeDisplayName }
+                        placeholder = { t('dialog.enterDisplayName') }
+                        value = { displayName } />
+                }
                 <Button
                     accessibilityLabel = 'prejoin.joinMeeting'
                     disabled = { joinButtonDisabled }

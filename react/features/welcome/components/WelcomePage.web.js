@@ -1,15 +1,17 @@
 /* global interfaceConfig */
 
 import React from 'react';
+import { connect } from 'react-redux';
 
 import { isMobileBrowser } from '../../base/environment/utils';
-import { translate, translateToHTML } from '../../base/i18n';
-import { Icon, IconWarning } from '../../base/icons';
-import { Watermarks } from '../../base/react';
-import { connect } from '../../base/redux';
-import { CalendarList } from '../../calendar-sync';
-import { RecentList } from '../../recent-list';
-import { SETTINGS_TABS, SettingsButton } from '../../settings';
+import { translate, translateToHTML } from '../../base/i18n/functions';
+import Icon from '../../base/icons/components/Icon';
+import { IconWarning } from '../../base/icons/svg';
+import Watermarks from '../../base/react/components/web/Watermarks';
+import CalendarList from '../../calendar-sync/components/CalendarList.web';
+import RecentList from '../../recent-list/components/RecentList.web';
+import SettingsButton from '../../settings/components/web/SettingsButton';
+import { SETTINGS_TABS } from '../../settings/constants';
 
 import { AbstractWelcomePage, _mapStateToProps } from './AbstractWelcomePage';
 import Tabs from './Tabs';
@@ -48,7 +50,7 @@ class WelcomePage extends AbstractWelcomePage {
         this.state = {
             ...this.state,
 
-            generateRoomnames:
+            generateRoomNames:
                 interfaceConfig.GENERATE_ROOMNAMES_ON_WELCOME_PAGE
         };
 
@@ -129,8 +131,8 @@ class WelcomePage extends AbstractWelcomePage {
         document.body.classList.add('welcome-page');
         document.title = interfaceConfig.APP_NAME;
 
-        if (this.state.generateRoomnames) {
-            this._updateRoomname();
+        if (this.state.generateRoomNames) {
+            this._updateRoomName();
         }
 
         if (this._shouldShowAdditionalContent()) {
@@ -210,40 +212,37 @@ class WelcomePage extends AbstractWelcomePage {
                             { t('welcomepage.headerSubtitle')}
                         </span>
                         <div id = 'enter_room'>
-                            <div className = 'enter-room-input-container'>
-                                <form onSubmit = { this._onFormSubmit }>
-                                    <input
-                                        aria-disabled = 'false'
-                                        aria-label = 'Meeting name input'
-                                        autoFocus = { true }
-                                        className = 'enter-room-input'
-                                        id = 'enter_room_field'
-                                        onChange = { this._onRoomChange }
-                                        pattern = { ROOM_NAME_VALIDATE_PATTERN_STR }
-                                        placeholder = { this.state.roomPlaceholder }
-                                        ref = { this._setRoomInputRef }
-                                        title = { t('welcomepage.roomNameAllowedChars') }
-                                        type = 'text'
-                                        value = { this.state.room } />
-                                    <div
-                                        className = { _moderatedRoomServiceUrl
-                                            ? 'warning-with-link'
-                                            : 'warning-without-link' }>
-                                        { this._renderInsecureRoomNameWarning() }
-                                    </div>
-                                </form>
+                            <div className = 'join-meeting-container'>
+                                <div className = 'enter-room-input-container'>
+                                    <form onSubmit = { this._onFormSubmit }>
+                                        <input
+                                            aria-disabled = 'false'
+                                            aria-label = 'Meeting name input'
+                                            autoFocus = { true }
+                                            className = 'enter-room-input'
+                                            id = 'enter_room_field'
+                                            onChange = { this._onRoomChange }
+                                            pattern = { ROOM_NAME_VALIDATE_PATTERN_STR }
+                                            placeholder = { this.state.roomPlaceholder }
+                                            ref = { this._setRoomInputRef }
+                                            title = { t('welcomepage.roomNameAllowedChars') }
+                                            type = 'text'
+                                            value = { this.state.room } />
+                                    </form>
+                                </div>
+                                <button
+                                    aria-disabled = 'false'
+                                    aria-label = 'Start meeting'
+                                    className = 'welcome-page-button'
+                                    id = 'enter_room_button'
+                                    onClick = { this._onFormSubmit }
+                                    tabIndex = '0'
+                                    type = 'button'>
+                                    { t('welcomepage.startMeeting') }
+                                </button>
                             </div>
-                            <button
-                                aria-disabled = 'false'
-                                aria-label = 'Start meeting'
-                                className = 'welcome-page-button'
-                                id = 'enter_room_button'
-                                onClick = { this._onFormSubmit }
-                                tabIndex = '0'
-                                type = 'button'>
-                                { t('welcomepage.startMeeting') }
-                            </button>
                         </div>
+                        { this._renderInsecureRoomNameWarning() }
 
                         { _moderatedRoomServiceUrl && (
                             <div id = 'moderated-meetings'>

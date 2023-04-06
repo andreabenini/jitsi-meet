@@ -1,11 +1,11 @@
 import React, { PureComponent } from 'react';
 import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { connect } from 'react-redux';
 
-import { translate } from '../../../base/i18n';
+import { translate } from '../../../base/i18n/functions';
 import JitsiScreen from '../../../base/modal/components/JitsiScreen';
-import { LoadingIndicator } from '../../../base/react';
-import { connect } from '../../../base/redux';
+import LoadingIndicator from '../../../base/react/components/native/LoadingIndicator';
 import { getSharedDocumentUrl } from '../../functions';
 
 import styles, { INDICATOR_COLOR } from './styles';

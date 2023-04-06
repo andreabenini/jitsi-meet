@@ -1,15 +1,13 @@
 /* global interfaceConfig */
 
 import { isMobileBrowser } from '../base/environment/utils';
-import { Platform } from '../base/react';
-import { URI_PROTOCOL_PATTERN } from '../base/util';
+import Platform from '../base/react/Platform';
+import { URI_PROTOCOL_PATTERN } from '../base/util/uri';
 import { isVpaasMeeting } from '../jaas/functions';
 
-import {
-    DeepLinkingDesktopPage,
-    DeepLinkingMobilePage,
-    NoMobileApp
-} from './components';
+import DeepLinkingDesktopPage from './components/DeepLinkingDesktopPage';
+import DeepLinkingMobilePage from './components/DeepLinkingMobilePage';
+import NoMobileApp from './components/NoMobileApp';
 import { _openDesktopApp } from './openDesktopApp';
 
 /**

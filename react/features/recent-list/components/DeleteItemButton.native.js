@@ -1,9 +1,10 @@
 // @flow
 
-import { translate } from '../../base/i18n';
-import { IconTrash } from '../../base/icons';
-import { connect } from '../../base/redux';
-import { AbstractButton, type AbstractButtonProps } from '../../base/toolbox/components';
+import { connect } from 'react-redux';
+
+import { translate } from '../../base/i18n/functions';
+import { IconTrash } from '../../base/icons/svg';
+import AbstractButton, { IProps as AbstractButtonProps } from '../../base/toolbox/components/AbstractButton';
 import { deleteRecentListEntry } from '../actions';
 
 export type Props = AbstractButtonProps & {

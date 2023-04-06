@@ -1,12 +1,13 @@
 import React from 'react';
 import { TouchableWithoutFeedback, View } from 'react-native';
+import { connect } from 'react-redux';
 import type { Dispatch } from 'redux';
 
 import { getDefaultURL } from '../../app/functions';
 import { openSheet } from '../../base/dialog/actions';
-import { translate } from '../../base/i18n';
-import { NavigateSectionList, type Section } from '../../base/react';
-import { connect } from '../../base/redux';
+import { translate } from '../../base/i18n/functions';
+import NavigateSectionList from '../../base/react/components/native/NavigateSectionList';
+import { Section } from '../../base/react/types';
 import styles from '../../welcome/components/styles';
 import { isRecentListEnabled, toDisplayableList } from '../functions';
 

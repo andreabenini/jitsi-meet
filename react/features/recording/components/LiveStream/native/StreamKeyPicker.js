@@ -8,11 +8,11 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { connect } from 'react-redux';
 
-import { _abstractMapStateToProps } from '../../../../base/dialog';
-import { translate } from '../../../../base/i18n';
-import { connect } from '../../../../base/redux';
-import { StyleType } from '../../../../base/styles';
+import { _abstractMapStateToProps } from '../../../../base/dialog/functions';
+import { translate } from '../../../../base/i18n/functions';
+import { StyleType } from '../../../../base/styles/functions.native';
 import { YOUTUBE_LIVE_DASHBOARD_URL } from '../constants';
 
 import styles, { ACTIVE_OPACITY, TOUCHABLE_UNDERLAY } from './styles';

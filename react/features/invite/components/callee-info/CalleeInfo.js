@@ -1,18 +1,19 @@
 // @flow
 
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
-import { Avatar } from '../../../base/avatar';
-import { MEDIA_TYPE } from '../../../base/media';
+import Avatar from '../../../base/avatar/components/Avatar';
+import { MEDIA_TYPE } from '../../../base/media/constants';
 import {
     getParticipantDisplayName,
     getParticipantPresenceStatus,
     getRemoteParticipants
-} from '../../../base/participants';
-import { Container, Text } from '../../../base/react';
-import { connect } from '../../../base/redux';
-import { isLocalTrackMuted } from '../../../base/tracks';
-import { CALLING, PresenceLabel } from '../../../presence-status';
+} from '../../../base/participants/functions';
+import { Container, Text } from '../../../base/react/components/index';
+import { isLocalTrackMuted } from '../../../base/tracks/functions.any';
+import PresenceLabel from '../../../presence-status/components/PresenceLabel';
+import { CALLING } from '../../../presence-status/constants';
 
 import styles from './styles';
 

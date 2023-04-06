@@ -1,32 +1,33 @@
 import React, { PureComponent } from 'react';
 import { Image, View } from 'react-native';
+import { connect } from 'react-redux';
 import type { Dispatch } from 'redux';
 
 import { JitsiTrackEvents } from '../../../base/lib-jitsi-meet';
-import { MEDIA_TYPE, VIDEO_TYPE } from '../../../base/media';
+import { MEDIA_TYPE, VIDEO_TYPE } from '../../../base/media/constants';
+import { pinParticipant } from '../../../base/participants/actions';
+import ParticipantView from '../../../base/participants/components/ParticipantView.native';
+import { PARTICIPANT_ROLE } from '../../../base/participants/constants';
 import {
-    PARTICIPANT_ROLE,
     getLocalParticipant,
     getParticipantByIdOrUndefined,
     getParticipantCount,
     hasRaisedHand,
     isEveryoneModerator,
-    isScreenShareParticipant,
-    pinParticipant
-} from '../../../base/participants';
-import ParticipantView from '../../../base/participants/components/ParticipantView.native';
+    isScreenShareParticipant
+} from '../../../base/participants/functions';
 import { FakeParticipant } from '../../../base/participants/types';
-import { Container } from '../../../base/react';
-import { connect } from '../../../base/redux';
+import Container from '../../../base/react/components/native/Container';
+import { trackStreamingStatusChanged } from '../../../base/tracks/actions.native';
 import {
     getTrackByMediaTypeAndParticipant,
-    getVideoTrackByParticipant,
-    trackStreamingStatusChanged
-} from '../../../base/tracks';
+    getVideoTrackByParticipant
+} from '../../../base/tracks/functions.native';
 import ConnectionIndicator from '../../../connection-indicator/components/native/ConnectionIndicator';
-import { DisplayNameLabel } from '../../../display-name';
+import DisplayNameLabel from '../../../display-name/components/native/DisplayNameLabel';
 import { getGifDisplayMode, getGifForParticipant } from '../../../gifs/functions';
 import {
+    showConnectionStatus,
     showContextMenuDetails,
     showSharedVideoMenu
 } from '../../../participants-pane/actions.native';
@@ -187,13 +188,13 @@ class Thumbnail extends PureComponent<Props> {
 
         if (_fakeParticipant && _localVideoOwner) {
             dispatch(showSharedVideoMenu(_participantId));
-        }
-
-        // TODO: add support for getting info about the virtual screen shares.
-
-        if (!_fakeParticipant) {
-            dispatch(showContextMenuDetails(_participantId, _local));
-        }
+        } else if (!_fakeParticipant) {
+            if (_local) {
+                dispatch(showConnectionStatus(_participantId));
+            } else {
+                dispatch(showContextMenuDetails(_participantId));
+            }
+        } // else no-op
     }
 
     /**
@@ -218,14 +219,11 @@ class Thumbnail extends PureComponent<Props> {
         if (!_fakeParticipant || _isVirtualScreenshare) {
             indicators.push(<View
                 key = 'top-left-indicators'
-                style = { [
-                    styles.thumbnailTopIndicatorContainer,
-                    styles.thumbnailTopLeftIndicatorContainer
-                ] }>
+                style = { styles.thumbnailTopLeftIndicatorContainer }>
                 { !_isVirtualScreenshare && <ConnectionIndicator participantId = { participantId } /> }
                 { !_isVirtualScreenshare && <RaisedHandIndicator participantId = { participantId } /> }
-                { tileView && isScreenShare && (
-                    <View style = { styles.indicatorContainer }>
+                { tileView && (isScreenShare || _isVirtualScreenshare) && (
+                    <View style = { styles.screenShareIndicatorContainer }>
                         <ScreenShareIndicator />
                     </View>
                 ) }
@@ -373,7 +371,7 @@ class Thumbnail extends PureComponent<Props> {
                     : <>
                         <ParticipantView
                             avatarSize = { tileView ? AVATAR_SIZE * 1.5 : AVATAR_SIZE }
-                            disableVideo = { isScreenShare || _fakeParticipant }
+                            disableVideo = { !tileView && (isScreenShare || _fakeParticipant) }
                             participantId = { participantId }
                             zOrder = { 1 } />
                         {

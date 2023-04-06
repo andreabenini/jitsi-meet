@@ -1,4 +1,3 @@
-/* eslint-disable lines-around-comment */
 import { Theme } from '@mui/material';
 import { withStyles } from '@mui/styles';
 import clsx from 'clsx';
@@ -10,18 +9,19 @@ import { connect } from 'react-redux';
 import { createScreenSharingIssueEvent } from '../../../analytics/AnalyticsEvents';
 import { sendAnalytics } from '../../../analytics/functions';
 import { IReduxState } from '../../../app/types';
-// @ts-ignore
-import { Avatar } from '../../../base/avatar';
+import Avatar from '../../../base/avatar/components/Avatar';
 import { isMobileBrowser } from '../../../base/environment/utils';
 import { translate } from '../../../base/i18n/functions';
 import { JitsiTrackEvents } from '../../../base/lib-jitsi-meet';
+// eslint-disable-next-line lines-around-comment
 // @ts-ignore
-import { VideoTrack } from '../../../base/media';
+import VideoTrack from '../../../base/media/components/web/VideoTrack';
 import { MEDIA_TYPE } from '../../../base/media/constants';
 import { pinParticipant } from '../../../base/participants/actions';
 import {
     getLocalParticipant,
     getParticipantByIdOrUndefined,
+    getScreenshareParticipantIds,
     hasRaisedHand,
     isLocalScreenshareParticipant,
     isScreenShareParticipant,
@@ -29,19 +29,18 @@ import {
 } from '../../../base/participants/functions';
 import { IParticipant } from '../../../base/participants/types';
 import { ASPECT_RATIO_NARROW } from '../../../base/responsive-ui/constants';
-// @ts-ignore
-import { Tooltip } from '../../../base/tooltip';
+import Tooltip from '../../../base/tooltip/components/Tooltip';
 import { trackStreamingStatusChanged } from '../../../base/tracks/actions';
 import {
     getLocalAudioTrack,
     getTrackByMediaTypeAndParticipant,
     getVideoTrackByParticipant
 } from '../../../base/tracks/functions';
+import { ITrack } from '../../../base/tracks/types';
 import { getVideoObjectPosition } from '../../../face-landmarks/functions';
 import { hideGif, showGif } from '../../../gifs/actions';
 import { getGifDisplayMode, getGifForParticipant } from '../../../gifs/functions';
-// @ts-ignore
-import { PresenceLabel } from '../../../presence-status';
+import PresenceLabel from '../../../presence-status/components/PresenceLabel';
 import { LAYOUTS } from '../../../video-layout/constants';
 import { getCurrentLayout } from '../../../video-layout/functions.web';
 import { togglePinStageParticipant } from '../../actions';
@@ -62,13 +61,10 @@ import {
     showGridInVerticalView
 } from '../../functions';
 
-// @ts-ignore
 import ThumbnailAudioIndicator from './ThumbnailAudioIndicator';
 import ThumbnailBottomIndicators from './ThumbnailBottomIndicators';
 import ThumbnailTopIndicators from './ThumbnailTopIndicators';
-// @ts-ignore
 import VirtualScreenshareParticipant from './VirtualScreenshareParticipant';
-/* eslint-enable lines-around-comment */
 
 /**
  * The type of the React {@code Component} state of {@link Thumbnail}.
@@ -104,7 +100,7 @@ export interface IProps extends WithTranslation {
     /**
      * The audio track related to the participant.
      */
-    _audioTrack?: Object;
+    _audioTrack?: ITrack;
 
     /**
      * Indicates whether the local video flip feature is disabled or not.
@@ -650,6 +646,17 @@ class Thumbnail extends Component<IProps, IState> {
     }
 
     /**
+     * Returns the size the avatar should have.
+     *
+     * @returns {number}
+     */
+    _getAvatarSize() {
+        const { _height, _width } = this.props;
+
+        return Math.min(_height / 2, _width - 30, 200);
+    }
+
+    /**
      * Returns an object with the styles for thumbnail.
      *
      * @returns {Object} - The styles for the thumbnail.
@@ -686,7 +693,7 @@ class Thumbnail extends Component<IProps, IState> {
             video: {}
         };
 
-        const avatarSize = Math.min(_height / 2, _width - 30, 200);
+        const avatarSize = this._getAvatarSize();
         let { left } = style || {};
 
         if (typeof left === 'number' && horizontalOffset) {
@@ -922,7 +929,8 @@ class Thumbnail extends Component<IProps, IState> {
                 style = { styles }>
                 <Avatar
                     className = 'userAvatar'
-                    participantId = { id } />
+                    participantId = { id }
+                    size = { this._getAvatarSize() } />
             </div>
         );
     }
@@ -1256,12 +1264,16 @@ function _mapStateToProps(state: IReduxState, ownProps: any): Object {
     case THUMBNAIL_TYPE.HORIZONTAL: {
         const {
             horizontalViewDimensions = {
-                local: {},
-                remote: {}
+                local: { width: undefined,
+                    height: undefined },
+                remote: { width: undefined,
+                    height: undefined }
             },
             verticalViewDimensions = {
-                local: {},
-                remote: {},
+                local: { width: undefined,
+                    height: undefined },
+                remote: { width: undefined,
+                    height: undefined },
                 gridView: {}
             }
         } = state['features/filmstrip'];
@@ -1270,8 +1282,8 @@ function _mapStateToProps(state: IReduxState, ownProps: any): Object {
             = tileType === THUMBNAIL_TYPE.VERTICAL
                 ? verticalViewDimensions : horizontalViewDimensions;
 
-        // @ts-ignore
-        const { width, height } = (isLocal ? local : remote) ?? {};
+        const { width, height } = (isLocal ? local : remote) ?? { width: undefined,
+            height: undefined };
 
         size = {
             _width: width,
@@ -1293,8 +1305,7 @@ function _mapStateToProps(state: IReduxState, ownProps: any): Object {
         break;
     }
     case THUMBNAIL_TYPE.TILE: {
-        // @ts-ignore
-        const { thumbnailSize } = state['features/filmstrip'].tileViewDimensions;
+        const { thumbnailSize } = state['features/filmstrip'].tileViewDimensions ?? { thumbnailSize: undefined };
         const {
             stageFilmstripDimensions = {
                 thumbnailSize: {}
@@ -1337,9 +1348,14 @@ function _mapStateToProps(state: IReduxState, ownProps: any): Object {
     const participantId = isLocal ? getLocalParticipant(state)?.id : participantID;
     const isActiveParticipant = activeParticipants.find((pId: string) => pId === participantId);
     const participantCurrentlyOnLargeVideo = state['features/large-video']?.participantId === id;
+    const screenshareParticipantIds = getScreenshareParticipantIds(state);
+
     const shouldDisplayTintBackground
         = _currentLayout !== LAYOUTS.TILE_VIEW && filmstripType === FILMSTRIP_TYPE.MAIN
-        && (isActiveParticipant || participantCurrentlyOnLargeVideo);
+        && (isActiveParticipant || participantCurrentlyOnLargeVideo)
+
+        // skip showing tint for owner participants that are screensharing.
+        && !screenshareParticipantIds.includes(id);
 
     return {
         _audioTrack,

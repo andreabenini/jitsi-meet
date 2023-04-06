@@ -2,8 +2,8 @@
 
 import React, { Component } from 'react';
 
-import { IconMicSlash } from '../../../base/icons';
-import { BaseIndicator } from '../../../base/react';
+import { IconMicSlash } from '../../../base/icons/svg';
+import BaseIndicator from '../../../base/react/components/native/BaseIndicator';
 
 /**
  * Thumbnail badge for displaying the audio mute status of a participant.

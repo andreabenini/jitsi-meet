@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { IReduxState, IStore } from '../../../../app/types';
 import { translate } from '../../../../base/i18n/functions';
 import { IconImage } from '../../../../base/icons/svg';
-import Video from '../../../../base/media/components/Video.web';
+import { Video } from '../../../../base/media/components/index';
 import { equals } from '../../../../base/redux/functions';
 import { updateSettings } from '../../../../base/settings/actions';
 import Checkbox from '../../../../base/ui/components/web/Checkbox';
@@ -62,13 +62,13 @@ export interface IProps extends WithTranslation {
 /**
  * The type of the React {@code Component} state of {@link VideoSettingsContent}.
  */
-type State = {
+interface IState {
 
     /**
      * An array of all the jitsiTracks and eventual errors.
      */
     trackData: { deviceId: string; error?: string; jitsiTrack: any | null; }[];
-};
+}
 
 /**
  * Implements a React {@link Component} which displays a list of video
@@ -76,7 +76,7 @@ type State = {
  *
  * @augments Component
  */
-class VideoSettingsContent extends Component<IProps, State> {
+class VideoSettingsContent extends Component<IProps, IState> {
     _componentWasUnmounted: boolean;
 
     /**

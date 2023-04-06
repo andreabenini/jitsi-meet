@@ -11,9 +11,7 @@ import {
     SUBMIT_FEEDBACK_ERROR,
     SUBMIT_FEEDBACK_SUCCESS
 } from './actionTypes';
-// eslint-disable-next-line lines-around-comment
-// @ts-ignore
-import { FeedbackDialog } from './components';
+import FeedbackDialog from './components/FeedbackDialog';
 import { sendFeedbackToJaaSRequest } from './functions';
 
 /**
@@ -104,7 +102,7 @@ export function maybeOpenFeedbackDialog(conference: IJitsiConference) {
  * is closed.
  * @returns {Object}
  */
-export function openFeedbackDialog(conference: Object, onClose?: Function) {
+export function openFeedbackDialog(conference?: IJitsiConference, onClose?: Function) {
     return openDialog(FeedbackDialog, {
         conference,
         onClose

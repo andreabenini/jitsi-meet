@@ -1,16 +1,13 @@
 // @flow
 
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
-import {
-    createCalendarClickedEvent,
-    createCalendarSelectedEvent,
-    sendAnalytics
-} from '../../analytics';
+import { createCalendarClickedEvent, createCalendarSelectedEvent } from '../../analytics/AnalyticsEvents';
+import { sendAnalytics } from '../../analytics/functions';
 import { appNavigate } from '../../app/actions';
-import { getLocalizedDateFormatter, translate } from '../../base/i18n';
-import { NavigateSectionList } from '../../base/react';
-import { connect } from '../../base/redux';
+import { getLocalizedDateFormatter, translate } from '../../base/i18n/functions';
+import NavigateSectionList from '../../base/react/components/native/NavigateSectionList';
 import { openUpdateCalendarEventDialog, refreshCalendar } from '../actions';
 
 

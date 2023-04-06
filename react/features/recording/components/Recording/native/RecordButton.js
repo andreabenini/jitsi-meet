@@ -1,11 +1,12 @@
 // @flow
 
 import { Platform } from 'react-native';
+import { connect } from 'react-redux';
 
-import { openDialog } from '../../../../base/dialog';
-import { IOS_RECORDING_ENABLED, RECORDING_ENABLED, getFeatureFlag } from '../../../../base/flags';
-import { translate } from '../../../../base/i18n';
-import { connect } from '../../../../base/redux';
+import { openDialog } from '../../../../base/dialog/actions';
+import { IOS_RECORDING_ENABLED, RECORDING_ENABLED } from '../../../../base/flags/constants';
+import { getFeatureFlag } from '../../../../base/flags/functions';
+import { translate } from '../../../../base/i18n/functions';
 import { navigate }
     from '../../../../mobile/navigation/components/conference/ConferenceNavigationContainerRef';
 import { screen } from '../../../../mobile/navigation/routes';
@@ -13,7 +14,7 @@ import type { Props } from '../../LiveStream/AbstractStartLiveStreamDialog';
 import AbstractRecordButton,
 { _mapStateToProps as _abstractMapStateToProps } from '../AbstractRecordButton';
 
-import { StopRecordingDialog } from './index';
+import StopRecordingDialog from './StopRecordingDialog';
 
 
 /**

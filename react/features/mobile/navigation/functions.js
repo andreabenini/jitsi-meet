@@ -5,12 +5,10 @@ import { useDispatch } from 'react-redux';
 
 
 import { appNavigate } from '../../app/actions';
-import {
-    PREJOIN_PAGE_ENABLED,
-    getFeatureFlag
-} from '../../base/flags';
-import { IconCloseLarge } from '../../base/icons';
-import { toState } from '../../base/redux';
+import { PREJOIN_PAGE_ENABLED } from '../../base/flags/constants';
+import { getFeatureFlag } from '../../base/flags/functions';
+import { IconCloseLarge } from '../../base/icons/svg';
+import { toState } from '../../base/redux/functions';
 import { cancelKnocking } from '../../lobby/actions.native';
 
 import HeaderNavigationButton from './components/HeaderNavigationButton';

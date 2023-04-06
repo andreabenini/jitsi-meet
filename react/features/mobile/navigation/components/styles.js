@@ -1,4 +1,4 @@
-import { BoxModel } from '../../../base/styles';
+import { BoxModel } from '../../../base/styles/components/styles/BoxModel';
 import BaseTheme from '../../../base/ui/components/BaseTheme.native';
 
 
@@ -7,6 +7,14 @@ export const TEXT_COLOR = BaseTheme.palette.text01;
 const unreadCounterDescription = {
     ...BaseTheme.typography.bodyShortBoldLarge,
     color: BaseTheme.palette.text03
+};
+
+const HEADER_ACTION_BUTTON_SIZE = 16;
+
+const headerNavigationButtonLabel = {
+    color: BaseTheme.palette.link01,
+    fontSize: HEADER_ACTION_BUTTON_SIZE,
+    lineHeight: BaseTheme.spacing[3]
 };
 
 /**
@@ -39,12 +47,12 @@ export const navigationStyles = {
     },
 
     headerNavigationButtonLabel: {
-        color: BaseTheme.palette.link01
+        ...headerNavigationButtonLabel
     },
 
     headerNavigationButtonLabelBold: {
-        ...BaseTheme.typography.bodyShortRegularLarge,
-        color: BaseTheme.palette.link01
+        ...headerNavigationButtonLabel,
+        ...BaseTheme.typography.bodyShortRegularLarge
     },
 
     unreadCounterContainer: {

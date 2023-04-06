@@ -2,20 +2,19 @@
 
 import { jitsiLocalStorage } from '@jitsi/js-utils';
 import React, { PureComponent } from 'react';
+import { connect } from 'react-redux';
 
-import {
-    createChromeExtensionBannerEvent,
-    sendAnalytics
-} from '../../analytics';
+import { createChromeExtensionBannerEvent } from '../../analytics/AnalyticsEvents';
+import { sendAnalytics } from '../../analytics/functions';
 import { getCurrentConference } from '../../base/conference/functions';
 import checkChromeExtensionsInstalled from '../../base/environment/checkChromeExtensionsInstalled';
 import {
     isMobileBrowser
 } from '../../base/environment/utils';
-import { translate } from '../../base/i18n';
-import { Icon, IconCloseLarge } from '../../base/icons';
+import { translate } from '../../base/i18n/functions';
+import Icon from '../../base/icons/components/Icon';
+import { IconCloseLarge } from '../../base/icons/svg';
 import { browser } from '../../base/lib-jitsi-meet';
-import { connect } from '../../base/redux';
 import { isVpaasMeeting } from '../../jaas/functions';
 import logger from '../logger';
 

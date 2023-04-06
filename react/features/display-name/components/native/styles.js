@@ -5,8 +5,8 @@ import BaseTheme from '../../../base/ui/components/BaseTheme.native';
 export default {
     displayNameBackdrop: {
         alignSelf: 'center',
-        backgroundColor: BaseTheme.palette.ui16,
-        borderRadius: 4,
+        backgroundColor: BaseTheme.palette.ui01,
+        borderRadius: BaseTheme.shape.borderRadius,
         paddingHorizontal: BaseTheme.spacing[3],
         paddingVertical: BaseTheme.spacing[1]
     },

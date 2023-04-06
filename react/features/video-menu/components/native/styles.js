@@ -4,14 +4,15 @@ import {
     MD_FONT_SIZE,
     MD_ITEM_HEIGHT,
     MD_ITEM_MARGIN_PADDING
-} from '../../../base/dialog';
-import { ColorPalette, createStyleSheet } from '../../../base/styles';
+} from '../../../base/dialog/components/native/styles';
+import { ColorPalette } from '../../../base/styles/components/styles/ColorPalette';
+import { createStyleSheet } from '../../../base/styles/functions.native';
 import BaseTheme from '../../../base/ui/components/BaseTheme.native';
 
 export default createStyleSheet({
     participantNameContainer: {
         alignItems: 'center',
-        borderBottomColor: BaseTheme.palette.dividerColor,
+        borderBottomColor: BaseTheme.palette.ui07,
         borderBottomWidth: 0.4,
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
@@ -66,11 +67,11 @@ export default createStyleSheet({
     },
 
     divider: {
-        backgroundColor: BaseTheme.palette.dividerColor
+        backgroundColor: BaseTheme.palette.ui07
     },
 
     dividerDialog: {
-        backgroundColor: BaseTheme.palette.dividerColor,
+        backgroundColor: BaseTheme.palette.ui07,
         marginBottom: BaseTheme.spacing[3]
     },
 

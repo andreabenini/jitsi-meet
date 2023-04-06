@@ -3,17 +3,17 @@
 import React, { PureComponent } from 'react';
 import { WithTranslation } from 'react-i18next';
 import { FlatList, Text } from 'react-native';
+import { connect } from 'react-redux';
 
 import { IReduxState } from '../../../app/types';
 import { translate } from '../../../base/i18n/functions';
-// @ts-ignore
-import { Icon, IconAddUser } from '../../../base/icons';
+import Icon from '../../../base/icons/components/Icon';
+import { IconAddUser } from '../../../base/icons/svg';
 import {
     getLocalParticipant,
     getParticipantCountWithFake,
     getRemoteParticipants
 } from '../../../base/participants/functions';
-import { connect } from '../../../base/redux/functions';
 import Button from '../../../base/ui/components/native/Button';
 import Input from '../../../base/ui/components/native/Input';
 import { BUTTON_TYPES } from '../../../base/ui/constants.native';
@@ -31,7 +31,7 @@ import MeetingParticipantItem from './MeetingParticipantItem';
 import styles from './styles';
 
 
-type Props = WithTranslation & {
+interface IProps extends WithTranslation {
 
     /**
      * Current breakout room, if we are in one.
@@ -102,24 +102,19 @@ type Props = WithTranslation & {
      * Function to update the search string.
      */
     setSearchString: Function;
-
-    /**
-     * Translation function.
-     */
-    t: Function;
-};
+}
 
 /**
  *  The meeting participant list component.
  */
-class MeetingParticipantList extends PureComponent<Props> {
+class MeetingParticipantList extends PureComponent<IProps> {
 
     /**
      * Creates new MeetingParticipantList instance.
      *
-     * @param {Props} props - The props of the component.
+     * @param {IProps} props - The props of the component.
      */
-    constructor(props: Props) {
+    constructor(props: IProps) {
         super(props);
 
         this._keyExtractor = this._keyExtractor.bind(this);
@@ -279,7 +274,7 @@ class MeetingParticipantList extends PureComponent<Props> {
  *
  * @param {Object} state - The Redux state.
  * @private
- * @returns {Props}
+ * @returns {IProps}
  */
 function _mapStateToProps(state: IReduxState): Object {
     const _participantsCount = getParticipantCountWithFake(state);

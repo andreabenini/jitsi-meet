@@ -1,10 +1,11 @@
 // @flow
 import React from 'react';
+import { connect } from 'react-redux';
 
-import { getToolbarButtons } from '../../../base/config';
+import { getToolbarButtons } from '../../../base/config/functions.web';
 import { isMobileBrowser } from '../../../base/environment/utils';
-import { connect } from '../../../base/redux';
-import { LAYOUTS, LAYOUT_CLASSNAMES, getCurrentLayout } from '../../../video-layout';
+import { LAYOUTS, LAYOUT_CLASSNAMES } from '../../../video-layout/constants';
+import { getCurrentLayout } from '../../../video-layout/functions.web';
 import {
     ASPECT_RATIO_BREAKPOINT,
     FILMSTRIP_TYPE,

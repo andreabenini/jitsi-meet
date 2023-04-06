@@ -1,5 +1,3 @@
-/* eslint-disable lines-around-comment */
-
 import { IStore } from '../app/types';
 import { JitsiConferenceErrors } from '../base/lib-jitsi-meet';
 import {
@@ -8,7 +6,6 @@ import {
 } from '../base/lib-jitsi-meet/functions.any';
 import StateListenerRegistry from '../base/redux/StateListenerRegistry';
 
-// @ts-ignore
 import { openPageReloadDialog } from './actions';
 
 
@@ -111,7 +108,6 @@ StateListenerRegistry.register(
             });
         } else if (RN_NO_RELOAD_DIALOG_ERRORS.indexOf(error.name) === -1 && typeof error.recoverable === 'undefined') {
             setTimeout(() => {
-                // @ts-ignore
                 store.dispatch(openPageReloadDialog());
             }, 500);
         }

@@ -1,9 +1,9 @@
 // @flow
 
 import React from 'react';
+import { connect } from 'react-redux';
 
-import { InputDialog } from '../../../base/dialog';
-import { connect } from '../../../base/redux';
+import InputDialog from '../../../base/dialog/components/native/InputDialog';
 import AbstractDisplayNamePrompt from '../AbstractDisplayNamePrompt';
 
 /**

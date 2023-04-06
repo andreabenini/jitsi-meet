@@ -1,11 +1,11 @@
 // @flow
 
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 
-import { translate } from '../../base/i18n';
-import { getParticipantById } from '../../base/participants';
-import { connect } from '../../base/redux';
-import { getLocalVideoTrack } from '../../base/tracks';
+import { translate } from '../../base/i18n/functions';
+import { getParticipantById } from '../../base/participants/functions';
+import { getLocalVideoTrack } from '../../base/tracks/functions.any';
 import Dialog from '../../base/ui/components/web/Dialog';
 import { deny, grant } from '../actions';
 

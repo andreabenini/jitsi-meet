@@ -1,8 +1,9 @@
 // @flow
 import React from 'react';
+import { connect } from 'react-redux';
 
-import { connect } from '../../../base/redux';
-import { LAYOUTS, LAYOUT_CLASSNAMES, getCurrentLayout } from '../../../video-layout';
+import { LAYOUTS, LAYOUT_CLASSNAMES } from '../../../video-layout/constants';
+import { getCurrentLayout } from '../../../video-layout/functions.web';
 import {
     FILMSTRIP_TYPE
 } from '../../constants';

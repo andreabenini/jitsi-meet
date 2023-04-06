@@ -1,8 +1,6 @@
-/* eslint-disable lines-around-comment */
 import i18n from 'i18next';
 import { batch } from 'react-redux';
 
-// @ts-ignore
 import { appNavigate } from '../app/actions';
 import { IStore } from '../app/types';
 import {
@@ -22,10 +20,10 @@ import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
 import StateListenerRegistry from '../base/redux/StateListenerRegistry';
 import { SET_REDUCED_UI } from '../base/responsive-ui/actionTypes';
 import { BUTTON_TYPES } from '../base/ui/constants.any';
+import { isCalendarEnabled } from '../calendar-sync/functions';
+// eslint-disable-next-line lines-around-comment
 // @ts-ignore
-import { isCalendarEnabled } from '../calendar-sync';
-// @ts-ignore
-import { FeedbackDialog } from '../feedback';
+import FeedbackDialog from '../feedback/components/FeedbackDialog';
 import { setFilmstripEnabled } from '../filmstrip/actions.any';
 import { hideNotification, showNotification } from '../notifications/actions';
 import {
@@ -36,10 +34,11 @@ import {
 import { showSalesforceNotification } from '../salesforce/actions';
 import { setToolboxEnabled } from '../toolbox/actions.any';
 
-// @ts-ignore
-import { notifyKickedOut } from './actions';
+import { DISMISS_CALENDAR_NOTIFICATION } from './actionTypes';
+import { dismissCalendarNotification, notifyKickedOut } from './actions';
 
-let intervalId: any;
+
+let intervalID: any;
 
 
 MiddlewareRegistry.register(store => next => action => {
@@ -72,10 +71,11 @@ MiddlewareRegistry.register(store => next => action => {
         break;
     }
 
+    case DISMISS_CALENDAR_NOTIFICATION:
     case CONFERENCE_LEFT:
     case CONFERENCE_FAILED: {
-        clearInterval(intervalId);
-        intervalId = null;
+        clearInterval(intervalID);
+        intervalID = null;
 
         break;
     }
@@ -146,8 +146,8 @@ function _conferenceJoined({ dispatch, getState }: IStore) {
         getState
     });
 
-    if (!intervalId) {
-        intervalId = setInterval(() =>
+    if (!intervalID) {
+        intervalID = setInterval(() =>
             _maybeDisplayCalendarNotification({
                 dispatch,
                 getState
@@ -194,6 +194,7 @@ function _maybeDisplayCalendarNotification({ dispatch, getState }: IStore) {
             if (eventURL && eventURL !== currentConferenceURL) {
                 // @ts-ignore
                 if ((!eventToShow && event.startDate > now && event.startDate < now + ALERT_MILLISECONDS)
+
                     // @ts-ignore
                     || (event.startDate < now && event.endDate > now)) {
                     eventToShow = event;
@@ -232,20 +233,20 @@ function _calendarNotification({ dispatch, getState }: IStore, eventToShow: any)
         return;
     }
 
-    const customActionNameKey = [ 'notify.joinMeeting' ];
-    const customActionType = [ BUTTON_TYPES.PRIMARY ];
+    const customActionNameKey = [ 'notify.joinMeeting', 'notify.dontRemindMe' ];
+    const customActionType = [ BUTTON_TYPES.PRIMARY, BUTTON_TYPES.DESTRUCTIVE ];
     const customActionHandler = [ () => batch(() => {
         dispatch(hideNotification(CALENDAR_NOTIFICATION_ID));
         if (eventToShow?.url && (eventToShow.url !== currentConferenceURL)) {
             dispatch(appNavigate(eventToShow.url));
         }
-    }) ];
+    }), () => dispatch(dismissCalendarNotification()) ];
     const description
         = getLocalizedDateFormatter(eventToShow.startDate).fromNow();
     const icon = NOTIFICATION_ICON.WARNING;
     const title = (eventToShow.startDate < now) && (eventToShow.endDate > now)
-        ? i18n.t('calendarSync.ongoingMeeting')
-        : i18n.t('calendarSync.nextMeeting');
+        ? `${i18n.t('calendarSync.ongoingMeeting')}: \n${eventToShow.title}`
+        : `${i18n.t('calendarSync.nextMeeting')}: \n${eventToShow.title}`;
     const uid = CALENDAR_NOTIFICATION_ID;
 
     dispatch(showNotification({

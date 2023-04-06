@@ -1,4 +1,4 @@
-import { createStyleSheet } from '../../../base/styles';
+import { createStyleSheet } from '../../../base/styles/functions.native';
 import BaseTheme from '../../../base/ui/components/BaseTheme.native';
 
 
@@ -40,7 +40,7 @@ export const dialogStyles = createStyleSheet({
 
     field: {
         borderWidth: 1,
-        borderColor: BaseTheme.palette.border05,
+        borderColor: BaseTheme.palette.ui06,
         borderRadius: BaseTheme.shape.borderRadius,
         color: BaseTheme.palette.text01,
         fontSize: 14,
@@ -131,7 +131,7 @@ export const chatStyles = createStyleSheet({
 
     pollItemContainer: {
         backgroundColor: BaseTheme.palette.uiBackground,
-        borderColor: BaseTheme.palette.border05,
+        borderColor: BaseTheme.palette.ui06,
         borderRadius: BaseTheme.shape.borderRadius,
         boxShadow: BaseTheme.shape.boxShadow,
         borderWidth: 1,

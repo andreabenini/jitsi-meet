@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 
 import JitsiScreen from '../../../base/modal/components/JitsiScreen';
-import { isLocalParticipantModerator } from '../../../base/participants';
-import { equals } from '../../../base/redux';
+import { isLocalParticipantModerator } from '../../../base/participants/functions';
+import { equals } from '../../../base/redux/functions';
 import {
     getBreakoutRooms,
     getCurrentRoomId,
@@ -14,12 +14,10 @@ import {
     isInBreakoutRoom
 } from '../../../breakout-rooms/functions';
 import { getKnockingParticipants } from '../../../lobby/functions';
-import {
-    AddBreakoutRoomButton,
-    AutoAssignButton,
-    LeaveBreakoutRoomButton
-} from '../breakout-rooms/components/native';
+import AddBreakoutRoomButton from '../breakout-rooms/components/native/AddBreakoutRoomButton';
+import AutoAssignButton from '../breakout-rooms/components/native/AutoAssignButton';
 import { CollapsibleRoom } from '../breakout-rooms/components/native/CollapsibleRoom';
+import LeaveBreakoutRoomButton from '../breakout-rooms/components/native/LeaveBreakoutRoomButton';
 
 import LobbyParticipantList from './LobbyParticipantList';
 import MeetingParticipantList from './MeetingParticipantList';

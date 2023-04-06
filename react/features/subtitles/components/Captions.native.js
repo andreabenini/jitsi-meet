@@ -1,9 +1,10 @@
 // @flow
 
 import React from 'react';
+import { connect } from 'react-redux';
 
-import { Container, Text } from '../../base/react';
-import { connect } from '../../base/redux';
+import Container from '../../base/react/components/native/Container';
+import Text from '../../base/react/components/native/Text';
 
 import {
     AbstractCaptions,

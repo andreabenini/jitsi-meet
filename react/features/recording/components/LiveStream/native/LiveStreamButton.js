@@ -1,9 +1,11 @@
 // @flow
 
-import { openDialog } from '../../../../base/dialog';
-import { LIVE_STREAMING_ENABLED, getFeatureFlag } from '../../../../base/flags';
-import { translate } from '../../../../base/i18n';
-import { connect } from '../../../../base/redux';
+import { connect } from 'react-redux';
+
+import { openDialog } from '../../../../base/dialog/actions';
+import { LIVE_STREAMING_ENABLED } from '../../../../base/flags/constants';
+import { getFeatureFlag } from '../../../../base/flags/functions';
+import { translate } from '../../../../base/i18n/functions';
 import { navigate }
     from '../../../../mobile/navigation/components/conference/ConferenceNavigationContainerRef';
 import { screen } from '../../../../mobile/navigation/routes';
@@ -11,7 +13,7 @@ import AbstractLiveStreamButton,
 { _mapStateToProps as _abstractMapStateToProps } from '../AbstractLiveStreamButton';
 import type { Props } from '../AbstractStartLiveStreamDialog';
 
-import { StopLiveStreamDialog } from './index';
+import StopLiveStreamDialog from './StopLiveStreamDialog';
 
 
 /**

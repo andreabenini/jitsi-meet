@@ -1,19 +1,19 @@
 import React, { PureComponent } from 'react';
+import { connect } from 'react-redux';
 
-import { translate } from '../../../base/i18n';
+import { translate } from '../../../base/i18n/functions';
 import {
     getLocalParticipant,
     getParticipantById,
     getParticipantDisplayName,
     hasRaisedHand,
     isParticipantModerator
-} from '../../../base/participants';
+} from '../../../base/participants/functions';
 import { FakeParticipant } from '../../../base/participants/types';
-import { connect } from '../../../base/redux';
 import {
     isParticipantAudioMuted,
     isParticipantVideoMuted
-} from '../../../base/tracks';
+} from '../../../base/tracks/functions.native';
 import { showConnectionStatus, showContextMenuDetails, showSharedVideoMenu } from '../../actions.native';
 import type { MediaState } from '../../constants';
 import { getParticipantAudioMediaState, getParticipantVideoMediaState } from '../../functions';
@@ -172,7 +172,7 @@ function mapStateToProps(state, ownProps): Object {
     const { participant } = ownProps;
     const { ownerId } = state['features/shared-video'];
     const localParticipantId = getLocalParticipant(state).id;
-    const _isAudioMuted = isParticipantAudioMuted(participant, state);
+    const _isAudioMuted = Boolean(participant && isParticipantAudioMuted(participant, state));
     const _isVideoMuted = isParticipantVideoMuted(participant, state);
     const audioMediaState = getParticipantAudioMediaState(participant, _isAudioMuted, state);
     const videoMediaState = getParticipantVideoMediaState(participant, _isVideoMuted, state);

@@ -1,10 +1,11 @@
 // @flow
 
 import React, { useCallback } from 'react';
+import { connect } from 'react-redux';
 
-import { translate } from '../../../base/i18n';
-import { Icon, IconCloseLarge } from '../../../base/icons';
-import { connect } from '../../../base/redux';
+import { translate } from '../../../base/i18n/functions';
+import Icon from '../../../base/icons/components/Icon';
+import { IconCloseLarge } from '../../../base/icons/svg';
 import { toggleChat } from '../../actions.web';
 
 type Props = {

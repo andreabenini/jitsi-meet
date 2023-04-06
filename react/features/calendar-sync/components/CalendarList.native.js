@@ -6,11 +6,11 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { connect } from 'react-redux';
 
-import { translate } from '../../base/i18n';
-import { AbstractPage } from '../../base/react';
-import { connect } from '../../base/redux';
-import { openSettings } from '../../mobile/permissions';
+import { translate } from '../../base/i18n/functions';
+import AbstractPage from '../../base/react/components/AbstractPage';
+import { openSettings } from '../../mobile/permissions/functions';
 import { refreshCalendar } from '../actions';
 
 import CalendarListContent from './CalendarListContent';

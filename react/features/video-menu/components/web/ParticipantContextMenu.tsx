@@ -1,14 +1,11 @@
-/* eslint-disable lines-around-comment */
-
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 
-import { IReduxState } from '../../../app/types';
+import { IReduxState, IStore } from '../../../app/types';
 import { isSupported as isAvModerationSupported } from '../../../av-moderation/functions';
-// @ts-ignore
-import { Avatar } from '../../../base/avatar';
+import Avatar from '../../../base/avatar/components/Avatar';
 import { isIosMobileBrowser, isMobileBrowser } from '../../../base/environment/utils';
 import { MEDIA_TYPE } from '../../../base/media/constants';
 import { PARTICIPANT_ROLE } from '../../../base/participants/constants';
@@ -23,33 +20,25 @@ import { setVolume } from '../../../filmstrip/actions.web';
 import { isStageFilmstripAvailable } from '../../../filmstrip/functions.web';
 import { QUICK_ACTION_BUTTON } from '../../../participants-pane/constants';
 import { getQuickActionButtonType, isForceMuted } from '../../../participants-pane/functions';
-// @ts-ignore
-import { requestRemoteControl, stopController } from '../../../remote-control';
+import { requestRemoteControl, stopController } from '../../../remote-control/actions';
 import { showOverflowDrawer } from '../../../toolbox/functions.web';
+import { iAmVisitor } from '../../../visitors/functions';
 
+import AskToUnmuteButton from './AskToUnmuteButton';
+import ConnectionStatusButton from './ConnectionStatusButton';
 import CustomOptionButton from './CustomOptionButton';
-// @ts-ignore
-import { REMOTE_CONTROL_MENU_STATES } from './RemoteControlButton';
-// @ts-ignore
+import GrantModeratorButton from './GrantModeratorButton';
+import KickButton from './KickButton';
+import MuteButton from './MuteButton';
+import MuteEveryoneElseButton from './MuteEveryoneElseButton';
+import MuteEveryoneElsesVideoButton from './MuteEveryoneElsesVideoButton';
+import MuteVideoButton from './MuteVideoButton';
+import PrivateMessageMenuButton from './PrivateMessageMenuButton';
+import RemoteControlButton, { REMOTE_CONTROL_MENU_STATES } from './RemoteControlButton';
 import SendToRoomButton from './SendToRoomButton';
+import TogglePinToStageButton from './TogglePinToStageButton';
 import VerifyParticipantButton from './VerifyParticipantButton';
-
-import {
-    AskToUnmuteButton,
-    ConnectionStatusButton,
-    GrantModeratorButton,
-    KickButton,
-    MuteButton,
-    MuteEveryoneElseButton,
-    MuteEveryoneElsesVideoButton,
-    MuteVideoButton,
-    PrivateMessageMenuButton,
-    RemoteControlButton,
-    TogglePinToStageButton,
-    VolumeSlider
-    // @ts-ignore
-} from './';
-/* eslint-enable lines-around-comment */
+import VolumeSlider from './VolumeSlider';
 
 interface IProps {
 
@@ -134,7 +123,7 @@ const ParticipantContextMenu = ({
     remoteControlState,
     thumbnailMenu
 }: IProps) => {
-    const dispatch = useDispatch();
+    const dispatch: IStore['dispatch'] = useDispatch();
     const { t } = useTranslation();
     const { classes: styles } = useStyles();
 
@@ -147,6 +136,7 @@ const ParticipantContextMenu = ({
     const _overflowDrawer: boolean = useSelector(showOverflowDrawer);
     const { remoteVideoMenu = {}, disableRemoteMute, startSilent, customParticipantMenuButtons }
         = useSelector((state: IReduxState) => state['features/base/config']);
+    const visitorsMode = useSelector((state: IReduxState) => iAmVisitor(state));
     const { disableKick, disableGrantModerator, disablePrivateChat } = remoteVideoMenu;
     const { participantsVolume } = useSelector((state: IReduxState) => state['features/filmstrip']);
     const _volume = (participant?.local ?? true ? undefined
@@ -157,7 +147,7 @@ const ParticipantContextMenu = ({
     const shouldDisplayVerification = useSelector((state: IReduxState) => displayVerification(state, participant?.id));
 
     const _currentRoomId = useSelector(getCurrentRoomId);
-    const _rooms: Array<{ id: string; }> = Object.values(useSelector(getBreakoutRooms));
+    const _rooms = Object.values(useSelector(getBreakoutRooms));
 
     const _onVolumeChange = useCallback(value => {
         dispatch(setVolume(participant.id, value));
@@ -265,7 +255,7 @@ const ParticipantContextMenu = ({
             participantID = { _getCurrentParticipantId() } />);
     }
 
-    if (!disablePrivateChat) {
+    if (!disablePrivateChat && !visitorsMode) {
         buttons2.push(<PrivateMessageMenuButton
             key = 'privateMessage'
             participantID = { _getCurrentParticipantId() } />

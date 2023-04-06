@@ -1,11 +1,13 @@
 import React from 'react';
 import { Animated, SafeAreaView, TouchableHighlight, View } from 'react-native';
+import { connect } from 'react-redux';
 
 import { getName } from '../../app/functions';
-import { translate } from '../../base/i18n';
-import { Icon, IconWarning } from '../../base/icons';
-import { LoadingIndicator, Text } from '../../base/react';
-import { connect } from '../../base/redux';
+import { translate } from '../../base/i18n/functions';
+import Icon from '../../base/icons/components/Icon';
+import { IconWarning } from '../../base/icons/svg';
+import LoadingIndicator from '../../base/react/components/native/LoadingIndicator';
+import Text from '../../base/react/components/native/Text';
 import BaseTheme from '../../base/ui/components/BaseTheme.native';
 import Button from '../../base/ui/components/native/Button';
 import Input from '../../base/ui/components/native/Input';
@@ -73,7 +75,7 @@ class WelcomePage extends AbstractWelcomePage<*> {
 
     _onRoomChange: (string) => void;
 
-    _updateRoomname: () => void;
+    _updateRoomName: () => void;
 
     /**
      * Implements React's {@link Component#componentDidMount()}. Invoked
@@ -96,14 +98,14 @@ class WelcomePage extends AbstractWelcomePage<*> {
         });
 
         navigation.addListener('focus', () => {
-            this._updateRoomname();
+            this._updateRoomName();
         });
 
         navigation.addListener('blur', () => {
             this._clearTimeouts();
 
             this.setState({
-                generatedRoomname: '',
+                generatedRoomName: '',
                 insecureRoomName: false,
                 room: ''
             });
@@ -194,7 +196,7 @@ class WelcomePage extends AbstractWelcomePage<*> {
             });
         } else {
             // Restart room placeholder animation.
-            this._updateRoomname();
+            this._updateRoomName();
         }
 
         Animated.timing(

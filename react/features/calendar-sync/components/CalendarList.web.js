@@ -1,17 +1,17 @@
 // @flow
 
 import React from 'react';
+import { connect } from 'react-redux';
 
-import {
-    createCalendarClickedEvent,
-    sendAnalytics
-} from '../../analytics';
-import { translate } from '../../base/i18n';
-import { Icon, IconCalendar } from '../../base/icons';
-import { AbstractPage } from '../../base/react';
-import { connect } from '../../base/redux';
+import { createCalendarClickedEvent } from '../../analytics/AnalyticsEvents';
+import { sendAnalytics } from '../../analytics/functions';
+import { translate } from '../../base/i18n/functions';
+import Icon from '../../base/icons/components/Icon';
+import { IconCalendar } from '../../base/icons/svg';
+import AbstractPage from '../../base/react/components/AbstractPage';
 import Spinner from '../../base/ui/components/web/Spinner';
-import { SETTINGS_TABS, openSettingsDialog } from '../../settings';
+import { openSettingsDialog } from '../../settings/actions';
+import { SETTINGS_TABS } from '../../settings/constants';
 import { refreshCalendar } from '../actions';
 import { ERRORS } from '../constants';
 

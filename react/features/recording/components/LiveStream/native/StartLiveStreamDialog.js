@@ -1,11 +1,11 @@
 // @flow
 
 import React from 'react';
+import { connect } from 'react-redux';
 
-import { translate } from '../../../../base/i18n';
+import { translate } from '../../../../base/i18n/functions';
 import JitsiScreen from '../../../../base/modal/components/JitsiScreen';
-import { connect } from '../../../../base/redux';
-import { googleApi } from '../../../../google-api';
+import googleApi from '../../../../google-api/googleApi.native';
 import HeaderNavigationButton
     from '../../../../mobile/navigation/components/HeaderNavigationButton';
 import { goBack }

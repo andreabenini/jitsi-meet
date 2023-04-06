@@ -1,17 +1,14 @@
 import React, { PureComponent } from 'react';
 import { WithTranslation } from 'react-i18next';
+import { connect } from 'react-redux';
 
 import { IStore } from '../../app/types';
 import { hideDialog } from '../../base/dialog/actions';
 import { translate } from '../../base/i18n/functions';
-import { connect } from '../../base/redux/functions';
 import Dialog from '../../base/ui/components/web/Dialog';
 import Tabs from '../../base/ui/components/web/Tabs';
-// eslint-disable-next-line lines-around-comment
-// @ts-ignore
 import { obtainDesktopSources } from '../functions';
 
-// @ts-ignore
 import DesktopPickerPane from './DesktopPickerPane';
 
 /**
@@ -90,7 +87,7 @@ interface IState {
     /**
      * An object containing all the DesktopCapturerSources.
      */
-    sources: Object;
+    sources: any;
 
     /**
      * The desktop source types to fetch previews for.
