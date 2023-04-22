@@ -28,7 +28,7 @@ const DEFAULT_STATE = {
 
 export interface ICalendarSyncState {
     authorization?: string;
-    error?: Object;
+    error?: { error: string; };
     events: Array<{
         calendarId: string;
         endDate: string;
@@ -39,7 +39,7 @@ export interface ICalendarSyncState {
     integrationReady: boolean;
     integrationType?: string;
     isLoadingEvents?: boolean;
-    msAuthState?: Object;
+    msAuthState?: any;
     profileEmail?: string;
 }
 

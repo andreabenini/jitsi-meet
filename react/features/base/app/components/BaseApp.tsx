@@ -186,7 +186,7 @@ export default class BaseApp<P> extends Component<P, IState> {
      * @abstract
      * @protected
      */
-    _createExtraElement() {
+    _createExtraElement(): React.ReactElement | null {
         return null;
     }
 
@@ -250,7 +250,7 @@ export default class BaseApp<P> extends Component<P, IState> {
      * @returns {Promise}
      */
     _navigate(route: {
-        component?: ComponentType;
+        component?: ComponentType<any>;
         href?: string;
         props?: Object;
     }): Promise<any> {
@@ -280,5 +280,7 @@ export default class BaseApp<P> extends Component<P, IState> {
      *
      * @returns {React$Element}
      */
-    _renderDialogContainer: () => React.ReactElement;
+    _renderDialogContainer(): React.ReactElement | null {
+        return null;
+    }
 }

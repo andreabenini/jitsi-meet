@@ -8,7 +8,7 @@ import AbstractPage from '../../base/react/components/AbstractPage';
 import { Container, Text } from '../../base/react/components/index';
 
 // @ts-ignore
-import styles from './styles.web';
+import styles from './styles';
 
 /**
  * The type of the React {@code Component} props of {@link AbstractRecentList}.
@@ -70,11 +70,11 @@ export default class AbstractRecentList<P extends IProps> extends AbstractPage<P
                 aria-label = { t('welcomepage.recentList') }
                 className = 'meetings-list-empty'
                 role = 'region'
-                style = { styles.emptyListContainer }>
-                <Text
+                style = { styles.emptyListContainer as any }>
+                <Text // @ts-ignore
                     className = 'description'
                     id = { descriptionId }
-                    style = { styles.emptyListText }>
+                    style = { styles.emptyListText as any }>
                     { t('welcomepage.recentListEmpty') }
                 </Text>
             </Container>

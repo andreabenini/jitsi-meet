@@ -12,7 +12,7 @@ import Dialog from '../../../../base/ui/components/web/Dialog';
 import { StatusCode } from '../../../../base/util/uri';
 import { isDynamicBrandingDataLoaded } from '../../../../dynamic-branding/functions.any';
 import { getActiveSession } from '../../../../recording/functions';
-import { updateDialInNumbers } from '../../../actions';
+import { updateDialInNumbers } from '../../../actions.web';
 import {
     _getDefaultPhoneNumber,
     getInviteText,
@@ -27,8 +27,6 @@ import CopyMeetingLinkSection from './CopyMeetingLinkSection';
 import DialInLimit from './DialInLimit';
 import DialInSection from './DialInSection';
 import InviteByEmailSection from './InviteByEmailSection';
-// eslint-disable-next-line lines-around-comment
-// @ts-ignore
 import InviteContactsSection from './InviteContactsSection';
 import LiveStreamSection from './LiveStreamSection';
 

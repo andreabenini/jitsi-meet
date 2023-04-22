@@ -1,6 +1,6 @@
 /* eslint-disable lines-around-comment */
 
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, Theme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +37,9 @@ import SecurityDialog
 import SpeakerStats
 // @ts-ignore
     from '../../../../../speaker-stats/components/native/SpeakerStats';
+import LanguageSelectorDialog
+// @ts-ignore
+    from '../../../../../subtitles/components/native/LanguageSelectorDialog';
 // @ts-ignore
 import { screen } from '../../../routes';
 import {
@@ -54,7 +57,8 @@ import {
     securityScreenOptions,
     settingsNavigationContainerScreenOptions,
     sharedDocumentScreenOptions,
-    speakerStatsScreenOptions
+    speakerStatsScreenOptions,
+    subtitlesScreenOptions
     // @ts-ignore
 } from '../../../screenOptions';
 // @ts-ignore
@@ -92,7 +96,7 @@ const ConferenceNavigationContainer = () => {
         <NavigationContainer
             independent = { true }
             ref = { conferenceNavigationRef }
-            theme = { navigationContainerTheme }>
+            theme = { navigationContainerTheme as Theme }>
             <ConferenceStack.Navigator
                 screenOptions = {{
                     presentation: 'modal'
@@ -179,6 +183,7 @@ const ConferenceNavigationContainer = () => {
                         title: t('documentSharing.title')
                     }} />
                 <ConferenceStack.Screen
+                    // @ts-ignore
                     component = { SettingsNavigationContainer }
                     name = { screen.settings.main }
                     options = { settingsNavigationContainerScreenOptions } />
@@ -189,6 +194,13 @@ const ConferenceNavigationContainer = () => {
                     options = {{
                         ...carmodeScreenOptions,
                         title: t('carmode.labels.title')
+                    }} />
+                <ConferenceStack.Screen
+                    component = { LanguageSelectorDialog }
+                    name = { screen.conference.subtitles }
+                    options = {{
+                        ...subtitlesScreenOptions,
+                        title: t('transcribing.subtitles')
                     }} />
             </ConferenceStack.Navigator>
         </NavigationContainer>

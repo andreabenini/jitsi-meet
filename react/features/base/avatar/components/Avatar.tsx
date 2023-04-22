@@ -71,7 +71,7 @@ export interface IProps {
     /**
      * The size of the avatar.
      */
-    size: number;
+    size?: number;
 
     /**
      * One of the expected status strings (e.g. 'available') to render a badge on the avatar, if necessary.
@@ -185,6 +185,7 @@ class Avatar<P extends IProps> extends PureComponent<P, IState> {
             id?: string;
             status?: string;
             testId?: string;
+            url?: string;
             useCORS?: boolean;
         } = {
             className,
