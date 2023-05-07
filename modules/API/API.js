@@ -113,9 +113,15 @@ import { isAudioMuteButtonDisabled } from '../../react/features/toolbox/function
 import { setTileView, toggleTileView } from '../../react/features/video-layout/actions.any';
 import { muteAllParticipants } from '../../react/features/video-menu/actions';
 import { setVideoQuality } from '../../react/features/video-quality/actions';
+import { toggleWhiteboard } from '../../react/features/whiteboard/actions.any';
+import { WhiteboardStatus } from '../../react/features/whiteboard/types';
 import { getJitsiMeetTransport } from '../transport';
 
-import { API_ID, ENDPOINT_TEXT_MESSAGE_NAME } from './constants';
+import {
+    API_ID,
+    ASSUMED_BANDWIDTH_BPS,
+    ENDPOINT_TEXT_MESSAGE_NAME
+} from './constants';
 
 const logger = Logger.getLogger(__filename);
 
@@ -309,6 +315,23 @@ function initCommands() {
             const { duration, tones, pause } = options;
 
             APP.store.dispatch(sendTones(tones, duration, pause));
+        },
+        'set-assumed-bandwidth-bps': value => {
+            logger.debug('Set assumed bandwidth bps command received', value);
+
+            if (typeof value !== 'number' || isNaN(value)) {
+                logger.error('Assumed bandwidth bps must be a number.');
+
+                return;
+            }
+
+            const { conference } = APP.store.getState()['features/base/conference'];
+
+            if (conference) {
+                conference.setAssumedBandwidthBps(value < ASSUMED_BANDWIDTH_BPS
+                    ? ASSUMED_BANDWIDTH_BPS
+                    : value);
+            }
         },
         'set-follow-me': value => {
             logger.debug('Set follow me command received');
@@ -812,6 +835,9 @@ function initCommands() {
             } else {
                 logger.error(' End Conference not supported');
             }
+        },
+        'toggle-whiteboard': () => {
+            APP.store.dispatch(toggleWhiteboard());
         }
     };
     transport.on('event', ({ data, name }) => {
@@ -1990,6 +2016,20 @@ class API {
             name: 'participant-menu-button-clicked',
             key,
             participantId
+        });
+    }
+
+    /**
+     * Notify external application (if API is enabled) if whiteboard state is
+     * changed.
+     *
+     * @param {WhiteboardStatus} status - The new whiteboard status.
+     * @returns {void}
+     */
+    notifyWhiteboardStatusChanged(status: WhiteboardStatus) {
+        this._sendEvent({
+            name: 'whiteboard-status-changed',
+            status
         });
     }
 

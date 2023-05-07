@@ -48,7 +48,7 @@ export interface IProps {
      * The style (as in stylesheet) to be applied to this
      * {@code AbstractContainer}.
      */
-    style?: StyleType;
+    style?: StyleType | StyleType[];
 
     tabIndex?: number;
 
@@ -58,7 +58,7 @@ export interface IProps {
      * undefined and {@link onClick} is defined, {@code touchFeedback} is
      * considered defined as {@code true}.
      */
-    touchFeedback?: Function;
+    touchFeedback?: boolean;
 
     /**
      * Color to display when clicked.

@@ -59,6 +59,7 @@ const commands = {
     sendEndpointTextMessage: 'send-endpoint-text-message',
     sendParticipantToRoom: 'send-participant-to-room',
     sendTones: 'send-tones',
+    setAssumedBandwidthBps: 'set-assumed-bandwidth-bps',
     setFollowMe: 'set-follow-me',
     setLargeVideoParticipant: 'set-large-video-participant',
     setMediaEncryptionKey: 'set-media-encryption-key',
@@ -89,7 +90,8 @@ const commands = {
     toggleSubtitles: 'toggle-subtitles',
     toggleTileView: 'toggle-tile-view',
     toggleVirtualBackgroundDialog: 'toggle-virtual-background',
-    toggleVideo: 'toggle-video'
+    toggleVideo: 'toggle-video',
+    toggleWhiteboard: 'toggle-whiteboard'
 };
 
 /**
@@ -153,7 +155,8 @@ const events = {
     'subject-change': 'subjectChange',
     'suspend-detected': 'suspendDetected',
     'tile-view-changed': 'tileViewChanged',
-    'toolbar-button-clicked': 'toolbarButtonClicked'
+    'toolbar-button-clicked': 'toolbarButtonClicked',
+    'whiteboard-status-changed': 'whiteboardStatusChanged'
 };
 
 /**
