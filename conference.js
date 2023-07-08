@@ -87,6 +87,7 @@ import {
 } from './react/features/base/lib-jitsi-meet';
 import { isFatalJitsiConnectionError } from './react/features/base/lib-jitsi-meet/functions';
 import {
+    gumPending,
     setAudioAvailable,
     setAudioMuted,
     setAudioUnmutePermissions,
@@ -100,6 +101,7 @@ import {
     getStartWithVideoMuted,
     isVideoMutedByUser
 } from './react/features/base/media/functions';
+import { IGUMPendingState } from './react/features/base/media/types';
 import {
     dominantSpeakerChanged,
     localParticipantAudioLevelChanged,
@@ -361,11 +363,11 @@ class ConferenceConnector {
             const [ vnode ] = params;
 
             APP.store.dispatch(overwriteConfig(newConfig))
-                .then(this._conference.leaveRoom())
-                .then(APP.store.dispatch(setIAmVisitor(Boolean(vnode))))
+                .then(() => this._conference.leaveRoom())
+                .then(() => APP.store.dispatch(setIAmVisitor(Boolean(vnode))))
 
                 // we do not clear local tracks on error, so we need to manually clear them
-                .then(APP.store.dispatch(destroyLocalTracks()))
+                .then(() => APP.store.dispatch(destroyLocalTracks()))
                 .then(() => {
                     // Reset VideoLayout. It's destroyed in features/video-layout/middleware.web.js so re-initialize it.
                     VideoLayout.initLargeVideo();
@@ -418,7 +420,7 @@ class ConferenceConnector {
 
             if (newConfig) {
                 APP.store.dispatch(overwriteConfig(newConfig))
-                    .then(this._conference.leaveRoom())
+                    .then(() => this._conference.leaveRoom())
                     .then(() => {
                         _connectionPromise = connect(this._conference.roomName);
 
@@ -491,6 +493,21 @@ function disconnect() {
     }
 
     return connection.disconnect().then(onDisconnected, onDisconnected);
+}
+
+/**
+ * Sets the GUM pending state for the tracks that have failed.
+ *
+ * NOTE: Some of the track that we will be setting to GUM pending state NONE may not have failed but they may have
+ * been requested. This won't be a problem because their current GUM pending state will be NONE anyway.
+ * @param {JitsiLocalTrack} tracks - The tracks that have been created.
+ * @returns {void}
+ */
+function setGUMPendingStateOnFailedTracks(tracks) {
+    const tracksTypes = tracks.map(track => track.getType());
+    const nonPendingTracks = [ MEDIA_TYPE.AUDIO, MEDIA_TYPE.VIDEO ].filter(type => !tracksTypes.includes(type));
+
+    APP.store.dispatch(gumPending(nonPendingTracks, IGUMPendingState.NONE));
 }
 
 /**
@@ -601,6 +618,7 @@ export default {
                     return [];
                 });
         } else if (requestedAudio || requestedVideo) {
+            APP.store.dispatch(gumPending(initialDevices, IGUMPendingState.PENDING_UNMUTE));
             tryCreateLocalTracks = createLocalTracksF({
                 devices: initialDevices,
                 timeout,
@@ -863,6 +881,8 @@ export default {
             this._initDeviceList(true);
 
             if (isPrejoinPageVisible(state)) {
+                APP.store.dispatch(gumPending([ MEDIA_TYPE.AUDIO, MEDIA_TYPE.VIDEO ], IGUMPendingState.NONE));
+
                 return APP.store.dispatch(initPrejoin(localTracks, errors));
             }
 
@@ -870,14 +890,22 @@ export default {
 
             this._displayErrorsForCreateInitialLocalTracks(errors);
 
-            return this._setLocalAudioVideoStreams(handleInitialTracks(initialOptions, localTracks));
+            const tracks = handleInitialTracks(initialOptions, localTracks);
+
+            setGUMPendingStateOnFailedTracks(tracks);
+
+            return this._setLocalAudioVideoStreams(tracks);
         }
 
         const [ tracks, con ] = await this.createInitialLocalTracksAndConnect(roomName, initialOptions);
 
         this._initDeviceList(true);
 
-        return this.startConference(con, handleInitialTracks(initialOptions, tracks));
+        const filteredTracks = handleInitialTracks(initialOptions, tracks);
+
+        setGUMPendingStateOnFailedTracks(filteredTracks);
+
+        return this.startConference(con, filteredTracks);
     },
 
     /**
@@ -1000,6 +1028,7 @@ export default {
                 showUI && APP.store.dispatch(notifyMicError(error));
             };
 
+            APP.store.dispatch(gumPending([ MEDIA_TYPE.AUDIO ], IGUMPendingState.PENDING_UNMUTE));
             createLocalTracksF({ devices: [ 'audio' ] })
                 .then(([ audioTrack ]) => audioTrack)
                 .catch(error => {
@@ -1011,7 +1040,10 @@ export default {
                 .then(async audioTrack => {
                     await this._maybeApplyAudioMixerEffect(audioTrack);
 
-                    this.useAudioStream(audioTrack);
+                    return this.useAudioStream(audioTrack);
+                })
+                .finally(() => {
+                    APP.store.dispatch(gumPending([ MEDIA_TYPE.AUDIO ], IGUMPendingState.NONE));
                 });
         } else {
             muteLocalAudio(mute);
@@ -1091,6 +1123,8 @@ export default {
 
             this.isCreatingLocalTrack = true;
 
+            APP.store.dispatch(gumPending([ MEDIA_TYPE.VIDEO ], IGUMPendingState.PENDING_UNMUTE));
+
             // Try to create local video if there wasn't any.
             // This handles the case when user joined with no video
             // (dismissed screen sharing screen or in audio only mode), but
@@ -1115,6 +1149,7 @@ export default {
                 })
                 .finally(() => {
                     this.isCreatingLocalTrack = false;
+                    APP.store.dispatch(gumPending([ MEDIA_TYPE.VIDEO ], IGUMPendingState.NONE));
                 });
         } else {
             // FIXME show error dialog if it fails (should be handled by react)
@@ -1427,11 +1462,16 @@ export default {
      * @private
      */
     _setLocalAudioVideoStreams(tracks = []) {
+        const { dispatch } = APP.store;
+        const pendingGUMDevicesToRemove = [];
         const promises = tracks.map(track => {
             if (track.isAudioTrack()) {
+                pendingGUMDevicesToRemove.push(MEDIA_TYPE.AUDIO);
+
                 return this.useAudioStream(track);
             } else if (track.isVideoTrack()) {
                 logger.debug(`_setLocalAudioVideoStreams is calling useVideoStream with track: ${track}`);
+                pendingGUMDevicesToRemove.push(MEDIA_TYPE.VIDEO);
 
                 return this.useVideoStream(track);
             }
@@ -1443,6 +1483,10 @@ export default {
         });
 
         return Promise.allSettled(promises).then(() => {
+            if (pendingGUMDevicesToRemove.length > 0) {
+                dispatch(gumPending(pendingGUMDevicesToRemove, IGUMPendingState.NONE));
+            }
+
             this._localTracksInitialized = true;
             logger.log(`Initialized with ${tracks.length} local tracks`);
         });
@@ -1985,7 +2029,10 @@ export default {
 
         room.on(
             JitsiConferenceEvents.NON_PARTICIPANT_MESSAGE_RECEIVED,
-            (...args) => APP.store.dispatch(nonParticipantMessageReceived(...args)));
+            (...args) => {
+                APP.store.dispatch(nonParticipantMessageReceived(...args));
+                APP.API.notifyNonParticipantMessageReceived(...args);
+            });
 
         room.on(
             JitsiConferenceEvents.LOCK_STATE_CHANGED,
@@ -2156,6 +2203,11 @@ export default {
             UIEvents.VIDEO_DEVICE_CHANGED,
             cameraDeviceId => {
                 const videoWasMuted = this.isLocalVideoMuted();
+                const localVideoTrack = getLocalJitsiVideoTrack(APP.store.getState());
+
+                if (localVideoTrack?.getDeviceId() === cameraDeviceId) {
+                    return;
+                }
 
                 sendAnalytics(createDeviceChangedEvent('video', 'input'));
 
@@ -2400,7 +2452,9 @@ export default {
             const { dispatch } = APP.store;
             const setAudioOutputPromise
                 = setAudioOutputDeviceId(newDevices.audiooutput, dispatch)
-                    .catch(); // Just ignore any errors in catch block.
+                    .catch(err => {
+                        logger.error(`Failed to set the audio output device to ${newDevices.audiooutput} - ${err}`);
+                    });
 
             promises.push(setAudioOutputPromise);
         }
@@ -2438,7 +2492,7 @@ export default {
         }
 
         // check for video
-        if (!requestedInput.video) {
+        if (requestedInput.video) {
             APP.store.dispatch(checkAndNotifyForNewDevice(newAvailDevices.videoInput, oldDevices.videoInput));
         }
 
@@ -2482,14 +2536,15 @@ export default {
         // Create the tracks and replace them only if the user is unmuted.
         if (requestedInput.audio || requestedInput.video) {
             let tracks = [];
+            const realAudioDeviceId = hasDefaultMicChanged
+                ? getDefaultDeviceId(APP.store.getState(), 'audioInput') : newDevices.audioinput;
 
             try {
                 tracks = await mediaDeviceHelper.createLocalTracksAfterDeviceListChanged(
                     createLocalTracksF,
-                    newDevices.videoinput,
-                    hasDefaultMicChanged
-                        ? getDefaultDeviceId(APP.store.getState(), 'audioInput')
-                        : newDevices.audioinput);
+                    requestedInput.video ? newDevices.videoinput : null,
+                    requestedInput.audio ? realAudioDeviceId : null
+                );
             } catch (error) {
                 logger.error(`Track creation failed on device change, ${error}`);
 
@@ -2620,17 +2675,22 @@ export default {
     async leaveRoom(doDisconnect = true, reason = '') {
         APP.store.dispatch(conferenceWillLeave(room));
 
+        const maybeDisconnect = () => {
+            if (doDisconnect) {
+                return disconnect();
+            }
+        };
+
         if (room && room.isJoined()) {
-            return room.leave(reason).finally(() => {
-                if (doDisconnect) {
-                    return disconnect();
-                }
+            return room.leave(reason).then(() => maybeDisconnect())
+            .catch(e => {
+                logger.error(e);
+
+                return maybeDisconnect();
             });
         }
 
-        if (doDisconnect) {
-            return disconnect();
-        }
+        return maybeDisconnect();
     },
 
     /**

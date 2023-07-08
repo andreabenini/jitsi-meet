@@ -292,7 +292,7 @@ export function getVisitorOptions(stateful: IStateful, params: Array<string>) {
 
     const config = toState(stateful)['features/base/config'];
 
-    if (!config || !config.hosts) {
+    if (!config?.hosts) {
         logger.warn('Wrong configuration, missing hosts.');
 
         return;
@@ -386,6 +386,24 @@ export function getCurrentConference(stateful: IStateful): IJitsiConference | un
     }
 
     return joining || passwordRequired || membersOnly;
+}
+
+/**
+ * Returns whether the current conference is a P2P connection.
+ * Will return `false` if it's a JVB one, and `null` if there is no conference.
+ *
+ * @param {IStateful} stateful - The redux store, state, or
+ * {@code getState} function.
+ * @returns {boolean|null}
+ */
+export function isP2pActive(stateful: IStateful): boolean | null {
+    const conference = getCurrentConference(toState(stateful));
+
+    if (!conference) {
+        return null;
+    }
+
+    return conference.isP2PActive();
 }
 
 /**
