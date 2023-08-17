@@ -1,9 +1,11 @@
 import { IStore } from '../app/types';
+import { APP_WILL_NAVIGATE } from '../base/app/actionTypes';
 import {
     CONFERENCE_FAILED,
     CONFERENCE_JOINED,
     CONFERENCE_LEFT
 } from '../base/conference/actionTypes';
+import { isRoomValid } from '../base/conference/functions';
 import { CONNECTION_ESTABLISHED, CONNECTION_FAILED } from '../base/connection/actionTypes';
 import { hangup } from '../base/connection/actions';
 import { hideDialog } from '../base/dialog/actions';
@@ -14,8 +16,6 @@ import {
 } from '../base/lib-jitsi-meet';
 import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
 import { getBackendSafeRoomName } from '../base/util/uri';
-import { showErrorNotification } from '../notifications/actions';
-import { NOTIFICATION_TIMEOUT_TYPE } from '../notifications/constants';
 import { openLogoutDialog } from '../settings/actions';
 
 import {
@@ -29,12 +29,16 @@ import {
 import {
     hideLoginDialog,
     openLoginDialog,
+    openTokenAuthUrl,
     openWaitForOwnerDialog,
     redirectToDefaultLocation,
+    setTokenAuthUrlSuccess,
     stopWaitForOwner,
-    waitForOwner } from './actions';
+    waitForOwner
+} from './actions';
 import { LoginDialog, WaitForOwnerDialog } from './components';
 import { getTokenAuthUrl, isTokenAuthEnabled } from './functions';
+import logger from './logger';
 
 /**
  * Middleware that captures connection or conference failed errors and controls
@@ -107,12 +111,25 @@ MiddlewareRegistry.register(store => next => action => {
         break;
     }
 
-    case CONFERENCE_JOINED:
+    case CONFERENCE_JOINED: {
+        const { dispatch, getState } = store;
+        const state = getState();
+        const config = state['features/base/config'];
+
+        if (isTokenAuthEnabled(config)
+            && config.tokenAuthUrlAutoRedirect
+            && state['features/base/jwt'].jwt) {
+            // auto redirect is turned on and we have succesfully logged in
+            // let's mark that
+            dispatch(setTokenAuthUrlSuccess(true));
+        }
+
         if (_isWaitingForOwner(store)) {
             store.dispatch(stopWaitForOwner());
         }
         store.dispatch(hideLoginDialog());
         break;
+    }
 
     case CONFERENCE_LEFT:
         store.dispatch(stopWaitForOwner());
@@ -146,14 +163,24 @@ MiddlewareRegistry.register(store => next => action => {
     }
 
     case LOGOUT: {
+        const { dispatch, getState } = store;
+        const state = getState();
+        const config = state['features/base/config'];
         const { conference } = store.getState()['features/base/conference'];
 
         if (!conference) {
             break;
         }
 
-        store.dispatch(openLogoutDialog(() => {
-            const logoutUrl = store.getState()['features/base/config'].tokenLogoutUrl;
+        dispatch(openLogoutDialog(() => {
+            const logoutUrl = config.tokenLogoutUrl;
+
+            if (isTokenAuthEnabled(config)
+                && config.tokenAuthUrlAutoRedirect
+                && state['features/base/jwt'].jwt) {
+                // user is logging out remove auto redirect indication
+                dispatch(setTokenAuthUrlSuccess(false));
+            }
 
             if (logoutUrl) {
                 window.location.href = logoutUrl;
@@ -161,8 +188,28 @@ MiddlewareRegistry.register(store => next => action => {
                 return;
             }
 
-            conference.room.moderator.logout(() => store.dispatch(hangup(true)));
+            conference.room.moderator.logout(() => dispatch(hangup(true)));
         }));
+
+        break;
+    }
+
+    case APP_WILL_NAVIGATE: {
+        const { dispatch, getState } = store;
+        const state = getState();
+        const config = state['features/base/config'];
+        const room = state['features/base/conference'].room;
+
+        if (isRoomValid(room)
+            && config.tokenAuthUrl && config.tokenAuthUrlAutoRedirect
+            && state['features/authentication'].tokenAuthUrlSuccessful
+            && !state['features/base/jwt'].jwt) {
+            // if we have auto redirect enabled, and we have previously logged in successfully
+            // we will redirect to the auth url to get the token and login again
+            // we want to mark token auth success to false as if login is unsuccessful
+            // the participant can join anonymously and not go in login loop
+            dispatch(setTokenAuthUrlSuccess(false));
+        }
 
         break;
     }
@@ -235,22 +282,26 @@ function _handleLogin({ dispatch, getState }: IStore) {
     const config = state['features/base/config'];
     const room = getBackendSafeRoomName(state['features/base/conference'].room);
 
-    if (isTokenAuthEnabled(config)) {
-        if (typeof APP === 'undefined') {
-            dispatch(showErrorNotification({
-                descriptionKey: 'dialog.tokenAuthUnsupported',
-                titleKey: 'dialog.tokenAuthFailedTitle'
-            }, NOTIFICATION_TIMEOUT_TYPE.LONG));
+    if (!room) {
+        logger.warn('Cannot handle login, room is undefined!');
 
-            dispatch(redirectToDefaultLocation());
-
-            return;
-        }
-
-        // FIXME: This method will not preserve the other URL params that were originally passed.
-        // redirectToTokenAuthService
-        window.location.href = getTokenAuthUrl(config)(room, false);
-    } else {
-        dispatch(openLoginDialog());
+        return;
     }
+
+    if (!isTokenAuthEnabled(config)) {
+        dispatch(openLoginDialog());
+
+        return;
+    }
+
+    // FIXME: This method will not preserve the other URL params that were originally passed.
+    const tokenAuthServiceUrl = getTokenAuthUrl(config, room);
+
+    if (!tokenAuthServiceUrl) {
+        logger.warn('Cannot handle login, token service URL is not set');
+
+        return;
+    }
+
+    dispatch(openTokenAuthUrl(tokenAuthServiceUrl));
 }
