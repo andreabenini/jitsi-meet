@@ -1015,6 +1015,10 @@ var config = {
         // The Amplitude APP Key:
         // amplitudeAPPKey: '<APP_KEY>',
 
+        // Enables Amplitude UTM tracking:
+        // Default value is false.
+        // amplitudeIncludeUTM: false,
+
         // Obfuscates room name sent to analytics (amplitude, rtcstats)
         // Default value is false.
         // obfuscateRoomName: false,
@@ -1572,6 +1576,8 @@ var config = {
     // disableFilmstripAutohiding: false,
 
     // filmstrip: {
+    //     // Disable the vertical/horizonal filmstrip.
+    //     disabled: false,
     //     // Disables user resizable filmstrip. Also, allows configuration of the filmstrip
     //     // (width, tiles aspect ratios) through the interfaceConfig options.
     //     disableResizable: false,
