@@ -67,13 +67,18 @@
             "renameBreakoutRoom": "Rename breakout room",
             "sendToBreakoutRoom": "Send participant to:"
         },
+        "breakoutList": "Breakout list",
+        "buttonLabel": "Breakout rooms",
         "defaultName": "Breakout room #{{index}}",
+        "hideParticipantList": "Hide participant list",
         "mainRoom": "Main room",
         "notifications": {
             "joined": "Joining the \"{{name}}\" breakout room",
             "joinedMainRoom": "Joining the main room",
             "joinedTitle": "Breakout Rooms"
-        }
+        },
+        "showParticipantList": "Show participant list",
+        "title": "Breakout Rooms"
     },
     "calendarSync": {
         "addMeetingURL": "Add a meeting link",
@@ -477,6 +482,10 @@
         "viewUpgradeOptions": "View upgrade options",
         "viewUpgradeOptionsContent": "To get unlimited access to premium features like recording, transcriptions, RTMP Streaming & more, you'll need to upgrade your plan.",
         "viewUpgradeOptionsTitle": "You discovered a premium feature!",
+        "whiteboardLimitContent": "Sorry, the limit of conccurent whiteboard users has been reached.",
+        "whiteboardLimitReference": "For more information please visit",
+        "whiteboardLimitReferenceUrl": "our website",
+        "whiteboardLimitTitle": "Whiteboard usage restricted",
         "yourEntireScreen": "Your entire screen"
     },
     "documentSharing": {
@@ -724,6 +733,7 @@
         "dataChannelClosed": "Video quality impaired",
         "dataChannelClosedDescription": "The bridge channel has been disconnected and thus video quality is limited to its lowest setting.",
         "disabledIframe": "Embedding is only meant for demo purposes, so this call will disconnect in {{timeout}} minutes.",
+        "disabledIframeSecondary": "Embedding {{domain}} is only meant for demo purposes, so this call will disconnect in {{timeout}} minutes. Please use <a href='{{jaasDomain}}' rel='noopener noreferrer' target='_blank'>Jitsi as a Service</a> for production embedding!",
         "disconnected": "disconnected",
         "displayNotifications": "Display notifications for",
         "dontRemindMe": "Do not remind me",
@@ -799,7 +809,9 @@
         "videoUnmuteBlockedDescription": "Camera unmute and desktop sharing operation have been temporarily blocked because of system limits.",
         "videoUnmuteBlockedTitle": "Camera unmute and desktop sharing blocked!",
         "viewLobby": "View lobby",
-        "waitingParticipants": "{{waitingParticipants}} people"
+        "waitingParticipants": "{{waitingParticipants}} people",
+        "whiteboardLimitDescription": "Please save your progress, as the user limit will soon be reached and the whiteboard will close.",
+        "whiteboardLimitTitle": "Whiteboard usage"
     },
     "participantsPane": {
         "actions": {
@@ -808,6 +820,7 @@
             "askUnmute": "Ask to unmute",
             "audioModeration": "Unmute themselves",
             "blockEveryoneMicCamera": "Block everyone's mic and camera",
+            "breakoutRooms": "Breakout rooms",
             "invite": "Invite Someone",
             "moreModerationActions": "More moderation options",
             "moreModerationControls": "More moderation controls",
@@ -1154,7 +1167,7 @@
             "audioOnly": "Toggle audio only",
             "audioRoute": "Select the sound device",
             "boo": "Boo",
-            "breakoutRoom": "Join/leave breakout room",
+            "breakoutRooms": "Breakout rooms",
             "callQuality": "Manage video quality",
             "carmode": "Car Mode",
             "cc": "Toggle subtitles",

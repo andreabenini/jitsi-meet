@@ -65,7 +65,11 @@ import {
     updateDeviceList
 } from './react/features/base/devices/actions.web';
 import {
+    areDevicesDifferent,
+    filterIgnoredDevices,
+    flattenAvailableDevices,
     getDefaultDeviceId,
+    logDevices,
     setAudioOutputDeviceId
 } from './react/features/base/devices/functions.web';
 import {
@@ -632,7 +636,7 @@ export default {
         // so that the user can try unmute later on and add audio/video
         // to the conference
         if (!tracks.find(t => t.isAudioTrack())) {
-            this.setAudioMuteStatus(true);
+            this.updateAudioIconEnabled();
         }
 
         if (!tracks.find(t => t.isVideoTrack())) {
@@ -841,7 +845,7 @@ export default {
             // This will only modify base/media.audio.muted which is then synced
             // up with the track at the end of local tracks initialization.
             muteLocalAudio(mute);
-            this.setAudioMuteStatus(mute);
+            this.updateAudioIconEnabled();
 
             return;
         } else if (this.isLocalAudioMuted() === mute) {
@@ -1390,7 +1394,7 @@ export default {
                 APP.store.dispatch(
                 replaceLocalTrack(oldTrack, newTrack, room))
                     .then(() => {
-                        this.setAudioMuteStatus(this.isLocalAudioMuted());
+                        this.updateAudioIconEnabled();
                     })
                     .then(resolve)
                     .catch(reject)
@@ -2241,19 +2245,28 @@ export default {
      * @returns {Promise}
      */
     async _onDeviceListChanged(devices) {
-        const oldDevices = APP.store.getState()['features/base/devices'].availableDevices;
-        const localAudio = getLocalJitsiAudioTrack(APP.store.getState());
-        const localVideo = getLocalJitsiVideoTrack(APP.store.getState());
+        const state = APP.store.getState();
+        const { filteredDevices, ignoredDevices } = filterIgnoredDevices(devices);
+        const oldDevices = state['features/base/devices'].availableDevices;
 
-        APP.store.dispatch(updateDeviceList(devices));
+        if (!areDevicesDifferent(flattenAvailableDevices(oldDevices), filteredDevices)) {
+            return Promise.resolve();
+        }
+
+        logDevices(ignoredDevices, 'Ignored devices on device list changed:');
+
+        const localAudio = getLocalJitsiAudioTrack(state);
+        const localVideo = getLocalJitsiVideoTrack(state);
+
+        APP.store.dispatch(updateDeviceList(filteredDevices));
 
         // Firefox users can choose their preferred device in the gUM prompt. In that case
         // we should respect that and not attempt to switch to the preferred device from
         // our settings.
-        const newLabelsOnly = mediaDeviceHelper.newDeviceListAddedLabelsOnly(oldDevices, devices);
+        const newLabelsOnly = mediaDeviceHelper.newDeviceListAddedLabelsOnly(oldDevices, filteredDevices);
         const newDevices
             = mediaDeviceHelper.getNewMediaDevicesAfterDeviceListChanged(
-                devices,
+                filteredDevices,
                 localVideo,
                 localAudio,
                 newLabelsOnly);
@@ -2386,7 +2399,7 @@ export default {
 
         return Promise.all(promises)
             .then(() => {
-                APP.UI.onAvailableDevicesChanged(devices);
+                APP.UI.onAvailableDevicesChanged(filteredDevices);
             });
     },
 
@@ -2660,15 +2673,6 @@ export default {
      */
     setVideoMuteStatus() {
         APP.UI.setVideoMuted(this.getMyUserId());
-    },
-
-    /**
-     * Sets the audio muted status.
-     *
-     * @param {boolean} muted - New muted status.
-     */
-    setAudioMuteStatus(muted) {
-        APP.UI.setAudioMuted(this.getMyUserId(), muted);
     },
 
     /**
