@@ -51,6 +51,9 @@ var config = {
     // Websocket URL (XMPP)
     // websocket: 'wss://jitsi-meet.example.com/' + subdir + 'xmpp-websocket',
 
+    // Whether BOSH should be preferred over WebSocket if both are configured.
+    // preferBosh: false,
+
     // The real JID of focus participant - can be overridden here
     // Do not change username - FIXME: Make focus username configurable
     // https://github.com/jitsi/jitsi-meet/issues/7376
@@ -215,6 +218,9 @@ var config = {
 
     // Video
 
+    // Sets the default camera facing mode.
+    // cameraFacingMode: 'user',
+
     // Sets the preferred resolution (height) for local video. Defaults to 720.
     // resolution: 720,
 
@@ -288,12 +294,19 @@ var config = {
     //     max: 5,
     // },
 
-    // This option has been deprecated since it is no longer supported as per the w3c spec.
-    // https://w3c.github.io/mediacapture-screen-share/#dom-mediadevices-getdisplaymedia. If the user has not
-    // interacted with the webpage before the getDisplayMedia call, the promise will be rejected by the browser. This
-    // has already been implemented in Firefox and Safari and will be implemented in Chrome soon.
-    // https://bugs.chromium.org/p/chromium/issues/detail?id=1198918
-    // startScreenSharing: false,
+    // Optional screenshare settings that give more control over screen capture in the browser.
+    // screenShareSettings: {
+    //      // Show users the current tab is the preferred capture source, default: false.
+    //      desktopPreferCurrentTab: false,
+    //      // Allow users to select system audio, default: include.
+    //      desktopSystemAudio: 'include',
+    //      // Allow users to seamlessly switch which tab they are sharing without having to select the tab again.
+    //      desktopSurfaceSwitching: 'include',
+    //      // Allow a user to be shown a preference for what screen is to be captured, default: unset.
+    //      desktopDisplaySurface: undefined,
+    //      // Allow users to select the current tab as a capture source, default: exclude.
+    //      desktopSelfBrowserSurface: 'exclude'
+    // },
 
     // Recording
 
@@ -431,6 +444,49 @@ var config = {
     //    // Provides a way to set the codec preference on desktop based endpoints.
     //    codecPreferenceOrder: [ 'VP9', 'VP8', 'H264' ],
     //
+    //    // Codec specific settings for scalability modes and max bitrates.
+    //    av1: {
+    //      maxBitratesVideo: {
+    //          low: 100000,
+    //          standard: 300000,
+    //          high: 1000000,
+    //          ssHigh: 2500000
+    //      },
+    //      scalabilityModeEnabled: true,
+    //      useSimulcast: false,
+    //      useKSVC: true
+    //    },
+    //    h264: {
+    //      maxBitratesVideo: {
+    //          low: 200000,
+    //          standard: 500000,
+    //          high: 1500000,
+    //          ssHigh: 2500000
+    //      },
+    //      scalabilityModeEnabled: true
+    //    },
+    //    vp8: {
+    //      maxBitratesVideo: {
+    //          low: 200000,
+    //          standard: 500000,
+    //          high: 1500000,
+    //          ssHigh: 2500000
+    //      },
+    //      scalabilityModeEnabled: false
+    //    },
+    //    vp9: {
+    //      maxBitratesVideo: {
+    //          low: 100000,
+    //          standard: 300000,
+    //          high: 1200000,
+    //          ssHigh: 2500000
+    //      },
+    //      scalabilityModeEnabled: true,
+    //      useSimulcast: false,
+    //      useKSVC: true
+    //    }
+    //
+    //    DEPRECATED! Use `codec specific settings` instead.
     //    // Provides a way to configure the maximum bitrates that will be enforced on the simulcast streams for
     //    // video tracks. The keys in the object represent the type of the stream (LD, SD or HD) and the values
     //    // are the max.bitrates to be set on that particular type of stream. The actual send may vary based on
@@ -1510,7 +1566,6 @@ var config = {
      disableLocalStats
      disableNS
      enableTalkWhileMuted
-     forceJVB121Ratio
      forceTurnRelay
      hiddenDomain
      hiddenFromRecorderFeatureEnabled

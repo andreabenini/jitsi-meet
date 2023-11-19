@@ -253,6 +253,7 @@ export interface IConfig {
     callStatsID?: string;
     callStatsSecret?: string;
     callUUID?: string;
+    cameraFacingMode?: string;
     channelLastN?: number;
     chromeExtensionBanner?: {
         chromeExtensionsInfo?: Array<{ id: string; path: string; }>;
@@ -520,6 +521,7 @@ export interface IConfig {
     pcStatsInterval?: number;
     peopleSearchQueryTypes?: string[];
     peopleSearchUrl?: string;
+    preferBosh?: boolean;
     preferredTranscribeLanguage?: string;
     prejoinConfig?: {
         enabled?: boolean;

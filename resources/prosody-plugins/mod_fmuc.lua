@@ -292,10 +292,12 @@ end);
 module:hook('muc-occupant-groupchat', function(event)
     local occupant, room, stanza = event.occupant, event.room, event.stanza;
     local from = stanza.attr.from;
-    local occupant_host = jid.host(occupant.bare_jid);
+    local occupant_host;
 
     -- if there is no occupant this is a message from main, probably coming from other vnode
     if occupant then
+        occupant_host = jid.host(occupant.bare_jid);
+
         -- we manage nick only for visitors
         if occupant_host ~= main_domain then
             -- add to message stanza display name for the visitor
@@ -502,7 +504,7 @@ function route_s2s_stanza(event)
     end
 
      if stanza.name == 'message' then
-        if jid.resource(stanza.to) then
+        if jid.resource(stanza.attr.to) then
             -- there is no point of delivering messages to main participants individually
             return true; -- drop it
         end
