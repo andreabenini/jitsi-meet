@@ -312,7 +312,6 @@ export interface IConfig {
     disableRemoveRaisedHandOnFocus?: boolean;
     disableResponsiveTiles?: boolean;
     disableRtx?: boolean;
-    disableScreensharingVirtualBackground?: boolean;
     disableSelfView?: boolean;
     disableSelfViewSettings?: boolean;
     disableShortcuts?: boolean;
@@ -563,6 +562,7 @@ export interface IConfig {
         mobileXmppWsThreshold?: number;
         noAutoPlayVideo?: boolean;
         p2pTestMode?: boolean;
+        skipInterimTranscriptions?: boolean;
         testMode?: boolean;
     };
     tileView?: {

@@ -84,6 +84,9 @@ var config = {
         // issues related to insertable streams.
         // disableE2EE: false,
 
+        // Enables supports for AV1 codec.
+        // enableAv1: false,
+
         // Enables XMPP WebSocket (as opposed to BOSH) for the given amount of users.
         // mobileXmppWsThreshold: 10, // enable XMPP WebSockets on mobile for 10% of the users
 
@@ -97,6 +100,9 @@ var config = {
         // Disables the auto-play behavior of *all* newly created video element.
         // This is useful when the client runs on a host with limited resources.
         // noAutoPlayVideo: false,
+
+        // Experiment: Whether to skip interim transcriptions.
+        // skipInterimTranscriptions: false,
     },
 
     // Disables moderator indicators.
@@ -1388,9 +1394,6 @@ var config = {
     // When true the user cannot add more images to be used as virtual background.
     // Only the default ones from will be available.
     // disableAddingBackgroundImages: false,
-
-    // Disables using screensharing as virtual background.
-    // disableScreensharingVirtualBackground: false,
 
     // Sets the background transparency level. '0' is fully transparent, '1' is opaque.
     // backgroundAlpha: 1,
