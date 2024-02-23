@@ -141,7 +141,14 @@ export interface IDeeplinkingMobileConfig extends IDeeplinkingPlatformConfig {
     fDroidUrl?: string;
 }
 
+export interface IDesktopDownloadConfig {
+    linux?: string;
+    macos?: string;
+    windows?: string;
+}
+
 export interface IDeeplinkingDesktopConfig extends IDeeplinkingPlatformConfig {
+    download?: IDesktopDownloadConfig;
     enabled: boolean;
 }
 
@@ -523,6 +530,10 @@ export interface IConfig {
         sharingEnabled?: boolean;
     };
     recordingSharingUrl?: string;
+    recordings?: {
+        showPrejoinWarning?: boolean;
+        suggestRecording?: boolean;
+    };
     remoteVideoMenu?: {
         disableGrantModerator?: boolean;
         disableKick?: boolean;
@@ -563,6 +574,7 @@ export interface IConfig {
     testing?: {
         assumeBandwidth?: boolean;
         disableE2EE?: boolean;
+        dumpTranscript?: boolean;
         mobileXmppWsThreshold?: number;
         noAutoPlayVideo?: boolean;
         p2pTestMode?: boolean;
@@ -587,7 +599,6 @@ export interface IConfig {
     transcribingEnabled?: boolean;
     transcription?: {
         autoTranscribeOnRecord?: boolean;
-        disableStartForAll?: boolean;
         enabled?: boolean;
         preferredLanguage?: string;
         translationLanguages?: Array<string>;
