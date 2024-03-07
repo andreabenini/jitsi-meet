@@ -650,7 +650,7 @@ var config = {
     //     // Whether to disable welcome page. In case it's disabled a random room
     //     // will be joined when no room is specified.
     //     disabled: false,
-    //     // If set,landing page will redirect to this URL.
+    //     // If set, landing page will redirect to this URL.
     //     customUrl: ''
     // },
 
@@ -1300,6 +1300,8 @@ var config = {
     // remoteVideoMenu: {
     //     // Whether the remote video context menu to be rendered or not.
     //     disabled: true,
+    //     // If set to true the 'Switch to visitor' button will be disabled.
+    //     disableDemote: true,
     //     // If set to true the 'Kick out' button will be disabled.
     //     disableKick: true,
     //     // If set to true the 'Grant moderator' button will be disabled.
@@ -1388,6 +1390,8 @@ var config = {
 
     // Options related to the participants pane.
     // participantsPane: {
+    //     // Enables feature
+    //     enabled: true,
     //     // Hides the moderator settings tab.
     //     hideModeratorSettingsTab: false,
     //     // Hides the more actions button.

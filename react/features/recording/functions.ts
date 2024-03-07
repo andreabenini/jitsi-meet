@@ -14,7 +14,7 @@ import { registerSound, unregisterSound } from '../base/sounds/actions';
 import { isInBreakoutRoom } from '../breakout-rooms/functions';
 import { isEnabled as isDropboxEnabled } from '../dropbox/functions';
 import { extractFqnFromPath } from '../dynamic-branding/functions.any';
-import { isTranscribing } from '../transcribing/functions';
+import { isRecorderTranscriptionsRunning } from '../transcribing/functions';
 
 import LocalRecordingManager from './components/Recording/LocalRecordingManager';
 import {
@@ -140,9 +140,8 @@ export function getSessionStatusToShow(state: IReduxState, mode: string): string
             }
         }
     }
-    if ((!Array.isArray(recordingSessions) || recordingSessions.length === 0)
-        && mode === JitsiRecordingConstants.mode.FILE
-        && (LocalRecordingManager.isRecordingLocally() || isRemoteParticipantRecordingLocally(state))) {
+    if (!status && mode === JitsiRecordingConstants.mode.FILE
+            && (LocalRecordingManager.isRecordingLocally() || isRemoteParticipantRecordingLocally(state))) {
         status = JitsiRecordingConstants.status.ON;
     }
 
@@ -179,7 +178,6 @@ export function isRecordingRunning(state: IReduxState) {
     return (
         isCloudRecordingRunning(state)
         || LocalRecordingManager.isRecordingLocally()
-        || isTranscribing(state)
     );
 }
 
@@ -190,15 +188,11 @@ export function isRecordingRunning(state: IReduxState) {
  * @returns {boolean}
  */
 export function canStopRecording(state: IReduxState) {
-    if (!isRecordingRunning(state)) {
-        return false;
-    }
-
     if (LocalRecordingManager.isRecordingLocally()) {
         return true;
     }
 
-    if (isCloudRecordingRunning(state) || isTranscribing(state)) {
+    if (isCloudRecordingRunning(state) || isRecorderTranscriptionsRunning(state)) {
         return isLocalParticipantModerator(state) && isJwtFeatureEnabled(state, 'recording', true);
     }
 
@@ -259,12 +253,12 @@ export function getRecordButtonProps(state: IReduxState) {
     const localRecordingEnabled = !localRecording?.disable && supportsLocalRecording();
 
     const dropboxEnabled = isDropboxEnabled(state);
-    const recordingEnabled = recordingService?.enabled || localRecordingEnabled || dropboxEnabled;
+    const recordingEnabled = recordingService?.enabled || dropboxEnabled;
 
-    if (isModerator) {
+    if (localRecordingEnabled) {
+        visible = true;
+    } else if (isModerator) {
         visible = recordingEnabled ? isJwtFeatureEnabled(state, 'recording', true) : false;
-    } else {
-        visible = navigator.product !== 'ReactNative' && localRecordingEnabled;
     }
 
     // disable the button if the livestreaming is running.
@@ -354,7 +348,7 @@ export async function sendMeetingHighlight(state: IReduxState) {
  * @param {Object} state - Redux state.
  * @returns {boolean}
  */
-function isRemoteParticipantRecordingLocally(state: IReduxState) {
+export function isRemoteParticipantRecordingLocally(state: IReduxState) {
     const participants = getRemoteParticipants(state);
 
     // eslint-disable-next-line prefer-const
