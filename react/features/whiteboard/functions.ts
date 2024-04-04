@@ -6,7 +6,7 @@ import { getCurrentConference } from '../base/conference/functions';
 import { IWhiteboardConfig } from '../base/config/configType';
 import { getRemoteParticipants, isLocalParticipantModerator } from '../base/participants/functions';
 import { encodeToBase64URL } from '../base/util/httpUtils';
-import { appendURLHashParam, appendURLParam } from '../base/util/uri';
+import { appendURLHashParam, appendURLParam, getBackendSafePath } from '../base/util/uri';
 import { getCurrentRoomId, isInBreakoutRoom } from '../breakout-rooms/functions';
 
 import { MIN_USER_LIMIT, USER_LIMIT_THRESHOLD, WHITEBOARD_ID, WHITEBOARD_PATH_NAME } from './constants';
@@ -36,26 +36,26 @@ export const getCollabDetails = (state: IReduxState): {
 } | undefined => getWhiteboardState(state).collabDetails;
 
 /**
- * Indicates whether the whiteboard is enabled in the config.
+ * Indicates whether the whiteboard collaboration details are available.
+ *
+ * @param {IReduxState} state - The state from the Redux store.
+ * @returns {boolean}
+ */
+const hasCollabDetails = (state: IReduxState): boolean => Boolean(
+    getCollabDetails(state)?.roomId && getCollabDetails(state)?.roomKey
+);
+
+/**
+ * Indicates whether the whiteboard is enabled.
  *
  * @param {IReduxState} state - The state from the Redux store.
  * @returns {boolean}
  */
 export const isWhiteboardEnabled = (state: IReduxState): boolean =>
-    getWhiteboardConfig(state).enabled
+    (getWhiteboardConfig(state).enabled || hasCollabDetails(state))
     && getWhiteboardConfig(state).collabServerBaseUrl
     && getCurrentConference(state)?.getMetadataHandler()
 ?.isSupported();
-
-/**
- * Indicates whether the whiteboard has the collaboration
- * details and is ready to be used.
- *
- * @param {IReduxState} state - The state from the Redux store.
- * @returns {boolean}
- */
-export const isWhiteboardReady = (state: IReduxState): boolean =>
-    isWhiteboardEnabled(state) && Boolean(getCollabDetails(state));
 
 /**
  * Indicates whether the whiteboard is open.
@@ -98,7 +98,9 @@ export const getCollabServerUrl = (state: IReduxState): string | undefined => {
     const { locationURL } = state['features/base/connection'];
     const inBreakoutRoom = isInBreakoutRoom(state);
     const roomId = getCurrentRoomId(state);
-    const room = md5.hex(`${locationURL?.origin}${locationURL?.pathname}${inBreakoutRoom ? `|${roomId}` : ''}`);
+    const room = md5.hex(
+        `${locationURL?.origin}${getBackendSafePath(locationURL?.pathname)}${inBreakoutRoom ? `|${roomId}` : ''}`
+    );
 
     return appendURLParam(collabServerBaseUrl, 'room', room);
 };
