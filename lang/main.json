@@ -786,6 +786,7 @@
         "newDeviceAction": "Use",
         "newDeviceAudioTitle": "New audio device detected",
         "newDeviceCameraTitle": "New camera detected",
+        "nextToSpeak": "You are the next in line to speak",
         "noiseSuppressionDesktopAudioDescription": "Noise suppression can't be enabled while sharing desktop audio, please disable it and try again.",
         "noiseSuppressionFailedTitle": "Failed to start noise suppression",
         "noiseSuppressionStereoDescription": "Stereo audio noise suppression is not currently supported.",
@@ -877,6 +878,7 @@
             "submit": "Submit"
         },
         "by": "By {{ name }}",
+        "closeButton": "Close poll",
         "create": {
             "addOption": "Add option",
             "answerPlaceholder": "Option {{index}}",
@@ -1492,6 +1494,12 @@
     },
     "visitors": {
         "chatIndicator": "(visitor)",
+        "joinMeeting": {
+            "description": "You're currently an observer in this conference.",
+            "raiseHand": "Raise your hand",
+            "title": "Joining meeting",
+            "wishToSpeak": "If you wish to speak, please raise your hand below and wait for the moderator's approval."
+        },
         "labelTooltip": "Number of visitors: {{count}}",
         "notification": {
             "demoteDescription": "Sent here by {{actor}}, raise your hand to participate",
