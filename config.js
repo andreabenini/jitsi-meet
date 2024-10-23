@@ -451,6 +451,10 @@ var config = {
 
     //     // Enables automatic turning on transcribing when recording is started
     //     autoTranscribeOnRecord: false,
+
+    //     // Enables automatic request of subtitles when transcriber is present in the meeting, uses the default
+    //     // language that is set
+    //     autoCaptionOnTranscribe: false,
     // },
 
     // Misc
@@ -625,14 +629,6 @@ var config = {
     // Disables or enables REMB support in this client (default: enabled).
     // enableRemb: true,
 
-    // Enables ICE restart logic in LJM and displays the page reload overlay on
-    // ICE failure. Current disabled by default because it's causing issues with
-    // signaling when Octo is enabled. Also when we do an "ICE restart"(which is
-    // not a real ICE restart), the client maintains the TCC sequence number
-    // counter, but the bridge resets it. The bridge sends media packets with
-    // TCC sequence numbers starting from 0.
-    // enableIceRestart: false,
-
     // Enables forced reload of the client when the call is migrated as a result of
     // the bridge going down.
     // enableForcedReload: true,
@@ -766,6 +762,11 @@ var config = {
     //     hideDisplayName: false,
     //     // List of buttons to hide from the extra join options dropdown.
     //     hideExtraJoinButtons: ['no-audio', 'by-phone'],
+    //     // Configuration for pre-call test
+    //     // By setting preCallTestEnabled, you enable the pre-call test in the prejoin page.
+    //     // ICE server credentials need to be provided over the preCallTestICEUrl
+    //     preCallTestEnabled: false,
+    //     preCallTestICEUrl: ''
     // },
 
     // When 'true', the user cannot edit the display name.
