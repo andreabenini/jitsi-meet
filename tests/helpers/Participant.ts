@@ -1,9 +1,12 @@
 /* global APP $ */
 
 import { multiremotebrowser } from '@wdio/globals';
+import { Key } from 'webdriverio';
 
 import { IConfig } from '../../react/features/base/config/configType';
 import { urlObjectToString } from '../../react/features/base/util/uri';
+import BreakoutRooms from '../pageobjects/BreakoutRooms';
+import ChatPanel from '../pageobjects/ChatPanel';
 import Filmstrip from '../pageobjects/Filmstrip';
 import IframeAPI from '../pageobjects/IframeAPI';
 import Notifications from '../pageobjects/Notifications';
@@ -120,7 +123,10 @@ export class Participant {
     async joinConference(ctx: IContext, options: IJoinOptions = {}): Promise<void> {
         const config = {
             room: ctx.roomName,
-            configOverwrite: this.config,
+            configOverwrite: {
+                ...this.config,
+                ...options.configOverwrite || {}
+            },
             interfaceConfigOverwrite: {
                 SHOW_CHROME_EXTENSION_BANNER: false
             }
@@ -129,7 +135,7 @@ export class Participant {
         if (!options.skipDisplayName) {
             // @ts-ignore
             config.userInfo = {
-                displayName: this._name
+                displayName: options.displayName || this._name
             };
         }
 
@@ -252,6 +258,22 @@ export class Participant {
     }
 
     /**
+     * Checks if the meeting supports breakout rooms.
+     */
+    async isBreakoutRoomsSupported() {
+        return await this.driver.execute(() => typeof APP !== 'undefined'
+            && APP.store?.getState()['features/base/conference'].conference?.getBreakoutRooms()?.isSupported());
+    }
+
+    /**
+     * Checks if the participant is in breakout room.
+     */
+    async isInBreakoutRoom() {
+        return await this.driver.execute(() => typeof APP !== 'undefined'
+            && APP.store?.getState()['features/base/conference'].conference?.getBreakoutRooms()?.isBreakoutRoom());
+    }
+
+    /**
      * Waits to join the muc.
      *
      * @returns {Promise<void>}
@@ -319,6 +341,22 @@ export class Participant {
             timeout: 15_000,
             timeoutMsg: 'expected remote streams in 15s'
         });
+    }
+
+    /**
+     * Returns the chat panel for this participant.
+     */
+    getChatPanel(): ChatPanel {
+        return new ChatPanel(this);
+    }
+
+    /**
+     * Returns the BreakoutRooms for this participant.
+     *
+     * @returns {BreakoutRooms}
+     */
+    getBreakoutRooms(): BreakoutRooms {
+        return new BreakoutRooms(this);
     }
 
     /**
@@ -404,16 +442,40 @@ export class Participant {
     }
 
     /**
-     * Returns the local display name.
+     * Returns the local display name element.
+     * @private
      */
-    async getLocalDisplayName() {
+    private async getLocalDisplayNameElement() {
         const localVideoContainer = this.driver.$('span[id="localVideoContainer"]');
 
         await localVideoContainer.moveTo();
 
-        const localDisplayName = localVideoContainer.$('span[id="localDisplayName"]');
+        return localVideoContainer.$('span[id="localDisplayName"]');
+    }
 
-        return await localDisplayName.getText();
+    /**
+     * Returns the local display name.
+     */
+    async getLocalDisplayName() {
+        return await (await this.getLocalDisplayNameElement()).getText();
+    }
+
+    /**
+     * Sets the display name of the local participant.
+     */
+    async setLocalDisplayName(displayName: string) {
+        const localDisplayName = await this.getLocalDisplayNameElement();
+
+        await localDisplayName.click();
+
+        await this.driver.keys(displayName);
+        await this.driver.keys(Key.Return);
+
+        // just click somewhere to lose focus, to make sure editing has ended
+        const localVideoContainer = this.driver.$('span[id="localVideoContainer"]');
+
+        await localVideoContainer.moveTo();
+        await localVideoContainer.click();
     }
 
     /**
