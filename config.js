@@ -1360,8 +1360,9 @@ var config = {
     //     disableKick: true,
     //     // If set to true the 'Grant moderator' button will be disabled.
     //     disableGrantModerator: true,
-    //     // If set to true the 'Send private message' button will be disabled.
-    //     disablePrivateChat: true,
+    //     // If set to 'all' the 'Private chat' button will be disabled for all participants.
+    //     // If set to 'allow-moderator-chat' the 'Private chat' button will be available for chats with moderators.
+    //     disablePrivateChat: 'all' | 'allow-moderator-chat',
     // },
 
 
@@ -1778,6 +1779,13 @@ var config = {
     //     // The minimum number of participants that must be in the call for
     //     // the top panel layout to be used.
     //     minParticipantCountForTopPanel: 50,
+
+    //     // The width of the filmstrip on joining meeting. Can be resized afterwards.
+    //     initialWidth: 400,
+
+    //     // Whether the draggable resize bar of the filmstrip is always visible. Setting this to true will make
+    //     // the filmstrip always visible in case `disableResizable` is false.
+    //     alwaysShowResizeBar: true,
     // },
 
     // Tile view related config options.
