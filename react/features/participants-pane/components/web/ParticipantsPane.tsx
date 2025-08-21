@@ -45,7 +45,6 @@ const useStyles = makeStyles<IStylesProps>()((theme, { isChatOpen }) => {
         participantsPane: {
             backgroundColor: theme.palette.ui01,
             flexShrink: 0,
-            overflow: 'hidden',
             position: 'relative',
             transition: 'width .16s ease-in-out',
             width: '315px',
@@ -80,6 +79,21 @@ const useStyles = makeStyles<IStylesProps>()((theme, { isChatOpen }) => {
 
             '&::-webkit-scrollbar': {
                 display: 'none'
+            },
+
+            // Temporary fix: Limit context menu width to prevent clipping
+            // TODO: Long-term fix would be to portal context menus outside the scrollable container
+            '& [class*="contextMenu"]': {
+                maxWidth: '285px',
+
+                '& [class*="contextMenuItem"]': {
+                    whiteSpace: 'normal',
+
+                    '& span': {
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word'
+                    }
+                }
             }
         },
 

@@ -4,21 +4,18 @@ import logger from '../logger';
 
 import AbstractHandler, { IEvent } from './AbstractHandler';
 import { fixDeviceID } from './amplitude/fixDeviceID';
-import amplitude from './amplitude/lib';
+import amplitude, { initAmplitude } from './amplitude/lib';
 
 /**
  * Analytics handler for Amplitude.
  */
 export default class AmplitudeHandler extends AbstractHandler {
-    _deviceId: string;
-    _userId: Object;
 
     /**
      * Creates new instance of the Amplitude analytics handler.
      *
      * @param {Object} options - The amplitude options.
-     * @param {string} options.amplitudeAPPKey - The Amplitude app key required by the Amplitude API.
-     * @param {boolean} options.amplitudeIncludeUTM - Whether to include UTM parameters
+     * @param {string} options.amplitudeAPPKey - The Amplitude app key required by the Amplitude API
      * in the Amplitude events.
      */
     constructor(options: any) {
@@ -26,54 +23,26 @@ export default class AmplitudeHandler extends AbstractHandler {
 
         const {
             amplitudeAPPKey,
-            amplitudeIncludeUTM: includeUtm = true,
             user
         } = options;
 
         this._enabled = true;
 
-        const onError = (e: Error) => {
-            logger.error('Error initializing Amplitude', e);
-            this._enabled = false;
-        };
-
-        // Forces sending all events on exit (flushing) via sendBeacon
-        const onExitPage = () => {
-            amplitude.flush();
-        };
-
-        if (navigator.product === 'ReactNative') {
-            amplitude.init(amplitudeAPPKey);
-            fixDeviceID(amplitude).then(() => {
-                const deviceId = amplitude.getDeviceId();
-
-                if (deviceId) {
-                    this._deviceId = deviceId;
-                }
+        initAmplitude(amplitudeAPPKey, user)
+            .then(() => {
+                logger.info('Amplitude initialized');
+                fixDeviceID(amplitude);
+            })
+            .catch(e => {
+                logger.error('Error initializing Amplitude', e);
+                this._enabled = false;
             });
-        } else {
-            const amplitudeOptions: any = {
-                includeReferrer: true,
-                includeUtm,
-                saveParamsReferrerOncePerSession: false,
-                onError,
-                onExitPage
-            };
-
-            amplitude.init(amplitudeAPPKey, undefined, amplitudeOptions);
-            fixDeviceID(amplitude);
-        }
-
-        if (user) {
-            this._userId = user;
-            amplitude.setUserId(user);
-        }
     }
 
     /**
      * Sets the Amplitude user properties.
      *
-     * @param {Object} userProps - The user portperties.
+     * @param {Object} userProps - The user properties.
      * @returns {void}
      */
     setUserProperties(userProps: any) {
@@ -104,7 +73,7 @@ export default class AmplitudeHandler extends AbstractHandler {
 
         const eventName = this._extractName(event) ?? '';
 
-        amplitude.logEvent(eventName, event);
+        amplitude.track(eventName, event);
     }
 
     /**
@@ -113,13 +82,6 @@ export default class AmplitudeHandler extends AbstractHandler {
      * @returns {Object}
      */
     getIdentityProps() {
-        if (navigator.product === 'ReactNative') {
-            return {
-                deviceId: this._deviceId,
-                userId: this._userId
-            };
-        }
-
         return {
             sessionId: amplitude.getSessionId(),
             deviceId: amplitude.getDeviceId(),

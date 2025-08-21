@@ -6,9 +6,9 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList } from 'react-window';
 import { makeStyles } from 'tss-react/mui';
 
+import { IReduxState } from '../../../app/types';
 import Icon from '../../../base/icons/components/Icon';
 import { IconArrowDown, IconArrowUp } from '../../../base/icons/svg';
-import { withPixelLineHeight } from '../../../base/styles/functions.web';
 import { normalizeAccents } from '../../../base/util/strings.web';
 import { subscribeVisitorsList } from '../../../visitors/actions';
 import {
@@ -44,7 +44,7 @@ const useStyles = makeStyles()(theme => {
             justifyContent: 'space-between',
             cursor: 'pointer',
             padding: `${theme.spacing(1)} 0`,
-            ...withPixelLineHeight(theme.typography.bodyShortBold),
+            ...theme.typography.bodyShortBold,
             color: theme.palette.text02,
             flexShrink: 0
         },
@@ -78,6 +78,7 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
     const visitors = useSelector(getVisitorsList);
     const featureEnabled = useSelector(isVisitorsListEnabled);
     const shouldDisplayList = useSelector(shouldDisplayCurrentVisitorsList);
+    const { defaultRemoteDisplayName } = useSelector((state: IReduxState) => state['features/base/config']);
     const { t } = useTranslation();
     const { classes } = useStyles();
     const dispatch = useDispatch();
@@ -109,9 +110,11 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
         return null;
     }
 
-    const filtered = visitors.filter(v =>
-        normalizeAccents(v.name).toLowerCase().includes(normalizeAccents(searchString).toLowerCase())
-    );
+    const filtered = visitors.filter(v => {
+        const displayName = v.name || defaultRemoteDisplayName || 'Fellow Jitster';
+
+        return normalizeAccents(displayName).toLowerCase().includes(normalizeAccents(searchString).toLowerCase());
+    });
 
     // ListItem height is 56px including padding so the item size
     // for virtualization needs to match it exactly to avoid clipping.
@@ -125,7 +128,7 @@ export default function CurrentVisitorsList({ searchString }: IProps) {
                 <ParticipantItem
                     actionsTrigger = { ACTION_TRIGGER.HOVER }
                     audioMediaState = { MEDIA_STATE.NONE }
-                    displayName = { v.name }
+                    displayName = { v.name || defaultRemoteDisplayName || 'Fellow Jitster' }
                     participantID = { v.id }
                     videoMediaState = { MEDIA_STATE.NONE } />
             </div>

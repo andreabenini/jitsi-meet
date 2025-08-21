@@ -3,9 +3,10 @@
 -- Component "metadata.jitmeet.example.com" "room_metadata_component"
 --      muc_component = "conference.jitmeet.example.com"
 --      breakout_rooms_component = "breakout.jitmeet.example.com"
+local array = require 'util.array';
 local filters = require 'util.filters';
 local jid_node = require 'util.jid'.node;
-local json = require 'cjson.safe';
+local json = require 'util.json';
 local st = require 'util.stanza';
 local jid = require 'util.jid';
 
@@ -18,6 +19,7 @@ local internal_room_jid_match_rewrite = util.internal_room_jid_match_rewrite;
 local process_host_module = util.process_host_module;
 local table_shallow_copy = util.table_shallow_copy;
 local table_add = util.table_add;
+local table_equals = util.table_equals;
 
 local MUC_NS = 'http://jabber.org/protocol/muc';
 local COMPONENT_IDENTITY_TYPE = 'room_metadata';
@@ -78,24 +80,25 @@ function send_metadata(occupant, room, json_msg)
 
         -- we want to send the main meeting participants only to jicofo
         if is_admin(occupant.bare_jid) then
-            local participants = {};
+            local participants;
+            local moderators = array();
 
-            if room._data.mainMeetingParticipants then
-                table_add(participants, room._data.mainMeetingParticipants);
+            if room._data.participants then
+                participants = array();
+                participants:append(room._data.participants);
             end
 
             if room._data.moderator_id then
-                table.insert(participants, room._data.moderator_id);
+                moderators:push(room._data.moderator_id);
             end
 
             if room._data.moderators then
-                table_add(participants, room._data.moderators);
+                moderators:append(room._data.moderators);
             end
 
-            if #participants > 0 then
-                metadata_to_send = table_shallow_copy(metadata_to_send);
-                metadata_to_send.mainMeetingParticipants = participants;
-            end
+            metadata_to_send = table_shallow_copy(metadata_to_send);
+            metadata_to_send.participants = participants;
+            metadata_to_send.moderators = moderators;
         end
 
         json_msg = getMetadataJSON(room, metadata_to_send);
@@ -186,12 +189,15 @@ function on_message(event)
         jsonData.data = res;
     end
 
-    room.jitsiMetadata[jsonData.key] = jsonData.data;
+    local old_value = room.jitsiMetadata[jsonData.key];
+    if not table_equals(old_value, jsonData.data) then
+        room.jitsiMetadata[jsonData.key] = jsonData.data;
 
-    broadcastMetadata(room);
+        broadcastMetadata(room);
 
-    -- fire and event for the change
-    main_muc_module:fire_event('jitsi-metadata-updated', { room = room; actor = occupant; key = jsonData.key; });
+        -- fire and event for the change
+        main_muc_module:fire_event('jitsi-metadata-updated', { room = room; actor = occupant; key = jsonData.key; });
+    end
 
     return true;
 end
@@ -236,12 +242,35 @@ function process_main_muc_loaded(main_muc, host_module)
 
         local startMutedMetadata = room.jitsiMetadata.startMuted or {};
 
-        startMutedMetadata.audio = startMuted.attr.audio == 'true';
-        startMutedMetadata.video = startMuted.attr.video == 'true';
+        local audioNewValue = startMuted.attr.audio == 'true';
+        local videoNewValue = startMuted.attr.video == 'true';
+        local send_update = false;
 
-        room.jitsiMetadata.startMuted = startMutedMetadata;
+        if startMutedMetadata.audio ~= audioNewValue then
+            startMutedMetadata.audio = audioNewValue;
+            send_update = true;
+        end
+        if startMutedMetadata.video ~= videoNewValue then
+            startMutedMetadata.video = videoNewValue;
+            send_update = true;
+        end
 
-        host_module:fire_event('room-metadata-changed', { room = room; });
+        if send_update then
+            room.jitsiMetadata.startMuted = startMutedMetadata;
+
+            host_module:fire_event('room-metadata-changed', { room = room; });
+        end
+    end);
+
+    -- The the connection jid for authenticated users (like jicofo) stays the same,
+    -- so leaving and re-joining will result not sending metatadata again.
+    -- Make sure we clear the sent_initial_metadata entry for the occupant on leave.
+    host_module:hook("muc-occupant-left", function(event)
+        local room, occupant = event.room, event.occupant;
+
+        if room.sent_initial_metadata then
+            room.sent_initial_metadata[jid.bare(event.occupant.jid)] = nil;
+        end
     end);
 end
 
@@ -288,8 +317,7 @@ end
 
 -- Send a message update for metadata before sending the first self presence
 function filter_stanza(stanza, session)
-    if not stanza.attr or not stanza.attr.to or stanza.name ~= 'presence'
-        or stanza.attr.type == 'unavailable' or ends_with(stanza.attr.from, '/focus') then
+    if not stanza.attr or not stanza.attr.to or stanza.name ~= 'presence' or stanza.attr.type == 'unavailable' then
         return stanza;
     end
 

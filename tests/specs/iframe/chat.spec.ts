@@ -1,13 +1,19 @@
 import { expect } from '@wdio/globals';
 
 import type { Participant } from '../../helpers/Participant';
+import { setTestProperties } from '../../helpers/TestProperties';
 import { ensureTwoParticipants } from '../../helpers/participants';
 import { fetchJson } from '../../helpers/utils';
 
+setTestProperties(__filename, {
+    useIFrameApi: true,
+    useWebhookProxy: true,
+    usesBrowsers: [ 'p1', 'p2' ]
+});
 
 describe('Chat', () => {
     it('joining the meeting', async () => {
-        await ensureTwoParticipants(ctx);
+        await ensureTwoParticipants();
 
         const { p1, p2 } = ctx;
 

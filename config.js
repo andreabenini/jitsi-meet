@@ -117,6 +117,11 @@ var config = {
 
         // Will replace ice candidates IPs with invalid ones in order to fail ice.
         // failICE: true,
+
+        // When running on Spot TV, this controls whether to show the recording consent dialog.
+        // If false (default), Spot instances will not show the recording consent dialog.
+        // If true, Spot instances will show the recording consent dialog like regular clients.
+        // showSpotConsentDialog: false,
     },
 
     // Disables moderator indicators.
@@ -756,7 +761,7 @@ var config = {
     // hideDominantSpeakerBadge: false,
 
     // Default language for the user interface. Cannot be overwritten.
-    // DEPRECATED! Use the `lang` iframe option directly instead.
+    // For iframe integrations, use the `lang` option directly instead.
     // defaultLanguage: 'en',
 
     // Disables profile and the edit of all fields from the profile settings (display name and email)
@@ -786,7 +791,6 @@ var config = {
     // Configs for prejoin page.
     // prejoinConfig: {
     //     // When 'true', it shows an intermediate page before joining, where the user can configure their devices.
-    //     // This replaces `prejoinPageEnabled`. Defaults to true.
     //     enabled: true,
     //     // Hides the participant name editing field in the prejoin screen.
     //     // If requireDisplayName is also set as true, a name should still be provided through
@@ -1126,10 +1130,6 @@ var config = {
         // The Amplitude APP Key:
         // amplitudeAPPKey: '<APP_KEY>',
 
-        // Enables Amplitude UTM tracking:
-        // Default value is false.
-        // amplitudeIncludeUTM: false,
-
         // Obfuscates room name sent to analytics (amplitude, rtcstats)
         // Default value is false.
         // obfuscateRoomName: false,
@@ -1362,7 +1362,9 @@ var config = {
     //     disableGrantModerator: true,
     //     // If set to 'all' the 'Private chat' button will be disabled for all participants.
     //     // If set to 'allow-moderator-chat' the 'Private chat' button will be available for chats with moderators.
-    //     disablePrivateChat: 'all' | 'allow-moderator-chat',
+    //     // If set to 'disable-visitor-chat' the 'Private chat' button will be disabled for visitor-main participant
+    //     // conversations.
+    //     disablePrivateChat: 'all' | 'allow-moderator-chat' | 'disable-visitor-chat',
     // },
 
 
