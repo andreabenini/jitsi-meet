@@ -211,6 +211,13 @@ export const config: WebdriverIO.MultiremoteConfig = {
         } as IContext;
         globalAny.ctx.testProperties = testProperties;
 
+        if (testProperties.useJaas && !testsConfig.jaas.enabled) {
+            console.warn(`JaaS is not configured, skipping ${testName}.`);
+            globalAny.ctx.skipSuiteTests = true;
+
+            return;
+        }
+
         await Promise.all(multiremotebrowser.instances.map(async (instance: string) => {
             const bInstance = multiremotebrowser.getInstance(instance);
 
@@ -233,6 +240,7 @@ export const config: WebdriverIO.MultiremoteConfig = {
         }));
 
         globalAny.ctx.roomName = generateRoomName(testName);
+        console.log(`Using room name: ${globalAny.ctx.roomName}`);
 
         // If we are running the iFrameApi tests, we need to mark it as such and if needed to create the proxy
         // and connect to it.
@@ -249,11 +257,6 @@ export const config: WebdriverIO.MultiremoteConfig = {
 
         if (testProperties.useWebhookProxy && !globalAny.ctx.webhooksProxy) {
             console.warn(`WebhookProxy is not available, skipping ${testName}`);
-            globalAny.ctx.skipSuiteTests = true;
-        }
-
-        if (testProperties.useJaas && !testsConfig.jaas.enabled) {
-            console.warn(`JaaS is not configured, skipping ${testName}.`);
             globalAny.ctx.skipSuiteTests = true;
         }
     },
