@@ -4,9 +4,9 @@ import {
     ensureTwoParticipants,
     hangupAllParticipants,
     joinSecondParticipant,
-    joinThirdParticipant,
-    unmuteVideoAndCheck
+    joinThirdParticipant
 } from '../../helpers/participants';
+import { unmuteVideoAndCheck } from '../helpers/mute';
 
 describe('StartMuted', () => {
     it('checkboxes test', async () => {
@@ -139,6 +139,9 @@ describe('StartMuted', () => {
         await p3.getParticipantsPane().assertVideoMuteIconIsDisplayed(p2, true);
 
         // Unmute and see if the audio works
+        // we need 1 and 2 to be muted so we have a dominant speaker event for correct audio levels calculations
+        await p1.getToolbar().clickAudioMuteButton();
+        await p2.getToolbar().clickAudioMuteButton();
         await p3.getToolbar().clickAudioUnmuteButton();
         p1.log('configOptionsTest, unmuted third participant');
         await p1.waitForAudioMuted(p3, false /* unmuted */);

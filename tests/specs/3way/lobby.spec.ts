@@ -1,5 +1,5 @@
 import { P1, P3, Participant } from '../../helpers/Participant';
-import { config } from '../../helpers/TestsConfig';
+import { expectations } from '../../helpers/expectations';
 import {
     ensureOneParticipant,
     ensureThreeParticipants,
@@ -14,7 +14,7 @@ describe('Lobby', () => {
         await ensureOneParticipant();
 
         if (!await ctx.p1.execute(() => APP.conference._room.isLobbySupported())) {
-            ctx.skipSuiteTests = true;
+            ctx.skipSuiteTests = 'The environment does not support lobby.';
         }
     });
 
@@ -196,8 +196,9 @@ describe('Lobby', () => {
     });
 
     it('change of moderators in lobby', async () => {
-        // no moderator switching if jaas is available.
-        if (config.iframe.usesJaas) {
+        // The test below is only correct when the environment is configured to automatically elect a new moderator
+        // when the moderator leaves. For environments where this is not the case, the test is skipped.
+        if (!expectations.autoModerator) {
             return;
         }
         await hangupAllParticipants();
@@ -288,8 +289,9 @@ describe('Lobby', () => {
     });
 
     it('moderator leaves while lobby enabled', async () => {
-        // no moderator switching if jaas is available.
-        if (config.iframe.usesJaas) {
+        // The test below is only correct when the environment is configured to automatically elect a new moderator
+        // when the moderator leaves. For environments where this is not the case, the test is skipped.
+        if (!expectations.autoModerator) {
             return;
         }
         const { p1, p2, p3 } = ctx;

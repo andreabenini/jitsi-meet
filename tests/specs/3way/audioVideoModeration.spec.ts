@@ -1,12 +1,11 @@
 import { Participant } from '../../helpers/Participant';
-import { config } from '../../helpers/TestsConfig';
+import { expectations } from '../../helpers/expectations';
 import {
     ensureOneParticipant,
     ensureThreeParticipants, ensureTwoParticipants,
-    hangupAllParticipants,
-    unmuteAudioAndCheck,
-    unmuteVideoAndCheck
+    hangupAllParticipants
 } from '../../helpers/participants';
+import { unmuteAudioAndCheck, unmuteVideoAndCheck } from '../helpers/mute';
 
 describe('AVModeration', () => {
 
@@ -18,7 +17,8 @@ describe('AVModeration', () => {
 
         if (!await p1.isModerator()
             || (await p1.isModerator() && await p2.isModerator() && await p3.isModerator())) {
-            ctx.skipSuiteTests = true;
+            ctx.skipSuiteTests = `Unsupported moderator configuration: p1=${await p1.isModerator()},\
+             p2=${await p2.isModerator()}, p3=${await p3.isModerator()}`;
         }
     });
 
@@ -78,8 +78,9 @@ describe('AVModeration', () => {
     });
 
     it('hangup and change moderator', async () => {
-        // no moderator switching if jaas is available.
-        if (config.iframe.usesJaas) {
+        // The test below is only correct when the environment is configured to automatically elect a new moderator
+        // when the moderator leaves. For environments where this is not the case, the test is skipped.
+        if (!expectations.autoModerator) {
             return;
         }
 
