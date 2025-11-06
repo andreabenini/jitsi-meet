@@ -6,12 +6,12 @@ import type WebhookProxy from '../../helpers/WebhookProxy';
 import { joinJaasMuc, generateJaasToken as t } from '../../helpers/jaas';
 
 setTestProperties(__filename, {
+    requireWebhookProxy: true,
     useJaas: true,
-    useWebhookProxy: true,
     usesBrowsers: [ 'p1', 'p2' ]
 });
 
-describe('Transcriptions', () => {
+describe('Transcription', () => {
     let p1: Participant, p2: Participant;
     let webhooksProxy: WebhookProxy;
 

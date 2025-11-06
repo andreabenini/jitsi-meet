@@ -2,12 +2,12 @@ import { setTestProperties } from '../../helpers/TestProperties';
 import { joinJaasMuc, generateJaasToken as t } from '../../helpers/jaas';
 
 setTestProperties(__filename, {
+    requireWebhookProxy: true,
     useJaas: true,
-    useWebhookProxy: true,
     usesBrowsers: [ 'p1', 'p2', 'p3' ]
 });
 
-describe('MaxOccupants limit enforcement', () => {
+describe('MaxOccupants', () => {
     it('test maxOccupants limit', async () => {
         ctx.webhooksProxy.defaultMeetingSettings = {
             maxOccupants: 2
