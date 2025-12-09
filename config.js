@@ -520,9 +520,6 @@ var config = {
     //     // Note: Starting transcriptions from the recording dialog will still work.
     //     disableClosedCaptions: false,
 
-    //     // Whether to invite jigasi when backend transcriptions are enabled (asyncTranscription is true in metadata).
-    //     // By default, we invite it.
-    //     inviteJigasiOnBackendTranscribing: true,
     // },
 
     // Misc
@@ -907,6 +904,8 @@ var config = {
     //     alwaysVisible: false,
     //     // Indicates whether the toolbar should still autohide when chat is open
     //     autoHideWhileChatIsOpen: false,
+    //     // Default background color for the main toolbar. Accepts any valid CSS color.
+    //     // backgroundColor: '#ffffff',
     // },
 
     // Overrides the buttons displayed in the main toolbar. Depending on the screen size the number of displayed

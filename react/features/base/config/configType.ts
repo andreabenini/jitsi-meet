@@ -517,6 +517,10 @@ export interface IConfig {
     peopleSearchQueryTypes?: string[];
     peopleSearchTokenLocation?: string;
     peopleSearchUrl?: string;
+    pip?: {
+        disabled?: boolean;
+        showOnPrejoin?: boolean;
+    };
     preferBosh?: boolean;
     preferVisitor?: boolean;
     preferredTranscribeLanguage?: string;
@@ -618,6 +622,10 @@ export interface IConfig {
     toolbarConfig?: {
         alwaysVisible?: boolean;
         autoHideWhileChatIsOpen?: boolean;
+        /**
+         * Background color for the main toolbar. Accepts any valid CSS color.
+         */
+        backgroundColor?: string;
         initialTimeout?: number;
         timeout?: number;
     };
@@ -628,7 +636,6 @@ export interface IConfig {
         autoTranscribeOnRecord?: boolean;
         disableClosedCaptions?: boolean;
         enabled?: boolean;
-        inviteJigasiOnBackendTranscribing?: boolean;
         preferredLanguage?: string;
         translationLanguages?: Array<string>;
         translationLanguagesHead?: Array<string>;
