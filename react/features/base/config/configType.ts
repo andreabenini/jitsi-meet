@@ -559,6 +559,7 @@ export interface IConfig {
         skipConsentInMeeting?: boolean;
         suggestRecording?: boolean;
     };
+    reducedUImainToolbarButtons?: Array<string>;
     remoteVideoMenu?: {
         disableDemote?: boolean;
         disableGrantModerator?: boolean;
@@ -581,6 +582,7 @@ export interface IConfig {
     };
     serviceUrl?: string;
     sharedVideoAllowedURLDomains?: Array<string>;
+    showChatPermissionsModeratorSetting?: boolean;
     sipInviteUrl?: string;
     speakerStats?: {
         disableSearch?: boolean;

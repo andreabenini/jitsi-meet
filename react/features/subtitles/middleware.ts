@@ -8,6 +8,7 @@ import JitsiMeetJS from '../base/lib-jitsi-meet';
 import { TRANSCRIBER_ID } from '../base/participants/constants';
 import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
 import { showErrorNotification } from '../notifications/actions';
+import { RECORDING_METADATA_ID } from '../recording/constants';
 import { TRANSCRIBER_JOINED } from '../transcribing/actionTypes';
 
 import {
@@ -97,7 +98,7 @@ MiddlewareRegistry.register(store => next => action => {
         break;
     }
     case SET_REQUESTING_SUBTITLES:
-        _requestingSubtitlesChange(store, action.enabled, action.language, action.backendRecordingOn);
+        _requestingSubtitlesChange(store, action.enabled, action.language);
         break;
     }
 
@@ -343,26 +344,25 @@ function _getPrimaryLanguageCode(language: string) {
  * @param {Store} store - The redux store.
  * @param {boolean} enabled - Whether subtitles should be enabled or not.
  * @param {string} language - The language to use for translation.
- * @param {boolean} backendRecordingOn - Whether backend recording is on or not.
  * @private
  * @returns {void}
  */
 function _requestingSubtitlesChange(
         { dispatch, getState }: IStore,
         enabled: boolean,
-        language?: string | null,
-        backendRecordingOn = false) {
+        language?: string | null) {
     const state = getState();
     const { conference } = state['features/base/conference'];
+    const backendRecordingOn = conference?.getMetadataHandler()?.getMetadata()?.asyncTranscription;
 
     conference?.setLocalParticipantProperty(
         P_NAME_REQUESTING_TRANSCRIPTION,
         enabled);
 
-    if (enabled && conference?.getTranscriptionStatus() === JitsiMeetJS.constants.transcriptionStatus.OFF) {
-        const featureAllowed = isJwtFeatureEnabled(getState(), MEET_FEATURES.TRANSCRIPTION, false);
+    if (enabled && conference?.getTranscriptionStatus() === JitsiMeetJS.constants.transcriptionStatus.OFF
+        && isJwtFeatureEnabled(getState(), MEET_FEATURES.TRANSCRIPTION, false)) {
 
-        if (featureAllowed && !backendRecordingOn) {
+        if (!backendRecordingOn) {
             conference?.dial(TRANSCRIBER_DIAL_NUMBER)
                 .catch((e: any) => {
                     logger.error('Error dialing', e);
@@ -375,6 +375,10 @@ function _requestingSubtitlesChange(
                     }));
                     dispatch(setSubtitlesError(true));
                 });
+        } else {
+            conference?.getMetadataHandler()?.setMetadata(RECORDING_METADATA_ID, {
+                isTranscribingEnabled: true
+            });
         }
     }
 
@@ -382,6 +386,13 @@ function _requestingSubtitlesChange(
         conference?.setLocalParticipantProperty(
             P_NAME_TRANSLATION_LANGUAGE,
             language.replace('translation-languages:', ''));
+    }
+
+    if (!enabled && backendRecordingOn
+        && conference?.getMetadataHandler()?.getMetadata()[RECORDING_METADATA_ID]?.isTranscribingEnabled) {
+        conference?.getMetadataHandler()?.setMetadata(RECORDING_METADATA_ID, {
+            isTranscribingEnabled: false
+        });
     }
 }
 
