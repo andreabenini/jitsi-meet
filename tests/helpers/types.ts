@@ -63,6 +63,11 @@ export type IParticipantJoinOptions = {
     skipDisplayName?: boolean;
 
     /**
+     * Whether to skip the prejoin button 'Join' click when joining.
+     */
+    skipPrejoinButtonClick?: boolean;
+
+    /**
      * Whether to skip waiting for the participant to join the room. Cases like lobby where we do not succeed to join
      * based on the logic of the test.
      */
@@ -72,6 +77,11 @@ export type IParticipantJoinOptions = {
      * An optional tenant to use. If provided it overrides the default.
      */
     tenant?: string;
+
+    /**
+     * An optional string to append to the URL when joining the room.
+     */
+    urlAppendString?: string;
 };
 
 export type IJoinOptions = {
@@ -97,6 +107,11 @@ export type IJoinOptions = {
     skipInMeetingChecks?: boolean;
 
     /**
+     * Whether to skip the prejoin button 'Join' click when joining.
+     */
+    skipPrejoinButtonClick?: boolean;
+
+    /**
      * The skip waiting for the participant to join the room setting to pass to IParticipantJoinOptions.
      */
     skipWaitToJoin?: boolean;
@@ -110,4 +125,9 @@ export type IJoinOptions = {
      * Options used when generating a token.
      */
     tokenOptions?: ITokenOptions;
+
+    /**
+     * An optional string to append to the URL when joining the room.
+     */
+    urlAppendString?: string;
 };
