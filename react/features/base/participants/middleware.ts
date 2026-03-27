@@ -545,6 +545,15 @@ StateListenerRegistry.register(
                         propertyHandlers[propertyName](participant, newValue);
                     }
                 });
+            conference.on(JitsiConferenceEvents.PERMISSIONS_RECEIVED, (p: Object) => {
+                const localParticipant = getLocalParticipant(store.getState());
+
+                localParticipant && store.dispatch(participantUpdated({
+                    id: localParticipant.id,
+                    local: true,
+                    features: p
+                }));
+            });
         } else {
             const localParticipantId = getLocalParticipant(store.getState)?.id;
 
@@ -610,17 +619,12 @@ function _localParticipantJoined({ getState, dispatch }: IStore, next: Function,
     const settings = state['features/base/settings'];
     const jwtUser = state['features/base/jwt']?.user;
 
-    const userContext = jwtUser ? {
-        id: jwtUser.id,
-        name: jwtUser.name
-    } : undefined;
-
     dispatch(localParticipantJoined({
         avatarURL: settings.avatarURL,
         email: settings.email,
         name: settings.displayName,
         id: '',
-        userContext
+        userContext: jwtUser
     }));
 
     return result;
