@@ -68,9 +68,10 @@ const specs = [
  * Analyzes test files at config construction time to determine browser requirements
  * and generate capabilities with appropriate exclusions.
  */
-function generateCapabilitiesFromSpecs(): Record<string, any> {
+function generateCapabilitiesFromSpecs(): { capabilities: Record<string, any>; excludedSpecs: string[]; } {
     const allSpecFiles: string[] = [];
     const browsers = [ 'p1', 'p2', 'p3', 'p4', 'p5', 'p6' ];
+    const excludedSpecs: string[] = [];
 
     for (const pattern of specs) {
         const matches = glob.sync(pattern, { cwd: path.join(__dirname) });
@@ -98,6 +99,12 @@ function generateCapabilitiesFromSpecs(): Record<string, any> {
         const props = testProperties[file];
         const relativeFile = path.relative(__dirname, file);
 
+        // If a test requires JaaS but JaaS is not configured, exclude it at the top level so no worker is created.
+        if (props?.useJaas && !testsConfig.jaas.enabled) {
+            excludedSpecs.push(relativeFile);
+            continue;
+        }
+
         // If a test doesn't use a particular browser, add it to exclusions for that browser
         if (props?.usesBrowsers) {
             browsers.forEach(browser => {
@@ -108,25 +115,28 @@ function generateCapabilitiesFromSpecs(): Record<string, any> {
         }
     }
 
-    return Object.fromEntries(
-        browsers.map(browser => [
-            browser,
-            {
-                capabilities: {
-                    browserName: 'chrome',
-                    ...(browser === 'p1' && process.env.BROWSER_CHROME_BETA ? { browserVersion: 'beta' } : {}),
-                    'goog:chromeOptions': {
-                        args: chromeArgs,
-                        prefs: chromePreferences
-                    },
-                    'wdio:exclude': Array.from(browserExclusions[browser] || [])
+    return {
+        capabilities: Object.fromEntries(
+            browsers.map(browser => [
+                browser,
+                {
+                    capabilities: {
+                        browserName: 'chrome',
+                        ...(browser === 'p1' && process.env.BROWSER_CHROME_BETA ? { browserVersion: 'beta' } : {}),
+                        'goog:chromeOptions': {
+                            args: chromeArgs,
+                            prefs: chromePreferences
+                        },
+                        'wdio:exclude': Array.from(browserExclusions[browser] || [])
+                    }
                 }
-            }
-        ])
-    );
+            ])
+        ),
+        excludedSpecs
+    };
 }
 
-const capabilities = generateCapabilitiesFromSpecs();
+const { capabilities, excludedSpecs } = generateCapabilitiesFromSpecs();
 
 const TEST_RESULTS_DIR = 'test-results';
 
@@ -137,6 +147,7 @@ export const config: WebdriverIO.MultiremoteConfig = {
     runner: 'local',
 
     specs,
+    exclude: excludedSpecs,
 
     maxInstances: parseInt(process.env.MAX_INSTANCES || '1', 10), // if changing check onWorkerStart logic
 
@@ -472,9 +483,11 @@ export const config: WebdriverIO.MultiremoteConfig = {
 
     /**
      * Gets executed after a worker process has exited.
-     * If the worker crashed (e.g. session DELETE timeout), the JUnit reporter never flushes,
-     * leaving a zero-byte XML file. This hook detects that and writes a failure entry so the
-     * report generator has something to show.
+     * Handles two crash scenarios:
+     * 1. Session DELETE timeout: JUnit reporter never flushes, leaving a zero-byte XML.
+     * 2. Session INIT timeout: JUnit reporter writes a non-empty XML but with empty name/classname,
+     *    and the allure reporter never fires (no beforeTest hook ran).
+     * In both cases, synthesise a failure entry for JUnit and allure so the crash shows up in reports.
      */
     onWorkerEnd(cid, exitCode, workerSpecs) {
         if (exitCode === 0) {
@@ -482,18 +495,30 @@ export const config: WebdriverIO.MultiremoteConfig = {
         }
         const xmlPath = path.join(TEST_RESULTS_DIR, `results-${cid}.xml`);
 
-        try {
-            if (fs.statSync(xmlPath).size > 0) {
-                return;
-            }
-        } catch {
-            // file doesn't exist yet — fall through and create it
-        }
-
         const specName = workerSpecs?.[0] ? path.basename(workerSpecs[0], '.spec.ts') : 'unknown';
         const dirMatch = workerSpecs?.[0]?.match(/\/tests\/specs\/([^/]+)\//);
         const dir = dirMatch ? dirMatch[1] : 'unknown';
         const message = `Worker exited with code ${exitCode} before results were written. Test result is unknown - tests may have passed.`;
+
+        // Check whether the XML has real test content. The JUnit reporter writes a non-empty XML
+        // even for session-init failures, but the testcase has empty name/classname in that case.
+        // If real test results were written, the allure reporter will have already produced its
+        // own result files, so we skip both. If the XML is missing or has no named test cases,
+        // we need to synthesise both.
+        let xmlHasNamedTests = false;
+
+        try {
+            const xmlContent = fs.readFileSync(xmlPath, 'utf8');
+
+            xmlHasNamedTests = xmlContent.includes('name="') && !xmlContent.includes('name=""');
+        } catch {
+            // file doesn't exist — fall through and create it
+        }
+
+        if (xmlHasNamedTests) {
+            // Real test results were written; allure reporter handled this worker normally.
+            return;
+        }
 
         const b = junitReportBuilder.newBuilder();
 
