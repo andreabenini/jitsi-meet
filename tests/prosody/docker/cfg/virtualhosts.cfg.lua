@@ -42,6 +42,7 @@ VirtualHost "localhost"
         "system_chat_message";
         -- test-only
         "muc_password_check";
+        "muc_breakout_rooms";
     }
 
     -- mod_muc_password_check: verify Bearer tokens with the login ASAP key server.
@@ -67,8 +68,10 @@ VirtualHost "localhost"
 
     -- Required by mod_conference_duration to find the MUC component.
     -- Required by mod_muc_lobby_rooms.
+    -- Required by mod_muc_breakout_rooms.
     main_muc = "conference.localhost"
     lobby_muc = "lobby.conference.localhost"
+    breakout_rooms_muc = "breakout.conference.localhost"
 
     -- Clients on whitelist.localhost bypass the lobby.
     muc_lobby_whitelist = { "whitelist.localhost" }
@@ -123,3 +126,17 @@ VirtualHost "shared-secret.localhost"
 
 VirtualHost "whitelist.localhost"
     authentication = "anonymous"
+
+-- VirtualHost for mod_trace tests, with otlp_endpoint configured so the
+-- module is active. Points at the mock OTLP receiver served by
+-- mod_test_observer_http on the main VirtualHost.
+VirtualHost "trace.localhost"
+    authentication = "anonymous"
+    modules_enabled = { "trace" }
+    otlp_endpoint = "http://localhost:5280/test-observer/otlp-traces"
+
+-- VirtualHost for mod_trace tests with otlp_endpoint left unset: the module
+-- must log a warning and no-op rather than hook anything.
+VirtualHost "trace-disabled.localhost"
+    authentication = "anonymous"
+    modules_enabled = { "trace" }
