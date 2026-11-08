@@ -2,13 +2,18 @@ import { AnyAction } from 'redux';
 
 import { IStore } from '../app/types';
 import { ENDPOINT_MESSAGE_RECEIVED, NON_PARTICIPANT_MESSAGE_RECEIVED } from '../base/conference/actionTypes';
+import { IJitsiConference } from '../base/conference/reducer';
 import { MEET_FEATURES } from '../base/jwt/constants';
 import { isJwtFeatureEnabled } from '../base/jwt/functions';
 import JitsiMeetJS from '../base/lib-jitsi-meet';
 import { TRANSCRIBER_ID } from '../base/participants/constants';
 import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
-import { showErrorNotification } from '../notifications/actions';
+import StateListenerRegistry from '../base/redux/StateListenerRegistry';
+import { isE2EEOnInMeeting } from '../e2ee/functions';
+import { showErrorNotification, showNotification } from '../notifications/actions';
+import { NOTIFICATION_TIMEOUT_TYPE } from '../notifications/constants';
 import { RECORDING_METADATA_ID } from '../recording/constants';
+import { isFileRecordingRequested } from '../recording/functions';
 import { maybeNotifyRecordingStart } from '../recording/middleware';
 import { TRANSCRIBER_JOINED } from '../transcribing/actionTypes';
 
@@ -86,6 +91,9 @@ MiddlewareRegistry.register(store => next => action => {
         const state = store.getState()['features/subtitles'];
         const toggledValue = !state._requestingSubtitles;
 
+        if (toggledValue && _refusedUnderE2EE(store)) {
+            return;
+        }
         _requestingSubtitlesChange(store, toggledValue, state._language);
         break;
     }
@@ -102,6 +110,9 @@ MiddlewareRegistry.register(store => next => action => {
         break;
     }
     case SET_REQUESTING_SUBTITLES:
+        if (action.enabled && _refusedUnderE2EE(store)) {
+            return;
+        }
         _requestingSubtitlesChange(
             store, action.enabled, action.language,
             action.forceBackendRecordingOn, action.isRecordingRequested,
@@ -375,6 +386,31 @@ function _getPrimaryLanguageCode(language: string) {
 }
 
 /**
+ * Clears the recording isTranscribingEnabled flag after inviting the transcriber failed, along with
+ * what this participant currently asks of the recording: a request it made along with the
+ * transcription is kept, one it withdrew meanwhile (the recording was stopped while the invite was
+ * pending) stays withdrawn. That comes from the redux state, not from the local copy of the room
+ * metadata: the copy only reflects a write once the server echoed it back, so right after the
+ * failure it may still miss the request, or still show one already withdrawn.
+ *
+ * The server applies the updates in the order they are sent, so this one lands after the one that
+ * requested the transcription, whether or not its echo has arrived yet.
+ *
+ * @param {IJitsiConference} conference - The conference.
+ * @param {Function} getState - The redux getState function.
+ * @returns {void}
+ */
+function _clearTranscribingEnabled(conference: IJitsiConference, getState: IStore['getState']) {
+    const metadataHandler = conference.getMetadataHandler();
+
+    metadataHandler.setMetadata(RECORDING_METADATA_ID, {
+        ...metadataHandler.getMetadata()[RECORDING_METADATA_ID],
+        isRecordingRequested: isFileRecordingRequested(getState()),
+        isTranscribingEnabled: false
+    });
+}
+
+/**
  * Toggle the local property 'requestingTranscription'. This will cause Jicofo
  * and Jigasi to decide whether the transcriber needs to be in the room.
  *
@@ -409,6 +445,9 @@ function _requestingSubtitlesChange(
     if (enabled && conference?.getTranscriptionStatus() === JitsiMeetJS.constants.transcriptionStatus.OFF
         && isJwtFeatureEnabled(getState(), MEET_FEATURES.TRANSCRIPTION, false)) {
 
+        // Whether this request wrote isTranscribingEnabled to the room metadata (below).
+        let transcribingEnabledWritten = false;
+
         if (!backendRecordingOn) {
             conference?.dial(TRANSCRIBER_DIAL_NUMBER)
                 .catch((e: any) => {
@@ -416,6 +455,13 @@ function _requestingSubtitlesChange(
 
                     // let's back to the correct state
                     dispatch(setRequestingSubtitles(false, false, null));
+
+                    // Clear the transcription flag written below for this request: remote
+                    // participants would otherwise keep waiting for a transcription that is not
+                    // coming before notifying about the recording.
+                    if (conference && transcribingEnabledWritten) {
+                        _clearTranscribingEnabled(conference, getState);
+                    }
 
                     dispatch(showErrorNotification({
                         titleKey: 'transcribing.failed'
@@ -438,6 +484,7 @@ function _requestingSubtitlesChange(
                 isTranscribingEnabled: true,
                 ...(isRecordingRequested && { isRecordingRequested: true })
             });
+            transcribingEnabledWritten = true;
         }
     }
 
@@ -479,3 +526,39 @@ function _setClearerOnTranscriptMessage(
             () => dispatch(removeTranscriptMessage(transcriptMessageID)),
             REMOVE_AFTER_MS);
 }
+
+/**
+ * Refuses a subtitles request while anyone has E2EE on: nothing server-side can transcribe encrypted media. The
+ * request never reaches the reducer.
+ *
+ * @param {IStore} store - The redux store.
+ * @returns {boolean} Whether the request was refused.
+ */
+function _refusedUnderE2EE({ dispatch, getState }: IStore) {
+    if (!isE2EEOnInMeeting(getState())) {
+        return false;
+    }
+    logger.warn('Not requesting subtitles: end-to-end encryption is on');
+    dispatch(showErrorNotification({ titleKey: 'transcribing.unavailableWithE2EE' }));
+    dispatch(setSubtitlesError(true));
+
+    // A recording started alongside still gets its start notification.
+    if (getState()['features/recording'].startRecordingIntent) {
+        maybeNotifyRecordingStart(dispatch, getState);
+    }
+
+    return true;
+}
+
+/**
+ * E2EE came on with subtitles requested here (a race, or a client that doesn't block it): drop the local request.
+ * A meeting-wide transcription is left to whoever runs it.
+ */
+StateListenerRegistry.register(
+    state => isE2EEOnInMeeting(state),
+    (e2eeOn, { dispatch, getState }) => {
+        if (e2eeOn && getState()['features/subtitles']._requestingSubtitles) {
+            dispatch(setRequestingSubtitles(false, false, null, false, false, true));
+            dispatch(showNotification({ titleKey: 'transcribing.stoppedForE2EE' }, NOTIFICATION_TIMEOUT_TYPE.MEDIUM));
+        }
+    });

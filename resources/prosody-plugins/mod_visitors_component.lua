@@ -22,7 +22,7 @@ local split_string = util.split_string;
 local new_id = require 'util.id'.medium;
 local uuid_generate = require 'util.uuid'.generate;
 local json = require 'cjson.safe';
-local inspect = require 'inspect';
+local serialize = require 'util.serialization'.new('debug');
 
 -- Debug flag
 local DEBUG = false;
@@ -95,7 +95,9 @@ local function request_promotion_received(room, from_jid, from_vnode, nick, time
 
     -- if visitors is enabled for the room
     if visitors_promotion_map[room.jid] then
-        local force_promote = auto_allow_promotion or get_visitors_room_metadata(room).autoPromote;
+        local metadata = get_visitors_room_metadata(room);
+        -- auto-allow applies only when room is live, a missing live flag means the room is live
+        local force_promote = (auto_allow_promotion or metadata.autoPromote) and metadata.live ~= false;
         if not force_promote and force_promote_requested == 'true' then
             -- Let's do the force_promote checks if requested
             -- if it is vpaas meeting we trust the moderator computation from visitor node (value of force_promote_requested)
@@ -302,7 +304,7 @@ local function stanza_handler(event)
     local request_promotion = visitors_iq:get_child('promotion-request');
     if request_promotion then
         if not from_vnode then
-            module:log('warn', 'Received forged request_promotion message: %s %s',stanza, inspect(room._connected_vnodes));
+            module:log('warn', 'Received forged request_promotion message: %s %s',stanza, serialize(room._connected_vnodes));
             return true; -- stop processing
         end
 
@@ -338,7 +340,7 @@ local function stanza_handler(event)
     if transcription_languages
         and (transcription_languages.attr.langs or transcription_languages.attr.count) then
         if not from_vnode then
-            module:log('warn', 'Received forged transcription_languages message: %s %s',stanza, inspect(room._connected_vnodes));
+            module:log('warn', 'Received forged transcription_languages message: %s %s',stanza, serialize(room._connected_vnodes));
             return true; -- stop processing
         end
 
@@ -374,7 +376,7 @@ local function stanza_handler(event)
     if recording_metadata_el then
         if not from_vnode then
             module:log('warn', 'Received forged recording_metadata message: %s %s',
-                stanza, inspect(room._connected_vnodes));
+                stanza, serialize(room._connected_vnodes));
             return true; -- stop processing
         end
 
@@ -538,7 +540,7 @@ process_host_module(muc_domain_prefix..'.'..muc_domain_base, function(host_modul
         local is_live = get_visitors_room_metadata(room).live;
 
         -- we skip any checks when auto-allow is enabled and room is live
-        if (auto_allow_promotion or get_visitors_room_metadata(room).autoPromote and (is_live or is_live == nil))
+        if ((auto_allow_promotion or get_visitors_room_metadata(room).autoPromote) and (is_live or is_live == nil))
             or ignore_list:contains(jid.host(stanza.attr.from)) -- jibri or other domains to ignore
             or table_find(room._data.moderators, session.jitsi_meet_context_user and session.jitsi_meet_context_user.id)
             or table_find(room._data.participants, session.jitsi_meet_context_user and session.jitsi_meet_context_user.id) then

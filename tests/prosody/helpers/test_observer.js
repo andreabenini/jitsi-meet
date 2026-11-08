@@ -22,8 +22,11 @@ const JIGASI_INVITE_URL = 'http://localhost:5280/invite-jigasi';
  *                                       body. Tests the nil-check bug:
  *                                       json.decode returns nil and the module
  *                                       must not crash on r['access'].
+ * @param {number}  [opts.delay=0]       Seconds the mock holds each response
+ *                                       before sending it, to move the ban
+ *                                       callback later in session setup.
  */
-export async function setAccessManagerResponse({ access = true, status = 200, nonJson = false } = {}) {
+export async function setAccessManagerResponse({ access = true, status = 200, nonJson = false, delay = 0 } = {}) {
     const res = await fetch(ACCESS_MANAGER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -31,7 +34,8 @@ export async function setAccessManagerResponse({ access = true, status = 200, no
             access,
             status,
             // eslint-disable-next-line camelcase
-            non_json: nonJson
+            non_json: nonJson,
+            delay
         })
     });
 
@@ -146,6 +150,23 @@ export async function getSessionFeatures(fullJid) {
     }
 
     return (await res.json()).features;
+}
+
+/**
+ * Returns the current token fields (auth_token and the JWT-derived claims) of a
+ * live c2s session.
+ *
+ * @param {string} fullJid  e.g. 'abc123@localhost/res1'
+ * @returns {Promise<object>}
+ */
+export async function getSessionLive(fullJid) {
+    const res = await fetch(`${BASE}/session-live?jid=${encodeURIComponent(fullJid)}`);
+
+    if (!res.ok) {
+        throw new Error(`getSessionLive failed: ${res.status} ${await res.text()}`);
+    }
+
+    return res.json();
 }
 
 /**
@@ -339,7 +360,7 @@ export async function clearOtlpTraces() {
 /**
  * Returns room state from Prosody's internal MUC state.
  * @param {string} roomJid  e.g. 'room@conference.localhost'
- * @returns {Promise<{jid: string, hidden: boolean, occupant_count: number}|null>}
+ * @returns {Promise<{jid: string, hidden: boolean, occupant_count: number, meeting_id?: string}|null>}
  */
 export async function getRoomState(roomJid) {
     const res = await fetch(`${BASE}/rooms?jid=${encodeURIComponent(roomJid)}`);
@@ -493,4 +514,34 @@ export async function endMeeting(roomJid, token, { silentReconnect = false, omit
 
     return { status: res.status,
         body: await res.text() };
+}
+
+/**
+ * Returns the Jibri IQs that reached the MUC component (i.e. passed
+ * mod_filter_iq_jibri), as recorded by mod_test_observer. app_data is the
+ * value after the sender's `pre-iq/full` hooks (e.g. mod_jibri_session) ran.
+ *
+ * @returns {Promise<Array<{from: string, to: string, action?: string, recording_mode?: string, app_data?: string}>>}
+ */
+export async function getJibriIqs() {
+    const res = await fetch(`${BASE}/jibri-iqs`);
+
+    if (!res.ok) {
+        throw new Error(`GET /jibri-iqs failed: ${res.status}`);
+    }
+
+    return res.json();
+}
+
+/**
+ * Clears the Jibri IQs recorded by mod_test_observer.
+ *
+ * @returns {Promise<void>}
+ */
+export async function clearJibriIqs() {
+    const res = await fetch(`${BASE}/jibri-iqs`, { method: 'DELETE' });
+
+    if (!res.ok) {
+        throw new Error(`DELETE /jibri-iqs failed: ${res.status}`);
+    }
 }

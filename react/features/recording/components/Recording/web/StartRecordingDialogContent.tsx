@@ -9,11 +9,12 @@ import Container from '../../../../base/react/components/web/Container';
 import Image from '../../../../base/react/components/web/Image';
 import LoadingIndicator from '../../../../base/react/components/web/LoadingIndicator';
 import Text from '../../../../base/react/components/web/Text';
+import DisabledReasonTooltip from '../../../../base/tooltip/components/DisabledReasonTooltip';
 import Button from '../../../../base/ui/components/web/Button';
 import Switch from '../../../../base/ui/components/web/Switch';
 import { BUTTON_TYPES } from '../../../../base/ui/constants.web';
 import { RECORDING_TYPES } from '../../../constants';
-import { getRecordingDurationEstimation } from '../../../functions';
+import { START_BLOCKER_REASON_KEYS, StartBlocker, getRecordingDurationEstimation } from '../../../functions';
 import AbstractStartRecordingDialogContent, { mapStateToProps } from '../AbstractStartRecordingDialogContent';
 import {
     ICON_INFO,
@@ -105,24 +106,17 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
      * @returns {React$Component}
      */
     _renderRecordingSection() {
-        const recordingServiceOptions = this._getRecordingServiceOptions();
+        const { model, onStartRecording, onStopRecording, t } = this.props;
+        const { optionsLocked, running, selectedService, services, startBlocker, visible } = model.recording;
 
-        if (!this._shouldRenderRecordingSection(recordingServiceOptions)) {
+        if (!visible) {
             return null;
         }
 
-        const {
-            isValidating,
-            onStartRecording,
-            onStopRecording,
-            recordingRunning,
-            selectedRecordingService,
-            startRecordingDisabled,
-            t
-        } = this.props;
+        const startReason = this._getBlockerReason(startBlocker);
         const { showRecordingOptions } = this.state;
         const classes = this.props.classes ?? {};
-        const serviceOptions = recordingServiceOptions.map(service => {
+        const serviceOptions = services.map(service => {
             return {
                 label: t(this._getServiceLabelKey(service)),
                 value: service
@@ -136,7 +130,7 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
                         { t('recording.recordAudioAndVideo') }
                     </label>
                     <Container className = { classes.switch }>
-                        { recordingRunning ? (
+                        { running ? (
                             <Button
                                 accessibilityLabel = { t('dialog.stopRecording') }
                                 labelKey = 'dialog.stop'
@@ -144,13 +138,16 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
                                 testId = 'recordingDialog.stopRecording'
                                 type = { BUTTON_TYPES.DESTRUCTIVE } />
                         ) : (
-                            <Button
-                                accessibilityLabel = { t('dialog.startRecording') }
-                                disabled = { startRecordingDisabled || isValidating }
-                                labelKey = 'dialog.start'
-                                onClick = { onStartRecording }
-                                testId = 'recordingDialog.startRecording'
-                                type = { BUTTON_TYPES.PRIMARY } />
+                            <DisabledReasonTooltip reason = { startReason }>
+                                <Button
+                                    accessibilityLabel = { t('dialog.startRecording') }
+                                    description = { startReason }
+                                    disabled = { Boolean(startBlocker) }
+                                    labelKey = 'dialog.start'
+                                    onClick = { onStartRecording }
+                                    testId = 'recordingDialog.startRecording'
+                                    type = { BUTTON_TYPES.PRIMARY } />
+                            </DisabledReasonTooltip>
                         ) }
                     </Container>
                 </Container>
@@ -158,17 +155,17 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
                     body: (
                         <>
                             <DropdownSelect
-                                disabled = { recordingRunning || isValidating }
+                                disabled = { optionsLocked }
                                 id = 'recording-service-select'
                                 label = { t('recording.storageLocation') }
                                 onChange = { this._onRecordingServiceChange }
                                 options = { serviceOptions }
-                                value = { selectedRecordingService ?? '' } />
-                            { selectedRecordingService === RECORDING_TYPES.JITSI_REC_SERVICE
+                                value = { selectedService } />
+                            { selectedService === RECORDING_TYPES.JITSI_REC_SERVICE
                                 && this._renderJitsiServiceOptions() }
-                            { selectedRecordingService === RECORDING_TYPES.DROPBOX
+                            { selectedService === RECORDING_TYPES.DROPBOX
                                 && this._renderDropboxOptions() }
-                            { selectedRecordingService === RECORDING_TYPES.LOCAL
+                            { selectedService === RECORDING_TYPES.LOCAL
                                 && this._renderLocalRecordingOptions() }
                             { this._renderFollowMeRecorder() }
                         </>
@@ -193,18 +190,13 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
      * @returns {React$Component}
      */
     _renderJitsiServiceOptions() {
-        const {
-            isValidating,
-            onSharingSettingChanged,
-            recordingRunning,
-            sharingSetting,
-            t
-        } = this.props;
+        const { model, onSharingSettingChanged, sharingSetting, t } = this.props;
+        const { optionsLocked, showFileSharing } = model.recording;
         const classes = this.props.classes ?? {};
 
         return (
             <>
-                { this._shouldRenderFileSharingContent() && (
+                { showFileSharing && (
                     <Container
                         className = { `${classes.header} ${classes.headerSpaceTop}` }
                         key = 'fileSharingSetting'>
@@ -222,7 +214,7 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
                         <Switch
                             checked = { sharingSetting }
                             className = { classes.switch }
-                            disabled = { isValidating || recordingRunning }
+                            disabled = { optionsLocked }
                             id = 'recording-switch-share'
                             onChange = { onSharingSettingChanged } />
                     </Container>
@@ -347,10 +339,9 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
         const {
             _localRecordingNoNotification,
             _localRecordingSelfEnabled,
-            isValidating,
             localRecordingOnlySelf,
+            model,
             onLocalRecordingSelfChange,
-            recordingRunning,
             t
         } = this.props;
         const classes = this.props.classes ?? {};
@@ -373,7 +364,7 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
                         <Switch
                             checked = { Boolean(localRecordingOnlySelf) }
                             className = { classes.switch }
-                            disabled = { isValidating || recordingRunning }
+                            disabled = { model.recording.optionsLocked }
                             id = 'recording-switch-myself'
                             onChange = { onLocalRecordingSelfChange ?? EMPTY_FUNCTION } />
                     </Container>
@@ -396,11 +387,13 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
      * @returns {React$Component}
      */
     _renderFollowMeRecorder() {
-        if (!this._shouldRenderFollowMeRecorder()) {
+        const { model, t } = this.props;
+        const { followMeRecorderChecked, followMeRecorderDisabled, showFollowMeRecorder } = model.recording;
+
+        if (!showFollowMeRecorder) {
             return null;
         }
 
-        const { t } = this.props;
         const classes = this.props.classes ?? {};
 
         return (
@@ -411,9 +404,9 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
                     { t('settings.followMeRecorder') }
                 </label>
                 <Switch
-                    checked = { this._isFollowMeRecorderChecked() }
+                    checked = { followMeRecorderChecked }
                     className = { classes.switch }
-                    disabled = { this._isFollowMeRecorderDisabled() }
+                    disabled = { followMeRecorderDisabled }
                     id = 'recording-switch-follow-me'
                     onChange = { this._onFollowMeRecorderChange } />
             </Container>
@@ -427,18 +420,21 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
      * @returns {React$Component}
      */
     _renderTranscriptionSection() {
-        if (!this._shouldRenderTranscriptionSection()) {
-            return null;
-        }
-
         const {
             _availableLanguages,
+            model,
             onStartTranscription,
             onStopTranscription,
             selectedLanguage,
-            t,
-            transcriptionRunning
+            t
         } = this.props;
+        const { running, startBlocker, visible } = model.transcription;
+
+        if (!visible) {
+            return null;
+        }
+
+        const startReason = this._getBlockerReason(startBlocker);
         const { showTranscriptionOptions } = this.state;
         const classes = this.props.classes ?? {};
         const languageOptions = _availableLanguages.map((lang: string) => {
@@ -455,7 +451,7 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
                         { t('recording.recordTranscription') }
                     </label>
                     <Container className = { classes.switch }>
-                        { transcriptionRunning ? (
+                        { running ? (
                             <Button
                                 accessibilityLabel = { t('dialog.stopTranscription') }
                                 labelKey = 'dialog.stop'
@@ -463,19 +459,23 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
                                 testId = 'recordingDialog.stopTranscription'
                                 type = { BUTTON_TYPES.DESTRUCTIVE } />
                         ) : (
-                            <Button
-                                accessibilityLabel = { t('dialog.startTranscription') }
-                                labelKey = 'dialog.start'
-                                onClick = { onStartTranscription }
-                                testId = 'recordingDialog.startTranscription'
-                                type = { BUTTON_TYPES.PRIMARY } />
+                            <DisabledReasonTooltip reason = { startReason }>
+                                <Button
+                                    accessibilityLabel = { t('dialog.startTranscription') }
+                                    description = { startReason }
+                                    disabled = { Boolean(startBlocker) }
+                                    labelKey = 'dialog.start'
+                                    onClick = { onStartTranscription }
+                                    testId = 'recordingDialog.startTranscription'
+                                    type = { BUTTON_TYPES.PRIMARY } />
+                            </DisabledReasonTooltip>
                         ) }
                     </Container>
                 </Container>
                 { this._renderAccordion({
                     body: (
                         <DropdownSelect
-                            disabled = { transcriptionRunning }
+                            disabled = { running }
                             id = 'transcription-language-select'
                             label = { t('recording.transcriptionLanguage') }
                             onChange = { this.props.onSubtitlesLanguageChange }
@@ -496,6 +496,18 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
     }
 
     /**
+     * Returns the translated explanation of a blocker, when it has one for the user.
+     *
+     * @param {StartBlocker|undefined} blocker - Why a start button is disabled, if it is.
+     * @returns {string|undefined}
+     */
+    _getBlockerReason(blocker: StartBlocker | undefined) {
+        const reasonKey = blocker && START_BLOCKER_REASON_KEYS[blocker];
+
+        return reasonKey ? this.props.t(reasonKey) : undefined;
+    }
+
+    /**
      * Renders the footer buttons acting on both services at once. When only
      * one service is running both buttons are shown: stop both stops the
      * running one, start both starts the missing one.
@@ -503,22 +515,14 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
      * @returns {React$Component}
      */
     _renderFooter() {
-        if (!this._shouldRenderFooter()) {
+        const { model, onStartBoth, onStopBoth, t } = this.props;
+        const { showStartBoth, showStopBoth, startBothBlocker, visible } = model.footer;
+
+        if (!visible) {
             return null;
         }
 
-        const {
-            isValidating,
-            onStartBoth,
-            onStopBoth,
-            recordingRunning,
-            startRecordingDisabled,
-            t,
-            transcriptionRunning
-        } = this.props;
-        const showStopBoth = recordingRunning || transcriptionRunning;
-        const showStartBoth = !recordingRunning || !transcriptionRunning;
-        const startBothDisabled = !recordingRunning && (startRecordingDisabled || isValidating);
+        const startBothReason = this._getBlockerReason(startBothBlocker);
         const classes = this.props.classes ?? {};
 
         return (
@@ -532,13 +536,16 @@ class StartRecordingDialogContent extends AbstractStartRecordingDialogContent {
                         type = { BUTTON_TYPES.DESTRUCTIVE } />
                 ) }
                 { showStartBoth && (
-                    <Button
-                        accessibilityLabel = { t('dialog.startBoth') }
-                        disabled = { startBothDisabled }
-                        labelKey = 'dialog.startBoth'
-                        onClick = { onStartBoth }
-                        testId = 'recordingDialog.startBoth'
-                        type = { BUTTON_TYPES.PRIMARY } />
+                    <DisabledReasonTooltip reason = { startBothReason }>
+                        <Button
+                            accessibilityLabel = { t('dialog.startBoth') }
+                            description = { startBothReason }
+                            disabled = { Boolean(startBothBlocker) }
+                            labelKey = 'dialog.startBoth'
+                            onClick = { onStartBoth }
+                            testId = 'recordingDialog.startBoth'
+                            type = { BUTTON_TYPES.PRIMARY } />
+                    </DisabledReasonTooltip>
                 ) }
             </Container>
         );

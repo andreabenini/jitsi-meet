@@ -41,6 +41,7 @@ const commands = {
     email: 'email',
     grantModerator: 'grant-moderator',
     grantRecordingConsent: 'grant-recording-consent',
+    grantVoiceAgentConsent: 'grant-voice-agent-consent',
     hangup: 'video-hangup',
     hideNotification: 'hide-notification',
     initiatePrivateChat: 'initiate-private-chat',
@@ -147,6 +148,7 @@ const events = {
     'filmstrip-display-changed': 'filmstripDisplayChanged',
     'incoming-message': 'incomingMessage',
     'knocking-participant': 'knockingParticipant',
+    'lobby-mode-changed': 'lobbyModeChanged',
     'log': 'log',
     'mic-error': 'micError',
     'moderation-participant-approved': 'moderationParticipantApproved',
@@ -155,6 +157,7 @@ const events = {
     'mouse-enter': 'mouseEnter',
     'mouse-leave': 'mouseLeave',
     'mouse-move': 'mouseMove',
+    'noise-suppression-changed': 'noiseSuppressionChanged',
     'non-participant-message-received': 'nonParticipantMessageReceived',
     'notification-triggered': 'notificationTriggered',
     'outgoing-message': 'outgoingMessage',
@@ -172,6 +175,7 @@ const events = {
     'raise-hand-updated': 'raiseHandUpdated',
     'ready': 'ready',
     'recording-consent-dialog-open': 'recordingConsentDialogOpen',
+    'voice-agent-consent-dialog-open': 'voiceAgentConsentDialogOpen',
     'recording-link-available': 'recordingLinkAvailable',
     'recording-status-changed': 'recordingStatusChanged',
     'participant-menu-button-clicked': 'participantMenuButtonClick',
@@ -1286,6 +1290,18 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
         return this._transport.sendRequest({
             name: 'is-moderation-on',
             mediaType
+        });
+    }
+
+    /**
+     * Returns the lobby mode status.
+     *
+     * @returns {Promise<boolean>} - Resolves with the lobby mode status and rejects on
+     * failure.
+     */
+    isLobbyEnabled() {
+        return this._transport.sendRequest({
+            name: 'is-lobby-enabled'
         });
     }
 

@@ -11,6 +11,7 @@ import { bottomSheetStyles } from '../../../base/dialog/components/native/styles
 import SettingsButton from '../../../base/settings/components/native/SettingsButton';
 import BreakoutRoomsButton
     from '../../../breakout-rooms/components/native/BreakoutRoomsButton';
+import CustomPanelButton from '../../../custom-panel/components/native/CustomPanelButton';
 import SharedDocumentButton from '../../../etherpad/components/SharedDocumentButton.native';
 import ReactionMenu from '../../../reactions/components/native/ReactionMenu';
 import { shouldDisplayReactionsButtons } from '../../../reactions/functions.any';
@@ -19,7 +20,7 @@ import RecordButton from '../../../recording/components/Recording/native/RecordB
 import SecurityDialogButton
     from '../../../security/components/security-dialog/native/SecurityDialogButton';
 import SharedVideoButton from '../../../shared-video/components/native/SharedVideoButton';
-import { isSharedVideoEnabled } from '../../../shared-video/functions';
+import { isSharedVideoButtonVisible } from '../../../shared-video/functions';
 import SpeakerStatsButton from '../../../speaker-stats/components/native/SpeakerStatsButton';
 import { isSpeakerStatsDisabled } from '../../../speaker-stats/functions';
 import ClosedCaptionButton from '../../../subtitles/components/native/ClosedCaptionButton';
@@ -53,11 +54,6 @@ interface IProps {
     _isOpen: boolean;
 
     /**
-     * Whether the shared video is enabled or not.
-     */
-    _isSharedVideoEnabled: boolean;
-
-    /**
      * Whether or not speaker stats is disable.
      */
     _isSpeakerStatsDisabled?: boolean;
@@ -81,6 +77,11 @@ interface IProps {
     * Whether or not any reactions buttons should be displayed.
     */
     _shouldDisplayReactionsButtons: boolean;
+
+    /**
+     * Whether the shared video button is shown, i.e. the local participant may share a video or shares one.
+     */
+    _showSharedVideoButton: boolean;
 
     /**
      * Used for hiding the dialog when the selection was completed.
@@ -128,7 +129,7 @@ class OverflowMenu extends PureComponent<IProps, IState> {
         const {
             _isBreakoutRoomsSupported,
             _isSpeakerStatsDisabled,
-            _isSharedVideoEnabled,
+            _showSharedVideoButton,
             dispatch
         } = this.props;
 
@@ -165,9 +166,10 @@ class OverflowMenu extends PureComponent<IProps, IState> {
                 <LiveStreamButton { ...buttonProps } />
                 <LinkToSalesforceButton { ...buttonProps } />
                 <WhiteboardButton { ...buttonProps } />
+                <CustomPanelButton { ...buttonProps } />
                 {/* @ts-ignore */}
                 <Divider style = { styles.divider as ViewStyle } />
-                {_isSharedVideoEnabled && <SharedVideoButton { ...buttonProps } />}
+                {_showSharedVideoButton && <SharedVideoButton { ...buttonProps } />}
                 { this._renderOverflowMenuButtons(topButtonProps) }
                 {!_isSpeakerStatsDisabled && <SpeakerStatsButton { ...buttonProps } />}
                 {_isBreakoutRoomsSupported && <BreakoutRoomsButton { ...buttonProps } />}
@@ -282,7 +284,7 @@ function _mapStateToProps(state: IReduxState) {
 
     return {
         _isBreakoutRoomsSupported: conference?.getBreakoutRooms()?.isSupported(),
-        _isSharedVideoEnabled: isSharedVideoEnabled(state),
+        _showSharedVideoButton: isSharedVideoButtonVisible(state),
         _isSpeakerStatsDisabled: isSpeakerStatsDisabled(state),
         _shouldDisplayReactionsButtons: shouldDisplayReactionsButtons(state)
     };
